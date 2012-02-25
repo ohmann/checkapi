@@ -1,0 +1,122 @@
+"""
+<Program Name>
+  check_api_output_file.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Creates a trace file for a specific run of CheckAPI. This is also the code
+  that specifies how an action is written to the trace.
+"""
+
+def _trim_str_if_needed(arg):
+    arg_str = str(arg)
+    arg_str_len = len(arg_str)
+    if  arg_str_len > MAX_STRING_LENGTH:
+        arg = arg_str[:MAX_STRING_LENGTH]
+        arg += "*WARNING!* String has been trimmed, it was "
+        arg += str(arg_str_len) + " characters long!"
+    return arg
+
+
+def _convert_arg_to_str(arg):
+    if is_model_object(arg):
+        arg = repr(arg).replace('<.', '', 1)
+        i = arg.find(" instance at 0x")
+        k = arg.find(" object at 0x")
+        if i > -1:
+            arg = arg[:i]
+        if k > -1:
+            arg = arg[:k]
+    return arg
+  
+
+def write_out_action(action, startnum = None):
+    num1, fnc_name, start, threadname, obj_id, args_list, model_func = action
+
+    # Convert the model function to pretty print
+    if model_func is not None:
+        model_func = str(model_func).replace("<function ", "", 1)
+        i = model_func.find(" at 0x")
+        model_func = model_func[:i]
+
+    args_str = []
+    for arg in args_list:
+        arg = _convert_arg_to_str(arg)
+        if isinstance(arg, tuple):
+            sub_args = []
+            for sub_arg in arg:
+                sub_arg = _convert_arg_to_str(sub_arg)
+                sub_args.append(sub_arg)
+            arg = tuple(sub_args)
+                      
+        arg = _trim_str_if_needed(arg)
+        args_str.append(arg)
+    
+    num1 = (num1, startnum)
+    action = (num1, fnc_name, start, threadname, obj_id, tuple(args_str), model_func)
+    action_str = str(action) + '\n'
+    
+    # Write log to string buffer
+    write_out_block_of_action_string(action_str)
+
+
+
+def write_out_block_of_action_string(action_str):
+    # append "action_str" in string buffer 
+    mycontext['string_buffer_of_write_out_action'] += action_str;
+ 
+    # when lines of string buffer over the max value, then write out to file.
+    if len(mycontext['string_buffer_of_write_out_action']) > MAX_STRING_LENGTH_FOR_WRITE_LOG:
+      #write out to file
+      write_str_to_log(mycontext['string_buffer_of_write_out_action'])
+      #initial string buffer 
+      mycontext['string_buffer_of_write_out_action'] = ""
+
+
+
+def write_out_last_string_buffer_action():
+    # when program is finished, write out all the string in buffer.
+    if mycontext['string_buffer_of_write_out_action']:
+      #write out to file
+      write_str_to_log(mycontext['string_buffer_of_write_out_action'])
+
+
+
+def write_str_to_log(output):
+    # write output string in file  
+    mycontext['fd'].writeat(output, mycontext['byte'])
+    # set the offset of byte
+    mycontext['byte'] += len(output)
+
+
+
+def _file_exists(filename):
+    try:
+        openfile(filename, False)
+        exists = True
+    except FileNotFoundError:
+        exists = False
+    return exists
+
+trace_file = OUTPUT_TRACE_FILE
+num = 1
+while _file_exists(trace_file):
+        trace_file = OUTPUT_TRACE_FILE
+        trace_file += str(num)
+        num += 1
+        
+# open trace log file
+fileobject = openfile(trace_file, True)
+# get file object
+mycontext['fd'] = fileobject
+# set initial byte at 0
+mycontext['byte'] = 0
+
+mycontext['trace_file'] = trace_file

@@ -1,0 +1,121 @@
+"""
+<Program Name>
+  deep_copy.repy
+
+<Author>
+  Justin Samuel (via namespace.py)
+  Jeff Rasley copied/modified the code for use with CheckAPI.
+
+<Purpose>
+  Given an object, makes a deep copy of the object and returns it.  This code
+  was mostly taken from namespace.py and adapted for use in CheckAPI.
+
+<Note>
+  My major changes from the original are related to the removal of virtual namespace
+  references.
+
+  Unlike the version in namespace.py this version does NOT support recursive
+  dictionaries, a stackoverflow error will occur if you give deep_copy() a recursive
+  reference such as:
+    d = {"test":123}
+    d["ref"] = d
+"""
+
+
+class DeepCopyError(RepyException):
+  pass
+
+
+def _is_in(obj, sequence):
+  """
+  A helper function to do identity ("is") checks instead of equality ("==")
+  when using X in [A, B, C] type constructs. So you would write:
+    if _is_in(type(foo), [int, long]):
+  instead of:
+    if type(foo) in [int, long]:
+  """
+  for item in sequence:
+    if obj is item:
+      return True
+  return False
+
+
+def deep_copy(obj, objectmap=None):
+  """
+  <Purpose>
+    Create a deep copy of an object without using the python 'copy' module.
+    Using copy.deepcopy() doesn't work because builtins like id and hasattr
+    aren't available in Repy.
+  <Arguments>
+    obj
+      The object to make a deep copy of.
+    objectmap
+      A mapping between original objects and the corresponding copy. This is
+      used to handle circular references.
+  <Exceptions>
+    TypeError
+      If an object is encountered that we don't know how to make a copy of.
+  <Side Effects>
+    A new reference is created to every non-simple type of object. That is,
+    everything except objects of type str, unicode, int, etc.
+  <Returns>
+    The deep copy of obj with circular/recursive references preserved.
+  <Warning>
+    Does not support recursive dictionaries or copying of the following
+    types: FunctionType, LambdaType, MethodType, InstanceType.  This is
+    not a problem since they do not show up in the model state anywhere.
+  """
+  try:
+    # types.InstanceType is included because the user can provide an instance
+    # of a class of their own in the list of callback args to settimer.
+    #
+    # types.NoneType, types.FunctionType, types.LambdaType, types.MethodType, types.InstanceType
+    if _is_in(type(obj), [str, unicode, int, long, float, complex, bool, frozenset]):
+      return obj
+    
+    elif obj is None:
+      return obj
+
+    elif type(obj) is list:
+      temp_list = []
+      for item in obj:
+        temp_list.append(deep_copy(item))
+
+      return temp_list
+
+    elif type(obj) is tuple:
+      temp_list = []
+
+      for item in obj:
+        temp_list.append(deep_copy(item))
+
+      return tuple(temp_list)
+
+    elif type(obj) is set:
+      temp_list = []
+      # We can't just store this list object in the objectmap because it isn't
+      # a set yet. If it's possible to have a set contain a reference to
+      # itself, this could result in infinite recursion. However, sets can
+      # only contain hashable items so I believe this can't happen.
+
+      for item in obj:
+        temp_list.append(deep_copy(item))
+
+      return set(temp_list)
+
+    elif type(obj) is dict:
+      temp_dict = {}
+
+      for key, value in obj.items():
+        temp_key = deep_copy(key)
+        temp_dict[temp_key] = deep_copy(value)
+
+      return temp_dict
+
+    else:
+      raise TypeError("deep_copy is not implemented for objects of type " + str(type(obj)))
+
+  except Exception, e:
+    raise DeepCopyError("deep_copy failed on " + str(obj) + " with message " + str(e))
+
+

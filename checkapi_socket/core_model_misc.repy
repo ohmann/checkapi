@@ -1,0 +1,99 @@
+"""
+<Program Name>
+  core_model_misc.repy
+
+<Author>
+  Jeff Rasley
+  jeffra45@cs.washington.edu
+
+<Purpose> 
+  Misc Model for the Repy V2 API. Used to model the following API calls:
+    randombytes
+    exitall
+    getlasterror.
+"""
+
+
+
+
+def model_randombytes(threadname):
+  """
+  <Purpose>
+    Return a string of random bytes with length 1024
+
+  <Arguments>
+    None.
+
+  <Exceptions>
+    None.
+
+  <Side Effects>
+    This function is metered because it may involve using a hardware source of 
+    randomness.
+
+  <Resource Consumption>
+    This operation consumes 1024 bytes of random data.
+
+  <Returns>
+    The string of bytes.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Get 1024 random bytes from the oracle.
+  randomdata, _ = oracle_getter("{1024,1024}", [])
+
+  return randomdata
+
+
+
+
+def model_exitall(threadname):
+  """
+   <Purpose>
+      Allows the user program to stop execution of the program without
+      passing an exit event to the main program. 
+
+   <Arguments>
+      threadname
+        The thread that this action was executed from.
+
+   <Exceptions>
+      InternalModelError if a threadname is used that does not exist.
+
+   <Side Effects>
+     The model quits.
+
+   <Returns>
+      None.   The current thread does not resume after exit
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+  # NOT MODELED
+
+
+
+def model_getlasterror(threadname):
+  """
+  <Purpose>
+    Obtains debugging information about the last exception that occured in the 
+    current thread.
+
+  <Arguments>
+    threadname
+      The thread that this action was executed from.
+
+  <Exceptions>
+    None
+
+  <Returns>
+    A string with details of the last exception in the current thread, or None 
+    if there is no such exception. (The model currently just returns None since
+    this function not being modeled at the moment)
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+  # NOT MODELED

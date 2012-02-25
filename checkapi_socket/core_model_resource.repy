@@ -1,0 +1,151 @@
+"""
+<Program Name>
+  core_model_resource.repy
+
+<Author>
+  Jeff Rasley
+  jeffra45@cs.washington.edu
+
+<Purpose>
+  Resource Model, Repy V2 API.
+  
+  *** NOTE: add/remove items are not being verified. ***
+"""
+
+
+# Set initial resource limits and usage dictionaries.
+def initialize_restrictions():
+  restrictions_table, consumption_table, stoptimes = getresources()
+  mycontext['model_state']['resource_restriction_table'] = restrictions_table
+  mycontext['model_state']['resource_consumption_table'] = consumption_table
+  mycontext['model_state']['exposed_resources'] = set(["cpu","memory",
+      "diskused","events","filewrite","fileread","filesopened", "insockets",
+      "outsockets","netsend","netrecv","loopsend","looprecv","lograte",
+      "random","messport","connport"])
+
+
+
+
+### Internal Model helper functions, used to interface resources ###
+def tattle_add_item(resource, item):
+  if not ENABLE_RESTRICTIONS:
+    return
+
+  consumption_table = mycontext['model_state']['resource_consumption_table']
+  restriction_table = mycontext['model_state']['resource_restriction_table']
+
+  ## Added the following line to support bootstrapping resources via 
+  ## getresources instead of old method of using a preprocessed restrictions 
+  ## file.
+  if type(consumption_table[resource]) is int:
+    consumption_table = _init_consumption_table(consumption_table, resource)
+
+  # Make sure it has been initialized.
+  if resource in restriction_table and resource not in consumption_table:
+    consumption_table[resource] = set([])
+
+  # If the item already exists, we are done.
+  if item in consumption_table[resource]:
+    return
+
+  # Check to make sure the resource is not already exhausted, this should
+  # not happen.
+  if len(consumption_table[resource]) > restriction_table[resource]:
+    raise InternalRepyError, "Should not be able to exceed resource count"
+  
+  # If we are already at our max resources then this addition would exceed the
+  # consumption limit, we must raise an error.
+  consumption_number = len(consumption_table[resource])
+  restriction_number = restriction_table[resource]
+  if consumption_number == restriction_number:
+    raise ResourceExhaustedError("consumed: ", consumption_number, \
+        "Resource '"+resource+"' limit exceeded!!")
+
+  # All is well, add the item to the list.
+  consumption_table[resource].add(item)
+
+
+
+
+def _init_consumption_table(consumption_table, resource):
+  original_value = consumption_table[resource]
+  consumption_table[resource] = set([])
+  for i in range(original_value):
+    consumption_table[resource].add("PLACEHOLDER_" + str(i))
+  return consumption_table
+
+
+
+
+def tattle_remove_item(resource, item):
+  if not ENABLE_RESTRICTIONS:
+    return
+
+  consumption_table = mycontext['model_state']['resource_consumption_table']
+  if type(consumption_table[resource]) is int:
+    consumption_table = _init_consumption_table(consumption_table, resource)
+
+  try:
+    consumption_table[resource].remove(item)
+  except KeyError:
+    # may happen because removal is idempotent
+    pass
+
+
+
+
+def is_item_allowed(resource, value):
+  if not ENABLE_RESTRICTIONS:
+    return True
+  else:
+    restriction_table = mycontext['model_state']['resource_restriction_table']
+    return value in restriction_table[resource]
+
+
+
+### Public API Calls are defined below ###
+def model_getresources(threadname):
+  """
+  <Purpose>
+    Used to retreive data regarding resource restrictions and consumption.
+
+  <Arguments>
+    None.
+
+  <Exceptions>
+    None.
+
+  <Returns>
+    A tuple that includes resource restrictions, consumption and stoptimes.
+  """
+  if not ENABLE_RESTRICTIONS:
+    return
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  limits = restriction_table.copy()
+  usage = consumption_table.copy()
+  
+  # Stoptimes are not being modeled.
+  stoptimes = []
+
+  # Check the usage dictionary
+  for resource in usage.keys():
+    # Remove any resources that are not exposed
+    if resource not in exposed_resources:
+      del usage[resource]
+
+    # Check the type, copy any data structures
+    # Flatten any structures using len() other than
+    # "connport" and "messport" 
+    if type(usage[resource]) in [list, dict, set]:
+    # Check if they are exempt from flattening, store a shallow copy
+      if resource in ['connport', 'messport']:
+        usage[resource] = usage[resource].copy()
+      
+      # Store the size of the data set
+      else:
+        usage[resource] = len(usage[resource])
+
+  return (limits, usage, stoptimes)

@@ -1,0 +1,46 @@
+"""
+<Program Name>
+  runtime_verification_misc.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Security Layer for Interposing on misc API calls.
+  Used for runtime verification against the core model.
+"""
+
+################## random bytes action ################## 
+def action_randombytes():
+  fnc_name = "randombytes"
+  model_func = model_randombytes
+  impl_func = randombytes
+  args_list = []
+  return exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list)
+
+
+################## EG: exitall action ##################
+def action_exitall():
+  # EG:
+  mycontext['action_lock'].acquire(True)
+  try:
+    systolic_verify(force=True)
+  finally:
+    mycontext['action_lock'].release()
+
+  # Everything is ok, we can now call the real exitall!
+  exitall() 
+
+
+
+################## wrap all misc calls ##################
+def wrap_misc():
+  CHILD_CONTEXT["randombytes"] = action_randombytes
+  # EG: 
+  CHILD_CONTEXT["exitall"] = action_exitall
+

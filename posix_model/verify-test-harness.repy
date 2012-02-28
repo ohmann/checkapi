@@ -1,0 +1,160 @@
+dy_import_module_symbols("check_api.repy")
+dy_import_module_symbols("wrapped_lind_net_calls.py")
+dy_import_module_symbols("wrapped_lind_fs_calls.py")
+dy_import_module_symbols("posix_test_harness_functions.py")
+
+# Preload file system state.
+#preloaded_files = ['/etc/ld.so.cache', ]
+#mycontext['model_state']['file_system_contents']
+
+net_syscall_map = {'getsockname_syscall':getsockname_syscall,
+               'getpeername_syscall':getpeername_syscall,
+               'listen_syscall':listen_syscall,          
+               'accept_syscall':accept_syscall,          
+               'getsockopt_syscall':getsockopt_syscall,  
+               'setsockopt_syscall':setsockopt_syscall,  
+               'setshutdown_syscall':setshutdown_syscall,
+               'socket_syscall':socket_syscall,          
+               'bind_syscall':bind_syscall,              
+               'connect_syscall':connect_syscall,        
+               'sendto_syscall':sendto_syscall,          
+               'send_syscall':send_syscall,              
+               'recvfrom_syscall':recvfrom_syscall,      
+               'recv_syscall':recv_syscall}
+
+fs_syscall_map = {'access_syscall':access_syscall,
+               'chdir_syscall':chdir_syscall,
+               'close_syscall':close_syscall,
+               'creat_syscall':creat_syscall,
+               'dup2_syscall':dup2_syscall,
+               'dup_syscall':dup_syscall,
+               'fcntl_syscall':fcntl_syscall,
+               'fstat_syscall':fstat_syscall,
+               'fstatfs_syscall':fstatfs_syscall,
+               'getdents_syscall':getdents_syscall,
+               'link_syscall':link_syscall,
+               'lseek_syscall':lseek_syscall,
+               'mkdir_syscall':mkdir_syscall,
+               'open_syscall':open_syscall,
+               'read_syscall':read_syscall,
+               'rmdir_syscall':rmdir_syscall,
+               'stat_syscall':stat_syscall,
+               'statfs_syscall':statfs_syscall,
+               'unlink_syscall':unlink_syscall,
+               'write_syscall':write_syscall}
+
+fd_call_map = {"fstatfs_syscall":fstatfs_syscall,
+               "fstat_syscall":fstat_syscall,
+               "lseek_syscall":lseek_syscall,
+               "read_syscall":read_syscall,
+               "write_syscall":write_syscall,
+               "close_syscall":close_syscall,
+               "dup2_syscall":dup2_syscall,
+               "dup_syscall":dup_syscall,
+               "fcntl_syscall":fcntl_syscall,
+               "getdents_syscall":getdents_syscall,
+               "bind_syscall":bind_syscall,
+               "connect_syscall":connect_syscall,
+               "sendto_syscall":sendto_syscall,
+               "send_syscall":send_syscall,
+               "recvfrom_syscall":recvfrom_syscall,
+               "recv_syscall":recv_syscall,
+               "getsockname_syscall":getsockname_syscall,
+               "getpeername_syscall":getpeername_syscall,
+               "listen_syscall":listen_syscall,
+               "accept_syscall":accept_syscall,
+               "getsockopt_syscall":getsockopt_syscall,
+               "setsockopt_syscall":setsockopt_syscall,
+               "setshutdown_syscall":setshutdown_syscall}
+
+# TODO: Probably need to deal with reads on files that we haven't written to? It seems 
+#       like we can't verify anything in terms of reads...
+
+posix_fd_map = {}
+mycontext['posix_oracle'] = []
+
+
+
+
+def _translate_fd(impl_fd):
+    try:
+        return posix_fd_map[impl_fd]
+    except KeyError:
+        return None
+
+
+
+# Takes a given list of actions in a trace and attempts to execute you them in 
+# the posix model. We are also responsible for keeping track of file-descriptor 
+# mappings since the implementation may use different ones from us.
+def verify_trace(trace):
+    for action in trace:
+        name, args, ret = action
+        impl_ret, impl_errno = ret
+
+        # Get the proper function from the function string.
+        if name in net_syscall_map:
+            fnc = net_syscall_map[name]
+            #log(name, '\n')
+        elif name in fs_syscall_map:
+            fnc = fs_syscall_map[name]
+            #log(name, '\n')
+
+
+        # Deal with various fd impl->model replacements.
+        if name in fd_call_map:
+            if name != "dup2_syscall":
+                impl_fd = args[0]
+                model_fd = _translate_fd(impl_fd)
+                if model_fd is None:
+                    log('Unknown fd:', action, '\n')
+                    continue
+                args = (model_fd,) + args[1:]
+            else:
+                model_fd1 = _translate_fd(args[0])
+                model_fd2 = _translate_fd(args[1])
+                if model_fd1 is None or model_fd2 is None:
+                    log('Unknown fd(s):', action, '\n')
+                    continue
+                args = (model_fd1, model_fd2)
+
+        action = (name, args, ret)
+        model_errno = None
+        try:
+            mycontext['posix_oracle'].append((impl_ret, impl_errno))
+            model_ret = fnc(*args)
+        except UnimplementedError:
+            log('UnimplmentedError Not Supported:', action, '\n')
+            continue
+        except SyscallError, err:
+            model_ret = -1
+            model_errno = err[1]
+            pass
+
+        # FS model doesn't need the oracle.
+        if name in fs_syscall_map:
+            mycontext['posix_oracle'].pop()
+
+        if name in ['socket_syscall', 'open_syscall'] and impl_ret != -1:
+            posix_fd_map[impl_ret] = model_ret
+            model_ret = impl_ret
+
+        # VERIFY RESULTS! Currently we are just printing them out to visually 
+        # verify we are getting something sane.        
+        log(name + str(args), '->', (impl_ret, impl_errno), (model_ret, model_errno), '\n')
+
+
+TRACE_FILE_NAME = "ktorrent.strace_full"
+#TRACE_FILE_NAME = "firefox.strace_full"
+
+fh = open(TRACE_FILE_NAME, "r")
+#trace = getNumberValidTraceLines(fh, 32)
+
+#log(len(trace), '\n')
+#for a in trace:
+#    log(a,'\n')
+#trace = [('socket_syscall', (2, 1, 0), (14, None)), ('close_syscall', (14,), (0, None))]
+trace = [('open_syscall', ("test", 0100, 0666), (3, None)), ('close_syscall', (3,), (0, None))]
+#open("/home/monzum/.kde/share/apps/ktorrent/magnets", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, 0666) = 3
+
+verify_trace(trace)

@@ -1,0 +1,528 @@
+#!python
+"""
+<Program Name>
+  rsashim.repy
+
+<Author>
+  Monzur Muhammad
+  monzum@cs.washington.edu
+
+<Started>
+  September 16, 2011
+
+<Purpose>
+  The purpose of the RSAShim is to create an encrypted channel
+  for communication. This shim uses the rsa.repy seattle library
+  to generate rsa keys, encrypt and decrypt messages with it.
+"""
+
+
+dy_import_module_symbols("rsa")
+dy_import_module_symbols("session")
+
+
+# Tags
+GREET_TAG="GREETING:::"
+NEW_SHARE_TAG="NEWKEY:::"
+
+
+# How many bits to use for RSA keys.
+BITSIZE = 128
+SLEEP_TIME = 0.001
+RECV_SIZE_BYTE = 2**14
+RSA_CHUNK_SIZE = 2**8
+
+class RSAShim(BaseShim):
+
+  def __init__(self, shim_stack = ShimStack(), optional_args = None):
+    """
+    <Purpose>
+      Initialize the RSAShim.
+
+    <Arguments>
+      shim_stack - the shim stack underneath us.
+
+      optional_args - The optional args (if provided) will be used to
+        encrypt and decrypt data. A new key will not be generated. Note
+        that if optional_args is provided then it must be provided for 
+        both the server side and client side, otherwise they won't be
+        able to communicate.
+
+    <Side Effects>
+      None
+
+    <Exceptions>
+      ShimInternalError raised if the optional args provided is not of
+      the proper format.
+
+    <Return>
+      None
+    """
+
+    # We keep a dictionary of key dicts for each socket that has
+    # a connection.
+    self.rsa_key_dict = {}
+    self.rsa_buffer_context = {}
+    self.active_sock_set = set()
+    self.socket_closed_local = []
+    
+    BaseShim.__init__(self, shim_stack, optional_args)
+
+ 
+
+
+  # ========================================
+  # TCP section of RSA Shim
+  # ========================================
+  def openconnection(self, destip, destport, localip, localport, timeout):
+    """
+    <Purpose>
+      Create a connection and initiate the handshake with the server.
+      Make sure that we have the same method of communication.
+
+    <Arguments>
+      Same arguments as Repy V2 Api for openconnection.
+
+    <Side Effects>
+      Some messages are sent back and forth.
+
+    <Exceptions>
+      Same exceptions as Repy V2 Api for openconnection. Note that
+      a ConnectionRefusedError is raised if the handhake fails with
+      the server.
+
+    <Return>
+      A socket like object.
+    """
+
+    # Open a connection by calling the next layer of shim.
+    next_sockobj = self.get_next_shim_layer().openconnection(destip, destport, localip, localport, timeout)
+
+    if isinstance(next_sockobj, ShimSocket):
+      sockobj = next_sockobj._socket
+    else:
+      sockobj = next_sockobj
+
+    # Generate a new set of pubkey/privkey and send the pub
+    # key back to the server to receive the actual key.
+    (temp_pub, temp_priv) = rsa_gen_pubpriv_keys(BITSIZE)
+    
+    # Greet the server and send it a temporary pubkey and wait
+    # for a response.
+    session_sendmessage(sockobj, GREET_TAG + str(temp_pub))
+    encrypted_response = session_recvmessage(sockobj)
+
+    response = rsa_decrypt(encrypted_response, temp_priv)
+    
+    if response.startswith(NEW_SHARE_TAG):
+      key_pair = response.split(NEW_SHARE_TAG)[1]
+
+      (pub_key, priv_key) = key_pair.split(':::')
+
+      # Add the socket to the active list.
+      self.active_sock_set.add(repr(sockobj))
+
+      self.rsa_key_dict[repr(sockobj)] = {}
+      self.rsa_key_dict[repr(sockobj)]['pub_key'] = eval(pub_key)
+      self.rsa_key_dict[repr(sockobj)]['priv_key'] = eval(priv_key)
+
+      self.rsa_buffer_context[repr(sockobj)] = {'send_buffer' : '',
+                                                'recv_encrypted_buffer' : '',
+                                                'recv_buffer' : '',
+                                                'send_lock' : createlock(),
+                                                'recv_lock' : createlock(),
+                                                'recv_encrypt_lock' : createlock()}
+    else:
+      raise ConnectionRefusedError("Unable to complete handshake with server and " +
+                                   "agree on RSA key.")
+
+    # Start up the two threads that does the sending and receiving 
+    # of the data.
+    createthread(self._sending_thread(sockobj))
+    createthread(self._receiving_thread(sockobj))
+
+    return ShimSocket(next_sockobj, self)
+
+
+
+
+  def tcpserversocket_getconnection(self, tcpserversocket):
+    """
+    <Purpose>
+      Accept a connection from the client. Complete a handshake
+      to make sure that both the server and client have the same
+      pub/priv key.
+   
+    <Arguments>
+      Same arguments as Repy V2 Api for tcpserver.getconnection()
+
+    <Side Effects>
+      Some messages are sent back and forth. Some RSA keys are generated
+      so things might slow down.
+
+    <Return>
+      A tuple of remoteip, remoteport and socket like object.
+    """
+
+    # Call the next layer of socket to get a connection.
+    (remoteip, remoteport, next_sockobj) = self.get_next_shim_layer().tcpserversocket_getconnection(tcpserversocket)
+
+    # We want the actual socket object, not the shimsocket
+    if isinstance(next_sockobj, ShimSocket):
+      sockobj = next_sockobj._socket
+    else:
+      sockobj = next_sockobj
+
+    # Try to get the initial greeting from the connection.
+    try:
+      initial_msg = session_recvmessage(sockobj)
+    except (ValueError, SessionEOF):
+      raise SocketWouldBlockError("No connection available right now.")
+
+    
+    # If we get a greeting tag then we send back to the client a new set
+    # of key that will be used to do all the communication.
+    if initial_msg.startswith(GREET_TAG):
+      # Extract the pubkey and convert it to dict.
+      client_pubkey = eval(initial_msg.split(GREET_TAG)[1])
+
+      # Generate new key.
+      (pub_key, priv_key) = rsa_gen_pubpriv_keys(BITSIZE)
+
+      # Add the socket to the active socket set.
+      self.active_sock_set.add(repr(sockobj))
+
+      self.rsa_key_dict[repr(sockobj)] = {}
+      self.rsa_key_dict[repr(sockobj)]['pub_key'] = pub_key
+      self.rsa_key_dict[repr(sockobj)]['priv_key'] = priv_key
+
+      self.rsa_buffer_context[repr(sockobj)] = {'send_buffer' : '',
+                                                'recv_encrypted_buffer' : '',
+                                                'recv_buffer' : '',
+                                                'send_lock' : createlock(),
+                                                'recv_lock' : createlock(),
+                                                'recv_encrypt_lock' : createlock()}
+
+      # Send back the new set of keys, encrypted with the pubkey
+      # provided by the client initially.
+      new_msg = NEW_SHARE_TAG + str(pub_key) + ':::' + str(priv_key)
+      session_sendmessage(sockobj, rsa_encrypt(new_msg, client_pubkey))
+
+    else:
+      raise ConnectionRefusedError("Unable to complete handshake with server and " +
+                                   "agree on RSA key.")
+
+
+    # Start up the two threads that does the sending and receiving
+    # of the data.
+    createthread(self._sending_thread(sockobj))
+    createthread(self._receiving_thread(sockobj))
+
+    return (remoteip, remoteport, ShimSocket(next_sockobj, self))
+
+
+
+
+
+  def socket_send(self, socket, msg):
+    """
+    <Purpose>
+      Encrypt the message and add it to the send buffer
+      in order for it to be sent.
+
+    <Arguments>
+      Same as Repy V2 Api
+
+    <Exceptions>
+      SocketWouldBlockError is raised if send buffer is not
+      empty.
+
+    <Return>
+      The amount of data that will be potentially sent if 
+      socket is not closed before send completes.
+    """
+
+    # If the send buffer is not empty, then we raise a 
+    # SocketWouldBlockError.
+    if self.rsa_buffer_context[repr(socket)]['send_buffer']:
+      raise SocketWouldBlockError("Send buffer is full")
+
+    if repr(socket) in self.socket_closed_local:
+      raise SocketClosedLocal("Socket closed locally!")
+
+    if repr(socket) not in self.active_sock_set:
+      raise SocketClosedRemote("Socket closed remotely!")
+
+    # Keep track of the original msg size, as it will change.
+    original_data_size = len(msg)
+
+
+    # Encrypt the data and put a little buffer.
+    while msg:
+      # We try to break up the entire msg into little portions
+      # just so we are not encrypting a huge msg (10MB) of size.
+      # The reason for this is, the encrypted message gets very
+      # huge and the receiver won't be able to receive any message
+      # until the very huge encrypted msg is received fully. So we
+      # break it up into little sections so we can send little 
+      # encrypted message so the receiver can constantly receive 
+      # messages.
+      sub_msg = msg[:RSA_CHUNK_SIZE]
+      msg = msg[RSA_CHUNK_SIZE:]
+
+      s=getruntime()
+      encrypt_msg = rsa_encrypt(sub_msg, self.rsa_key_dict[repr(socket)]['pub_key'])
+      e=getruntime() - s
+      header = str(len(encrypt_msg)) + '\n'
+
+      # Now that we are done encrypting everything, we add it to the send buffer
+      # in order for it to be sent across the network.
+      self.rsa_buffer_context[repr(socket)]['send_lock'].acquire(True)
+      try:
+        self.rsa_buffer_context[repr(socket)]['send_buffer'] += header + encrypt_msg
+      finally:
+        self.rsa_buffer_context[repr(socket)]['send_lock'].release()
+
+
+
+    return original_data_size
+
+
+
+
+
+  def socket_recv(self, socket, bytes):
+    """
+    <Purpose>
+      Check the recv buffer and check if there is data. 
+      If there is then we return the amount requested.
+    """
+
+    # Check first if the socket_close call was called.
+    if repr(socket) in self.socket_closed_local:
+      raise SocketClosedLocal("Socket closed locally!")
+
+    # If the buffer is empty, we have to check weather or not
+    # the socket is still active. If it is, then we raise
+    # SocketWouldBlockError, otherwise its a socket closed
+    # remote error.
+    # Possible bug scenario: buffer is empty, socket has just
+    # been closed remotely, the receiving thread just received
+    # some data right before socket was closed but it has not
+    # been decrypted and put in the buffer yet.
+
+
+    if not self.rsa_buffer_context[repr(socket)]['recv_buffer']:
+      if repr(socket) not in self.active_sock_set:
+        raise SocketClosedRemote("Socket closed remotely!")
+      else:
+        raise SocketWouldBlockError("No data to be received.")
+
+
+    
+    # Extract the data
+    msg_to_return = self.rsa_buffer_context[repr(socket)]['recv_buffer'][:bytes]
+
+    self.rsa_buffer_context[repr(socket)]['recv_lock'].acquire(True)
+    try:
+      self.rsa_buffer_context[repr(socket)]['recv_buffer'] = self.rsa_buffer_context[repr(socket)]['recv_buffer'][bytes:]
+    finally:
+      self.rsa_buffer_context[repr(socket)]['recv_lock'].release()
+
+    
+    return msg_to_return
+
+
+
+
+  def socket_close(self, sockobj):
+    """
+    <Purpose>
+      Call the next layer of socket_close and remove the socket from 
+      the active socket set.
+    """
+
+    return_val = self.get_next_shim_layer().socket_close(sockobj)
+
+    try:
+      self.active_sock_set.remove(repr(sockobj))
+    except:
+      pass
+
+    self.socket_closed_local.append(repr(sockobj))
+
+    return return_val
+
+
+
+  # =========================================================
+  # Helper Threads
+  # =========================================================
+  def _sending_thread(self, sockobj):
+    """
+    <Purpose>
+      A thread that is used for sending all the data.
+      Check to see if buffer has data. If it does then
+      we encrypt it and send it.
+    """
+
+    def _sending_helper():
+      # Continuously run this thread until socket is closed.
+      while repr(sockobj) in self.active_sock_set:
+        if self.rsa_buffer_context[repr(sockobj)]['send_buffer']:
+          msg = self.rsa_buffer_context[repr(sockobj)]['send_buffer']
+          try:
+            data_sent = self.get_next_shim_layer().socket_send(sockobj, msg)
+          except SocketWouldBlockError:
+            sleep(SLEEP_TIME)
+          except (SocketClosedLocal, SocketClosedRemote):
+            # Since the socket object is closed
+            try:
+              self.active_sock_set.remove(repr(sockobj))
+            except:
+              pass                        
+            break
+          else:
+            # Update the buffer to how much data was sent already.
+            self.rsa_buffer_context[repr(sockobj)]['send_lock'].acquire(True)
+            try:
+              self.rsa_buffer_context[repr(sockobj)]['send_buffer'] = self.rsa_buffer_context[repr(sockobj)]['send_buffer'][data_sent:]
+            finally:
+              self.rsa_buffer_context[repr(sockobj)]['send_lock'].release()
+        else:
+          # If we have an empty buffer, we just sleep.
+          sleep(SLEEP_TIME)
+
+    return _sending_helper
+
+
+
+
+  def _receiving_thread(self, sockobj):
+    """
+    <Purpose>
+      Keep receiving data and decrypting them. Fill up
+      a buffer of data that has been unencrypted and keep
+      a buffer for encrypted data that still needs to be 
+      decrypted.
+    """
+
+    # Launch the decrypter.
+    createthread(self._decrypt_msg(sockobj))
+
+    def _receiving_helper():
+      # Keep receiving data and decrypting it.
+      while repr(sockobj) in self.active_sock_set:
+        try:
+          encrypt_msg = self.get_next_shim_layer().socket_recv(sockobj, RECV_SIZE_BYTE)
+        except SocketWouldBlockError:
+          pass
+        except (SocketClosedLocal, SocketClosedRemote):
+          # Since the socket object is closed
+          try:
+            self.active_sock_set.remove(repr(sockobj))
+          except:
+            pass
+          break
+        else:
+          self.rsa_buffer_context[repr(sockobj)]['recv_encrypt_lock'].acquire(True)
+          try:
+            self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer'] += encrypt_msg
+          finally:
+            self.rsa_buffer_context[repr(sockobj)]['recv_encrypt_lock'].release()
+
+    return _receiving_helper
+
+
+
+
+  def _decrypt_msg(self, sockobj):
+    """
+    This is a helper function that is used to decrypt the message in the
+    recv_encrypt_buffer and add it to the recv_buffer.
+    If we don't have anything to decrypt anymore, we return false, 
+    otherwise we return true.
+    """
+
+    def _decrypt_msg_helper():
+      while True:
+        # First index of the character '\n'. It is used to determine
+        # upto which index in the recv_encrypt_buffer do we have the 
+        # header for that particular packet that denotes the size of
+        # the message.
+        # Example of two packets hello and world would be: '5\nhello5\nworld'
+        header_index = self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer'].find('\n')
+          
+        # We don't have a full encrypted message yet.
+        if header_index == -1:
+          if repr(sockobj) not in self.active_sock_set:
+            break
+          sleep(0.001)
+          continue
+
+        try:
+          message_length = int(self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer'][:header_index])
+        except ValueError:
+          raise ShimInternalError("Unable to decrypt receiving message due to bad header in recv_encrypt_buffer")
+
+        # Get the actual message out.
+        packet_end_index = header_index + message_length + 1
+
+        # If we haven't received the entire package, then we can't decrypt.
+        if len(self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer']) < packet_end_index:
+          if repr(sockobj) not in self.active_socket_set:
+            break
+          sleep(0.001)
+          continue
+
+        total_data = self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer'][:packet_end_index]
+        encrypt_msg = total_data[header_index + 1 : ]
+        
+        self.rsa_buffer_context[repr(sockobj)]['recv_encrypt_lock'].acquire(True)
+        try:
+          self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer'] = self.rsa_buffer_context[repr(sockobj)]['recv_encrypted_buffer'][packet_end_index:]
+        finally:
+          self.rsa_buffer_context[repr(sockobj)]['recv_encrypt_lock'].release()
+
+        # decrypt the message.
+        try:
+          actual_msg = rsa_decrypt(encrypt_msg, self.rsa_key_dict[repr(sockobj)]['priv_key'])
+        except ValueError:
+          raise ShimInternalError("Invalid private key being used for decryption!")
+
+        # Add the unencrypted data to the recv buffer.
+        self.rsa_buffer_context[repr(sockobj)]['recv_lock'].acquire(True)
+        try:
+          self.rsa_buffer_context[repr(sockobj)]['recv_buffer'] += actual_msg
+        finally:
+          self.rsa_buffer_context[repr(sockobj)]['recv_lock'].release()
+
+      
+    return _decrypt_msg_helper
+
+
+
+  # ========================================
+  # UDP section of RSA Shim    
+  # ========================================
+  # Not sure if we can implement UDP for this.
+
+
+  # =========================================
+  # Required Public Methods
+  # =========================================
+  def copy(self):
+    # Create a new instance of self and return it.
+    shim_stack_copy = self.shim_context['shim_stack'].copy()
+    optional_args = self.shim_context['optional_args']
+    return RSAShim(shim_stack_copy, optional_args)
+
+
+  def get_advertisement_string(self):
+    """
+    The RSAShim only advertises its name. No optional
+    args are avertised.
+    """
+    return '(RSAShim)' + self.get_next_shim_layer().get_advertisement_string()
+
+    

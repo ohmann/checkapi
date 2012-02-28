@@ -1,0 +1,108 @@
+"""
+<Program Name>
+  runtime_verification_fileio.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Security Layer for Interposing on FileIO related API calls.
+  Used for runtime verification against the core model.
+"""
+
+################## Psuedo-File-Object ##################
+class MBTFileObject(ModelObject):
+  def __init__(self, realobj, implid):
+    self.realobj = realobj
+    self.implid = implid
+    self.closed = False
+
+
+
+
+  def close(self):
+    fnc_name = "file_close"
+    model_func = model_file_close
+    impl_func = self.realobj.close
+    args_list = []
+    obj_id = self.implid
+    retval = exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list, obj_id, self)
+    self.closed = True
+    return retval
+
+
+
+
+  def writeat(self, data, offset):
+    fnc_name = "file_writeat"
+    model_func = model_file_writeat
+    impl_func = self.realobj.writeat
+    args_list = [data, offset]
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list, obj_id, self)
+
+
+
+
+  def readat(self, sizelimit, offset):
+    fnc_name = "file_readat"
+    model_func = model_file_readat
+    impl_func = self.realobj.readat
+    args_list = [sizelimit, offset]
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list, obj_id, self)
+
+
+
+
+  def __del__(self):
+    if not self.closed:
+      self.close()
+    mycontext['dead_object_ids'].append(self.implid)
+    
+
+
+
+################## open file action ################## 
+def action_openfile(filename, create):
+  fnc_name = "openfile"
+  model_func = model_openfile
+  impl_func = openfile
+  args_list = [filename, create]
+  return exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list)
+
+
+
+
+################## remove file action ##################
+def action_removefile(filename):
+  fnc_name = "removefile"
+  model_func = model_removefile
+  impl_func = removefile
+  args_list = [filename]
+  return exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list)
+
+
+
+
+################## list files action ################## 
+def action_listfiles():
+  fnc_name = "listfiles"
+  model_func = model_listfiles
+  impl_func = listfiles
+  args_list = []
+  return exec_model_impl(fnc_name, getthreadname(), model_func, impl_func, args_list)
+
+
+
+
+################## wrap file io contexts ################## 
+def wrap_fileio():
+  CHILD_CONTEXT["openfile"] = action_openfile
+  CHILD_CONTEXT["removefile"] = action_removefile
+  CHILD_CONTEXT["listfiles"] = action_listfiles

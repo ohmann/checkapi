@@ -1,0 +1,66 @@
+'''
+<Program Name>
+  check_api_bootstrap_state.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Bootstraps the model filesystem with user specified contents, used by
+  check_api.repy.
+'''
+
+
+def bootstrap_import_filestate(added_files=None):
+  """
+  <Purpose>
+    Imports a collection of files into the initial state of CheckAPI's model.
+
+  <Arguments>
+    None
+
+  <Exceptions>
+    RepyArgumentError is raised if the filename is invalid.
+
+    FileInUseError is raised if a handle to the file is already open.
+
+    FileNotFoundError is raised if the filename is not found.
+
+  <Side Effects>
+    Imports all files and their contents into CheckAPI's model state.
+    
+  <Resource Consumption>
+    Some number of implementation resources will be used depending on how many 
+    files are being imported into the model.
+    
+  <Returns>
+    None.
+  """
+    
+  try:
+    fd = openfile(FILES_TO_IMPORT_TO_FS, False)
+  except RepyException, err:
+    log("Was not able to bootstrap initial file state, encountered the following error: ")
+    log(err, '\n')
+    return
+  
+  bootstrap = fd.readat(None, 0).split('\n')
+
+  if added_files != None:
+    bootstrap.extend(added_files)
+  
+  for filename in set(bootstrap):
+    try: 
+      contents = openfile(filename, False).readat(None, 0)
+      mycontext["model_state"]['file_system_contents'][filename] = contents
+    except RepyException, err:
+      if (filename == ""):
+        continue
+      log("Was not able to import '" + filename + "', encountered the following error: ")
+      log(err, '\n')
+

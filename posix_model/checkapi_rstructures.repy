@@ -1,0 +1,118 @@
+"""
+<Program Name>
+  checkapi_rstructures.repy
+
+<Author>
+  Eleni Gessiou
+  egkesi01@students.poly.edu
+
+<Purpose> 
+  Offers optimization in time and transparency to the developer, for the
+  backtracking of states during systolic verification.
+  Adds extra functionality in the main stustures of python - dict, list, set-
+  that the core_model_state.repy uses. Using these Revertible structures,
+  the systolic verification can backtrack automatically to a stable, correct state.
+  
+"""
+
+mycontext['replay_history'] = []
+mycontext['replay_actions'] = []
+
+# in case of an error, backtrack by replaying the reverse actions 
+# in this step of the systolic verification
+def restore_state():
+  
+  mycontext['replay_actions'].reverse()
+  for undo, args in mycontext['replay_actions']:
+    undo(*args)
+  mycontext['replay_actions'] = mycontext['replay_history'].pop()
+  
+# keep the current, stable state, and allow any changes from here
+def empty_current_list():
+  mycontext['replay_history'].append(mycontext['replay_actions'])
+  mycontext['replay_actions'] = []
+
+
+def empty_history():
+  del mycontext['replay_history'][:]
+
+
+def print_replay_actions():
+  log("*****Replay actions\n")
+  log(mycontext['replay_actions'])
+  log("\n")
+
+# Revertible dictionary:
+# overrides some functions of dict, 
+# provides full functionality of a dictionary, with some extra
+# functionality for backtracking purposes
+class Rdict(dict):
+
+  def __setitem__(self, key, value):
+    try:
+      value_old = self[key]
+    except:
+      mycontext['replay_actions'].append((dict.__delitem__, (self, key)))
+    else:
+      mycontext['replay_actions'].append((dict.__setitem__, (self, key, value_old)))
+    finally:
+      dict.__setitem__(self, key, value)
+    
+  def __delitem__(self, key):
+    value_old = self[key]
+    dict.__delitem__(self, key)
+    mycontext['replay_actions'].append((dict.__setitem__, (self, key, value_old)))
+
+
+
+# Revertible list:
+# provides full functionality of a list and with some extra
+# functionality - by overriding some list functions, for backtracking purposes
+class Rlist(list):
+ 
+  def __setitem__(self, key, value):
+    try:
+      value_old = self[key]
+    except:
+      mycontext['replay_actions'].append((list.__delitem__, (self, key)))
+    else:
+      mycontext['replay_actions'].append((list.__setitem__, (self, key, value_old)))
+    finally:
+      list.__setitem__(self, key, value)
+ 
+  def __delitem__(self, key):
+    value_old = self[key]
+    list.__delitem__(self, key)
+    mycontext['replay_actions'].append((list.__setitem__, (self, key, value_old)))
+
+  def append(self, x):
+    list.append(self, x)
+    mycontext['replay_actions'].append((list.remove, (self, x)))
+
+
+  # it is not used in the current implementation
+  # but I included it for future purposes (?) since it can alter the state of a list
+  def insert(self, i, x):
+    list.insert(self, i, x)
+    mycontext['replay_actions'].append((list.remove, (self, x)))
+
+  def remove(self, x):
+    list.remove(self, x)
+    mycontext['replay_actions'].append((list.append, (self, x)))
+
+    
+
+# Revertible set:
+# provides full functionality of a set, with some extra for backtracking purposes
+class Rset(set):
+
+  def add(self, elem):
+    set.add(self, elem)
+    mycontext['replay_actions'].append((set.remove, (self, elem)))
+    
+  def remove(self, elem):
+    set.remove(self, elem)
+    mycontext['replay_actions'].append((set.add, (self, elem)))
+  
+
+    

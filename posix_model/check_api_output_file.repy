@@ -1,0 +1,91 @@
+"""
+<Program Name>
+  check_api_output_file.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Creates a trace file for a specific run of CheckAPI. This is also the code
+  that specifies how an action is written to the trace.
+"""
+
+def _trim_str_if_needed(arg):
+    arg_str = str(arg)
+    arg_str_len = len(arg_str)
+    if  arg_str_len > MAX_STRING_LENGTH:
+        arg = arg_str[:MAX_STRING_LENGTH]
+        arg += "*WARNING!* String has been trimmed, it was "
+        arg += str(arg_str_len) + " characters long!"
+    return arg
+
+
+def _convert_arg_to_str(arg):
+    if is_model_object(arg):
+        arg = repr(arg).replace('<.', '', 1)
+        i = arg.find(" instance at 0x")
+        k = arg.find(" object at 0x")
+        if i > -1:
+            arg = arg[:i]
+        if k > -1:
+            arg = arg[:k]
+    return arg
+
+
+def write_out_action(action, startnum = None):
+    num1, fnc_name, start, threadname, obj_id, args_list, model_func = action
+
+    # Convert the model function to pretty print
+    if model_func is not None:
+        model_func = str(model_func).replace("<function ", "", 1)
+        i = model_func.find(" at 0x")
+        model_func = model_func[:i]
+
+    args_str = []
+    for arg in args_list:
+        arg = _convert_arg_to_str(arg)
+        if isinstance(arg, tuple):
+            sub_args = []
+            for sub_arg in arg:
+                sub_arg = _convert_arg_to_str(sub_arg)
+                sub_args.append(sub_arg)
+            arg = tuple(sub_args)
+                      
+        arg = _trim_str_if_needed(arg)
+        args_str.append(arg)
+    
+    num1 = (num1, startnum)
+    action = (num1, fnc_name, start, threadname, obj_id, tuple(args_str), model_func)
+    action_str = str(action) + '\n'
+    write_str_to_log(action_str)
+
+
+def write_str_to_log(output):
+    bytes, fd = mycontext['trace_output']
+    fd.writeat(output, bytes)
+    bytes += len(output)
+    mycontext['trace_output'] = (bytes, fd)    
+
+
+def _file_exists(filename):
+    try:
+        openfile(filename, False)
+        exists = True
+    except FileNotFoundError:
+        exists = False
+    return exists
+
+trace_file = OUTPUT_TRACE_FILE
+num = 1
+while _file_exists(trace_file):
+        trace_file = OUTPUT_TRACE_FILE
+        trace_file += str(num)
+        num += 1
+
+mycontext['trace_output'] = (0, openfile(trace_file, True))
+mycontext['trace_file'] = trace_file

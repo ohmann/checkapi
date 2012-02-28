@@ -1,0 +1,213 @@
+'''
+<Program Name>
+  runtime_verification_core.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  The core of the runtime verification security layer. All other 
+  runtime_verification_* files call into here via exec_model_impl which then
+  executes and verifies the API calls.
+
+<Note> 
+  Keep in mind, this code can be called by any thread at anytime, be careful 
+  dealing with concurrency.
+'''
+
+mycontext['obj_id_count'] = 0
+mycontext['special_pending_calls'] = 0
+
+# API calls that return an object, this is used to match the API call with its
+# corresponding model wrapper object.
+OBJ_CREATE_CALLS_DICT = {'openfile':MBTFileObject,
+                         'listenforconnection':MBTTCPServer,
+                         "openconnection":MBTSocket,
+                         "listenformessage":MBTUDPServer,
+                         "tcpserver_getconnection":MBTSocket,
+                         "createlock":MBTLock}
+
+
+
+
+def _generate_new_obj_id():
+  """
+  Generates a unique object id
+  """
+  mycontext['obj_id_count'] += 1
+  return "obj" + str(mycontext['obj_id_count'])
+
+
+  
+
+def _wrap_and_store_object(fnc_name, impl_obj):
+  # Generate new object id.
+  impl_obj_id = _generate_new_obj_id()
+
+  # Add an empty entry into the translate map, this will be used by the model 
+  # to translate between object ids and model ids for objects.
+  mycontext['translate_ids'][impl_obj_id] = None
+
+  # TODO: Add support for shims here.
+
+  # Wrap the impl object and the object id into a new object based its 
+  # associated function name.
+  if fnc_name == "tcpserver_getconnection":
+    ip, port, socket_obj = impl_obj
+    wrapped_socket = OBJ_CREATE_CALLS_DICT[fnc_name](socket_obj, impl_obj_id)
+    return (ip, port, wrapped_socket)
+  else:
+    # Create new wrapper object.
+    return OBJ_CREATE_CALLS_DICT[fnc_name](impl_obj, impl_obj_id)
+
+
+
+
+def _get_obj_id(fnc_name, impl_obj):
+  if fnc_name == "tcpserver_getconnection":
+    ip, port, socket_obj = impl_obj
+    return (ip, port, socket_obj.implid)
+  else:
+    return impl_obj.implid
+
+
+
+
+def runtime_verification_wrap_calls():
+  """
+  <Purpose>
+    Used to wrap all of the interposed API calls into CheckAPI's child context.
+    This is done so that we may interpose and verify during runtime.
+
+  <Exceptions>
+    None
+
+  <Returns>
+    None
+  """
+  wrap_fileio()
+  wrap_network()
+  wrap_misc()
+  wrap_threading()
+
+
+
+
+def log_start_action(start_tuple):
+  mycontext['action_num'] += 1
+  start_action_number = mycontext['action_num']
+  start_tuple = (start_action_number,) + start_tuple
+  mycontext['trace_dict'][start_action_number] = start_tuple
+  mycontext['pending_actions'].append(start_action_number)
+  # Generate condition dictionary for later disambiguation.
+  mycontext['condition_dict'][start_action_number] = set(mycontext['finished_actions'])
+  if WRITE_OUT_TRACE:
+    write_out_action(start_tuple)
+  return start_action_number
+ 
+
+
+
+def log_finish_action(finish_tuple, start_action_number):
+  fnc_name, finish, threadname, obj_id, return_val_tuple, modelfnc = finish_tuple
+  impl_ret, impl_exp = return_val_tuple
+
+  # If we are dealing with an object, only log its object id.
+  if fnc_name in OBJ_CREATE_CALLS_DICT and is_model_object(impl_ret):
+    impl_obj_id = _get_obj_id(fnc_name, impl_ret)
+    finish_tuple = (fnc_name, finish, threadname, obj_id, tuple([impl_obj_id, impl_exp]), modelfnc)
+
+  mycontext['action_num'] += 1
+  finish_action_number = mycontext['action_num'] 
+  finish_tuple = (finish_action_number,) + finish_tuple
+  mycontext['trace_dict'][finish_action_number] = finish_tuple
+  mycontext['start_finish_map'][start_action_number] = finish_action_number
+  # Pending actions remove is O(len(pending_actions)), where pending actions will never be
+  # more than the number of current threads.
+  mycontext['pending_actions'].remove(start_action_number)
+  mycontext['finished_actions'].append(start_action_number)
+  if WRITE_OUT_TRACE:
+    write_out_action(finish_tuple, start_action_number)
+  return finish_action_number
+
+
+
+def exec_model_impl(fnc_name, threadname, model_func, impl_func, args_list, obj_id=None, impl_obj=None):
+  """
+  <Purpose>
+    This is the heart of the runtime verification portion of CheckAPI. All interposed
+    API calls get executed and verified via this function.
+    
+  <Arguments>
+    fnc_name
+      String representation of the API function in question
+    threadname
+      Thread id based on getthreadname()
+    model_func
+      Function pointer to the API function in the model 
+    impl_func
+      Function pointer to the API function in the implementation
+    args_list
+      List of all arguments needed to execute the action in the implementation
+    obj_id (optional)
+      Unique string representation of an object.
+    impl_obj (optional)
+      The actual object that a given method may be calling from
+      
+  <Exceptions>
+    Raises a ModelConformanceFailure or whatever impl_func raises.
+    
+  <Returns>
+    Returns whatever impl_func returns.
+  """
+  # Log start action.
+  mycontext['action_lock'].acquire(True)
+  start_tuple = (fnc_name, 'start', threadname, obj_id, tuple(args_list), model_func)
+  start_action_number = log_start_action(start_tuple)
+  finish_action_number = None
+  mycontext['action_lock'].release()
+
+  if fnc_name in ["lock_release", "createthread"]:
+    mycontext['special_pending_calls'] += 1
+
+  # Execute in the implementation.
+  impl_ret = impl_error = None
+  try:
+    impl_ret = impl_func(*args_list)
+  except RepyException, impl_error:
+    # Any other exception is a problem with the API.
+    pass
+
+  # Grab lock to log finish details.
+  mycontext['action_lock'].acquire(True)
+
+  # If the function returned an object, we must store a mapping from an impl 
+  # unique object id to a model object id.
+  if impl_error == None and fnc_name in OBJ_CREATE_CALLS_DICT:
+    impl_ret = _wrap_and_store_object(fnc_name, impl_ret)
+ 
+  # Log finish action.
+  finish_tuple = (fnc_name, 'finish', threadname, obj_id, tuple([impl_ret, impl_error]), None)
+  log_finish_action(finish_tuple, start_action_number)
+
+  if fnc_name in ["lock_release", "createthread"]:
+    mycontext['special_pending_calls'] -= 1
+
+  # Done with basics, verify if necessary.
+  try:
+    check_and_possibly_verify()
+ 
+    # We are done, return or raise to caller!
+    if impl_error != None:
+      raise impl_error
+    else:
+      return impl_ret
+
+  finally:
+    mycontext['action_lock'].release()
+

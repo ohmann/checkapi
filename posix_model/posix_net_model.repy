@@ -1,0 +1,16 @@
+mycontext['posix_fd_map'] = {}
+
+syscall_map = {'getsockname_syscall':getsockname_syscall,
+               'getpeername_syscall':getpeername_syscall,
+               'listen_syscall':listen_syscall,
+               'accept_syscall':accept_syscall,
+               'getsockopt_syscall':getsockopt_syscall,
+               'setsockopt_syscall':setsockopt_syscall,
+               'setshutdown_syscall':setshutdown_syscall,
+               'socket_syscall':socket_syscall,
+               'bind_syscall':bind_syscall,
+               'connect_syscall':connect_syscall,
+               'sendto_syscall':sendto_syscall,
+               'send_syscall':send_syscall,
+               'recvfrom_syscall':recvfrom_syscall,
+               'recv_syscall':recv_syscall}

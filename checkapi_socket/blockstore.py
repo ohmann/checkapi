@@ -29,6 +29,9 @@ FILE_INDEX = {}
 FILE_NAME_TEST = 'onekilo.txt' 
 FILE_DATA_TEST = '0123456789abcedf'
 
+# LOOP BACK IP ADDRESS
+SERVER_LOOP_BACK_IP = '127.0.0.1'
+
 #### Initialization functions
 
 def get_encryption_keys(args):
@@ -400,9 +403,12 @@ def main(args):
   # Setup the HTTP page handlers
   setup_default_handlers()
 
+  # Set IP address
+  ip = SERVER_LOOP_BACK_IP
+
   # Start the listeners
-  stop_func = pageserver.setup_listener(port)
-  log("Listening on",getmyip()+":"+str(port),"\n")
+  stop_func = pageserver.setup_listener(port, ip)
+  log("Listening on",ip +":"+str(port),"\n")
 
   # Define a function which checks if we should
   # terminate the webserver

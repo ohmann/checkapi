@@ -32,8 +32,8 @@
 # constants
 MSG_SIZE = 1024	    # maximum size for the recv calls to clients and max size for the message length for sending data to the client
 
-
-
+# LOOP BACK IP ADDRESS
+SERVER_LOOP_BACK_IP = '127.0.0.1'
 
 def process_client(client): #ip, port, client, thiscommhandle, listencommhandle):
 
@@ -196,7 +196,10 @@ mycontext['lock'] = Lock()
 tpool = ThreadPool(2,2) # Fix 4 threads min/max
 tpool.start()
 
-stop_func = waitforconn(12345, process_client, thread_pool=tpool, check_intv=0.005)
+# Set Server IP address
+ip = SERVER_LOOP_BACK_IP
+
+stop_func = waitforconn(12345, process_client, ip, thread_pool=tpool, check_intv=0.005)
 
 
 

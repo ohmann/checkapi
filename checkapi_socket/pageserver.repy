@@ -23,13 +23,13 @@ REQUEST_HANDLERS = {"GET":{}, "POST":{}, "ERR":{}}
 
 #### Public Functions
 
-def setup_listener(port, min_threads=2, max_threads=4, check_intv=0.025):
+def setup_listener(port, ip, min_threads=2, max_threads=4, check_intv=0.025):
   """
   Setup the listeners
   """
   tpool = ThreadPool(min_threads,max_threads)
   tpool.start()
-  stop_func = waitforconn(port, incoming_handler, check_intv=check_intv)
+  stop_func = waitforconn(port, incoming_handler, ip, check_intv=check_intv)
   return stop_func
 
 

@@ -402,12 +402,15 @@ def check_and_possibly_verify(force=False):
   NOTE: This call must be wrapped around a try/finally action_lock. If you 
     don't care about the trace length or any pending calls set force=True.
   """
-  if force or (len(mycontext['trace_dict']) / 2 > SYSTOLIC_LEVELS and mycontext['special_pending_calls'] == 0):
-    status_okay = systolic_disambiguate_and_verify()
-    if not status_okay:
-      for fail in mycontext['failure_messages']: 
-        log(fail,'\n')
-      for action_num in mycontext['trace_dict']: 
-        log(mycontext['trace_dict'][action_num], '\n')
-      raise ModelConformanceFailure("Could not find a valid serialization!")
+  try:
+    if force or (len(mycontext['trace_dict']) / 2 > SYSTOLIC_LEVELS and mycontext['special_pending_calls'] == 0):
+      status_okay = systolic_disambiguate_and_verify()
+      if not status_okay:
+        for fail in mycontext['failure_messages']: 
+          log(fail,'\n')
+        for action_num in mycontext['trace_dict']: 
+          log(mycontext['trace_dict'][action_num], '\n')
+        raise ModelConformanceFailure("Could not find a valid serialization!")
+  finally:
+    empty_history()
 

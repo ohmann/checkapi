@@ -13,7 +13,7 @@ ENFORCED = 2          # Only Allowed IPs permitted
 ENFORCEMENT_LEVEL = DISABLED
 
 # Set of allowed IP's, specified in order of preference
-ALLOWED_IPS = ["128.238.64.142"]
+ALLOWED_IPS = ["127.0.0.1"]
 
 def invalid_ip():
   raise AddressBindingError("Invalid local IP specified!")

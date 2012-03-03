@@ -167,9 +167,8 @@ if callfunc == "initialize":
   if mycontext['send_socket_data']:
     # Set interposition finished flag as True
     mycontext['interposition_finished_flag'] = True
-
-  # We must wait until the send thread has been finished
-  wait_until_finished(starting_threads - 1)
+    # We must wait until the send thread has been finished
+    wait_until_finished(starting_threads - 1)
   
   # Send the rest of data in string buffer, then close connection
   if mycontext['send_socket_data']:  

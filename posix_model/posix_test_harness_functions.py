@@ -60,13 +60,8 @@ def getNumberValidTraceLines(fh, num):
 def getValidTraceLine(fh):
     TRACE = []
     pendingStraceTable = []
-    lineNum = 1
     # Open the file and process each line
     for line in fh:
-        if DEBUG:
-            log(lineNum)
-        lineNum += 1
-            
         # Ignore SIGS
         if line[:3] in SIGS:
             continue
@@ -84,7 +79,10 @@ def getValidTraceLine(fh):
 
         # Is the strace resuming?
         if line.find("<... ") != -1 and line.find(" resumed>") != -1:
-            pid = int(line[line.find(" ")+1:line.find("]")])
+            try:
+                pid = int(line[line.find(" ")+1:line.find("]")])
+            except:
+                continue
             command = line[line.find("<... ") + 5:line.find(" resumed>")]
             pendingIdx = findPendingStrace(pendingStraceTable, pid, command)
             # If pending strace isn't found, ignore and continue
@@ -163,9 +161,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...\n")
             else:
                 TRACE.append(('socket_syscall', (domain,socktype, protocol), straceResult))
-                pass
-                #result = socket_syscall(domain, socktype, protocol)
-                #assert (result >= 0 and straceResult >= 0) or (result < 0 and straceResult < 0)
 
         ##### BIND #####
         elif command == "bind":
@@ -188,9 +183,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...\n")
             else:
                 TRACE.append(('bind_syscall',(sockfd, localip, localport), straceResult))
-                pass
-                #result = bind_syscall(sockfd, localip, localport)
-                #assert result == straceResult
 
         ##### CONNECT #####
         elif command == "connect":
@@ -212,9 +204,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('connect_syscall',(sockfd, remoteip, remoteport), straceResult))
-                pass
-                #result = connect_syscall(sockfd, remoteip, remoteport)
-                #assert result == straceResult
 
         # BUG: If message is larger than a certain length then strace will cut it off with '...' which could cause a false failure in comparison
         ##### SENDTO #####
@@ -246,22 +235,21 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('sendto_syscall',(sockfd, message, remoteip, remoteport, flags), straceResult))
-                pass
-                #result = sendto_syscall(sockfd, message, remoteip, remoteport, flags)
-                #assert result == straceResult
 
         ##### SEND #####
         elif command == "send":
-            
+            if(len(parameters) > 4):
+                merge(parameters, 1, len(parameters)-2)
+
             sockfd = int(parameters[0])
 
             # Get the message without quotes
             message = parameters[1].strip("...")[1:len(parameters[1])-1]
 
             try:
-                flags = int(parameters[3])
+                flags = int(parameters[-1])
             except:
-                flags = splitAndCombine(parameters[3])
+                flags = splitAndCombine(parameters[-1])
 
             if DEBUG:
                 log(command, sockfd, message, flags, straceResult)
@@ -270,13 +258,9 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('send_syscall',(sockfd, message, flags), straceResult))
-                pass
-                #result = send_syscall(sockfd, message, flags)
-                #assert result == straceResult
 
         ##### RECVFROM #####
         elif command == "recvfrom":
-
             sockfd = int(parameters[0])
 
             # Get the message without quotes
@@ -306,29 +290,23 @@ def getValidTraceLine(fh):
             else:
                 straceResult = (message,) + straceResult[1:]
                 TRACE.append(('recvfrom_syscall',(sockfd, length, flags), straceResult))
-                pass
-                #result = recvfrom_syscall(sockfd, length, flags)
-        #if len(result) == 1:
-                    #assert result == message
-                    # Or to avoid the problem with the strace cutting off the full message use the assert below instead
-                    #assert result.find(message) != -1
-                #else:
-                    #assert result[:2] == (remoteip, remoteport) and result[2].find(message) != -1
 
         ##### RECV #####
         elif command == "recv":
+            if(len(parameters) > 4):
+                merge(parameters, 1, len(parameters)-2)
 
             sockfd = int(parameters[0])
 
             # Get the message without quotes
             message = parameters[1].strip("...")[1:len(parameters[1])-1]
 
-            length = int(parameters[2])
+            length = int(parameters[-2])
 
             try:
-                flags = int(parameters[3])
+                flags = int(parameters[-1])
             except:
-                flags = splitAndCombine(parameters[3])
+                flags = splitAndCombine(parameters[-1])
 
             if DEBUG:
                 log(command, sockfd, length, flags, straceResult)
@@ -338,9 +316,6 @@ def getValidTraceLine(fh):
             else:
                 straceResult = (message,) + straceResult[1:]
                 TRACE.append(('recv_syscall',(sockfd, length, flags), straceResult))
-                pass
-                #result = recv_syscall(sockfd, length, flags)
-                #assert result.find(message) != -1
 
         ##### GETSOCKNAME #####
         elif command == "getsockname":
@@ -364,9 +339,6 @@ def getValidTraceLine(fh):
                 straceResult = ((localip, localport),) + straceResult[1:]
                 TRACE.append(('getsockname_syscall',(sockfd,), straceResult))
                 #TRACE.append(('getsockname_syscall',(sockfd,), (localip, localport)))
-                pass
-                #result = getsockname_syscall(sockfd)
-                #assert result == (localip, localport)
 
         ##### GETPEERNAME #####
         elif command == "getpeername":
@@ -389,9 +361,6 @@ def getValidTraceLine(fh):
             else:
                 straceResult = ((remoteip,remoteport),) + straceResult[1:]
                 TRACE.append(('getpeername_syscall',(sockfd,), straceResult))
-                pass
-                #result = getpeername_syscall(sockfd)
-                #assert result == (remoteip, remoteport)
 
         ##### LISTEN  #####
         elif command == "listen":
@@ -405,8 +374,6 @@ def getValidTraceLine(fh):
             if DEBUG:
                 log(command, sockfd, backlog, straceResult)
             TRACE.append(('listen_syscall',(sockfd, backlog), straceResult))
-            #result = listen_syscall(sockfd, backlog)
-            #assert result == straceResult
 
         ##### ACCEPT #####
         elif command == "accept":
@@ -428,9 +395,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('accept_syscall',(sockfd,), straceResult))
-                pass
-                #result = accept_syscall(sockfd)
-                #assert (result >= 0 and straceResult >= 0) or (result < 0 and straceResult < 0)
 
         ##### GETSOCKOPT #####
         elif command == "getsockopt":
@@ -462,9 +426,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('getsockopt_syscall',(sockfd, level, optname), result))
-                pass
-                #result = getsockopt_syscall(sockfd, level, optname)
-                #assert result == straceResult
 
         ##### SETSOCKOPT #####
         elif command == "setsockopt":
@@ -492,10 +453,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('setsockopt_syscall',(sockfd, level, optname, optval), straceResult))
-                pass
-                #result = setsockopt_syscall(sockfd, level, optname, optval)
-                #assert result == straceResult
-
 
         ##### SHUTDOWN #####
         elif command == "shutdown":
@@ -513,10 +470,6 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
             else:
                 TRACE.append(('setshutdown_syscall',(sockfd, how), straceResult))
-                pass
-                #result = setshutdown_syscall(sockfd, how)
-                #assert result == straceResult
-
 
         ##### CLOSE #####
         elif command == "close":
@@ -756,9 +709,12 @@ def getValidTraceLine(fh):
 
         ##### READ #####
         elif command == "read":
+            if(len(parameters) > 3):
+                merge(parameters, 1, len(parameters)-1)
+
             fd = int(parameters[0])
 
-            count = int(parameters[2])
+            count = int(parameters[-1])
 
             if DEBUG:
                 log(command, fd, count, straceResult)
@@ -766,6 +722,9 @@ def getValidTraceLine(fh):
 
         ##### WRITE #####
         elif command == "write":
+            if(len(parameters) > 3):
+                merge(parameters, 1, len(parameters)-1)
+
             fd = int(parameters[0])
 
             # Remove ... and then remove "'s without changing data
@@ -854,26 +813,39 @@ def getValidTraceLine(fh):
     return TRACE
 
 
+def merge(parameters, start, end):
+    for i in range(start, end - 1):
+        parameters[start] += ", " + parameters[start+1]
+        parameters.pop(start+1)
+
+
 def mergeQuoteParameters(parameters):
+    removeEmptyParameters(parameters)
     if len(parameters) <= 1:
         return
     index = 0
     while index < len(parameters):
-        if  parameters[index][0] == "\"" and parameters[index].strip(".")[-1] != "\"":
+        if  parameters[index][0] == "\"" and (len(parameters[index]) == 1 or parameters[index].strip(".")[-1] != "\""):
             # The only quote is the first quote which means the whole sentence got split and should be put back together.
             while index+1 < len(parameters):
-                if parameters[index].strip(".")[-1] != "\"":
+                if parameters[index+1].strip(".")[-1] != "\"":
                     parameters[index] += ", " + parameters[index+1]
                     parameters.pop(index+1)
                 else:
-                    #parameters[index] += ", " + parameters[index+1]
-                    #parameters.pop(index+1)
+                    parameters[index] += ", " + parameters[index+1]
+                    parameters.pop(index+1)
                     break
         index += 1
 
 
+def removeEmptyParameters(parameters):
+    for i in range(-1, -len(parameters), -1):
+        if len(parameters[i]) == 0:
+            parameters.pop(i)
+
+
 def findPendingStrace(table, pid, command):
-    for index in range(len(table)):
+    for index in range(0, len(table), 1):
         if table[index].pid == pid and table[index].command == command:
             return index
 

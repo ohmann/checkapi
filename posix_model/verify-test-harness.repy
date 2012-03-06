@@ -94,7 +94,7 @@ def _duplicate_filesystem():
 # Takes a given list of actions in a trace and attempts to execute you them in 
 # the posix model. We are also responsible for keeping track of file-descriptor 
 # mappings since the implementation may use different ones from us.
-def verify_trace(trace):
+def verify_trace(trace, num):
     lineNum = 0
     for action in trace:
         lineNum += 1
@@ -112,7 +112,7 @@ def verify_trace(trace):
             #log(name, '\n')
 
         # Ignore syscalls to nonexistant file descriptors
-        if name in ['fstatfs_syscall', 'fstat_syscall', 'lseek_syscall', 'read_syscall', 'write_syscall', 'dup2_syscall', 'dup_syscall', 'fcntl_syscall', 'getdents_syscall']:
+        if name in ['fstatfs_syscall', 'fstat_syscall', 'lseek_syscall', 'read_syscall', 'write_syscall', 'dup2_syscall', 'dup_syscall', 'fcntl_syscall', 'getdents_syscall', 'bind_syscall', 'connect_syscall', 'sendto_syscall', 'send_syscall', 'recvfrom_syscall', 'recv_syscall', 'getsockname_syscall', 'getpeername_syscall', 'listen_syscall', 'accept_syscall', 'getsockopt_syscall', 'setsockopt_syscall', 'setshutdown_syscall']:
             if args[0] in ignore_fd:
                 #print "IGNORING: " + str(action)
                 continue
@@ -133,6 +133,8 @@ def verify_trace(trace):
                 impl_fd = args[0]
                 model_fd = _translate_fd(impl_fd)
                 if model_fd is None:
+                    print "Unknown fd:", action
+                    return
                     #log('Unknown fd:', action, '\n')
                     continue
                 args = (model_fd,) + args[1:]
@@ -140,6 +142,7 @@ def verify_trace(trace):
                 model_fd1 = _translate_fd(args[0])
                 model_fd2 = _translate_fd(args[1])
                 if model_fd1 is None or model_fd2 is None:
+                    print "Unknown fd:", action
                     #log('Unknown fd(s):', action, '\n')
                     continue
                 args = (model_fd1, model_fd2)
@@ -151,6 +154,13 @@ def verify_trace(trace):
             model_ret = fnc(*args)
         except UnimplementedError:
             log('UnimplmentedError Not Supported:', action, '\n')
+            if name in ['open_syscall', 'creat_syscall', 'socket_syscall']:
+                ignore_fd.append(impl_ret)
+                #print str(posix_fd_map)
+                #try:
+                    #print posix_fd_map[args[0]]
+                #except:
+                    #print "NO GOOD..."
             continue
         except SyscallError, err:
             model_ret = -1
@@ -159,14 +169,13 @@ def verify_trace(trace):
 
         # Skip file syscalls on files that don't already exist in posix model
         if name in ['statfs_syscall', 'access_syscall', 'link_syscall', 'unlink_syscall', 'stat_syscall', 'chdir_syscall', 'mkdir_syscall', 'rmdir_syscall']:
-            #if (impl_ret, impl_errno) != (model_ret, model_errno) and impl_errno == None and model_errno != impl_errno:
             if model_errno != impl_errno or model_ret != impl_ret:
                 #print "IGNORING: " + str(action)
                 continue
 
         # If file doesn't exist in POSIX but exists on system, then add open fd to ignore_fd to ignore future calls to that fd
-        if name == 'open_syscall':
-            if (impl_ret, impl_errno) != (model_ret, model_errno) and impl_errno == None and model_errno == 'ENOENT':
+        if name in ['open_syscall', 'creat_syscall']:
+            if impl_errno == None and model_errno != impl_errno:
                 #print "IGNORING: " + str(action)
                 ignore_fd.append(impl_ret)
                 continue
@@ -174,7 +183,7 @@ def verify_trace(trace):
                 #print "NOT IGNORING: " + str(action)
                 pass
 
-        if name in ['socket_syscall', 'open_syscall'] and impl_ret != -1:
+        if name in ['socket_syscall', 'open_syscall', 'creat_syscall'] and impl_ret != -1:
             posix_fd_map[impl_ret] = model_ret
             model_ret = impl_ret
 
@@ -185,19 +194,20 @@ def verify_trace(trace):
         # VERIFY RESULTS! Currently we are just printing them out to visually 
         # verify we are getting something sane.
         if impl_ret != model_ret or impl_errno != model_errno:
-            print str(lineNum) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
-            return
+            print str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
+            return False
         else:
-            print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
+            print str(lineNum * num) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
         #log(name + str(args), '-> ', (impl_ret, impl_errno), (model_ret, model_errno), '\n')
-
+    return True
 
 #TRACE_FILE_NAME = "putty_ubuntu.strace_full"
 #TRACE_FILE_NAME = "firefox.strace_full"
-TRACE_FILE_NAME = "ktorrent.strace_full"
+TRACE_FILE_NAME = "skype.strace_network"
+#TRACE_FILE_NAME = "simple.trace"
+READ_AMNT = 512
 
 fh = open(TRACE_FILE_NAME, "r")
-trace = getNumberValidTraceLines(fh, -1)
 _duplicate_filesystem()
 
 #log(len(trace), '\n')
@@ -207,4 +217,11 @@ _duplicate_filesystem()
 #trace = [('open_syscall', ("test", 0100, 0666), (3, None)), ('close_syscall', (3,), (0, None))]
 #open("/home/monzum/.kde/share/apps/ktorrent/magnets", O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, 0666) = 3
 
-verify_trace(trace)
+trace = getNumberValidTraceLines(fh, READ_AMNT)
+num = 1
+verify_trace(trace, num)
+#while len(trace) > 0:
+#    if not verify_trace(trace, num):
+#        break
+#    num += 1
+#    trace = getNumberValidTraceLines(fh, READ_AMNT)

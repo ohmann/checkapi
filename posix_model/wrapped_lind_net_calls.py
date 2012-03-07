@@ -47,6 +47,10 @@ dy_import_module_symbols("wrapped_lind_fs_calls")
 #from wrapped_lind_fs_calls import *
 #import wrapped_lind_fs_calls as lind_fs_calls
 
+# If we do not know the ip address of something we need to temporarily store 
+# this as the address.
+UNKNOWN_IP = "2.2.2.2"
+
 
 """
   Author: Justin Cappos
@@ -372,7 +376,7 @@ def connect_syscall(fd,remoteip,remoteport):
 
     # Am I already bound?   If not, we'll need to get an ip / port
     if 'localip' not in filedescriptortable[fd]:
-      oracle_setter('2.2.2.2', None)
+      oracle_setter(UNKNOWN_IP, None)
       localip = model_getmyip('MainThread')
       localport = _get_available_tcp_port()
 
@@ -466,7 +470,7 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
 
     # If unspecified, use a new local port / the local ip
     if 'localip' not in filedescriptortable[fd]:
-      oracle_setter('2.2.2.2', None)
+      oracle_setter(UNKNOWN_IP, None)
       localip = model_getmyip('MainThread')
       localport = _get_available_tcp_port()
     else:
@@ -706,9 +710,17 @@ def getsockname_syscall(fd):
   if not IS_SOCK(filedescriptortable[fd]['mode']):
     raise SyscallError("getsockname_syscall","ENOTSOCK","The descriptor is not a socket.")
 
-
   # if we know this, return it...
   if 'localip' in filedescriptortable[fd]:
+    # JR: Model specific, since we now know what the IP should have been we can store it.
+    if filedescriptortable[fd]['localip'] == UNKNOWN_IP:
+      impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+      localip, localport = impl_ret
+      oracle_setter(localip, impl_errno)
+      localip = model_getmyip('MainThread')
+      filedescriptortable[fd]['localip'] = localip
+      filedescriptortable[fd]['localport'] = localport
+      
     return filedescriptortable[fd]['localip'], filedescriptortable[fd]['localport']
   
   # otherwise, return '0.0.0.0', 0

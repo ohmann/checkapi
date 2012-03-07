@@ -168,7 +168,8 @@ def verify_trace(trace, num):
             pass
 
         # Skip file syscalls on files that don't already exist in posix model
-        if name in ['statfs_syscall', 'access_syscall', 'link_syscall', 'unlink_syscall', 'stat_syscall', 'chdir_syscall', 'mkdir_syscall', 'rmdir_syscall']:
+        if name in ['statfs_syscall', 'access_syscall', 'link_syscall', 'unlink_syscall', 'stat_syscall', 
+                    'chdir_syscall', 'mkdir_syscall', 'rmdir_syscall']:
             if model_errno != impl_errno or model_ret != impl_ret:
                 #print "IGNORING: " + str(action)
                 continue
@@ -220,8 +221,8 @@ _duplicate_filesystem()
 trace = getNumberValidTraceLines(fh, READ_AMNT)
 num = 1
 verify_trace(trace, num)
-#while len(trace) > 0:
-#    if not verify_trace(trace, num):
-#        break
-#    num += 1
-#    trace = getNumberValidTraceLines(fh, READ_AMNT)
+while len(trace) > 0:
+    if not verify_trace(trace, num):
+        break
+    num += 1
+    trace = getNumberValidTraceLines(fh, READ_AMNT)

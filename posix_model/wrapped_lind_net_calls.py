@@ -454,7 +454,7 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
   # if there is no IP / port, call send instead.   It will assume the other
   # end is connected...
   if remoteip == '' and remoteport == 0:
-    return send_syscall(fd,message)
+    return send_syscall(fd,message,flags)
 
   if filedescriptortable[fd]['state'] == CONNECTED or filedescriptortable[fd]['state'] == LISTEN:
     raise SyscallError("sendto_syscall","EISCONN","The descriptor is connected.")

@@ -43,6 +43,9 @@ fs_syscall_map = {'access_syscall':access_syscall,
                'unlink_syscall':unlink_syscall,
                'write_syscall':write_syscall}
 
+oracle_required_funcs = ['connect_syscall', 'sendto_syscall', 
+                         'getsockname_syscall']
+
 fd_call_map = {"fstatfs_syscall":fstatfs_syscall,
                "fstat_syscall":fstat_syscall,
                "lseek_syscall":lseek_syscall,
@@ -188,8 +191,9 @@ def verify_trace(trace, num):
             posix_fd_map[impl_ret] = model_ret
             model_ret = impl_ret
 
-        # FS model doesn't need the oracle.
-        if name in fs_syscall_map:
+        # FS model doesn't need the oracle and a handful of network calls also 
+        # don't need it.
+        if name in fs_syscall_map or name not in oracle_required_funcs:
             mycontext['posix_oracle'].pop()
 
         # VERIFY RESULTS! Currently we are just printing them out to visually 

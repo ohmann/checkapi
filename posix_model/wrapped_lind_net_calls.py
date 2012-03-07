@@ -218,7 +218,6 @@ def socket_syscall(domain, socktype, protocol):
   """ 
     http://linux.die.net/man/2/socket
   """
-
   # this code is basically one huge case statement by domain
 
   # okay, let's do different things depending on the domain...

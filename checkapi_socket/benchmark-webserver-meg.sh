@@ -2,14 +2,14 @@
 # Used to automate benchmarking
 
 # The types of tests
-#TESTS="inmem inmem2 file listfiles load uptime"
-TESTS="meg"
+# TESTS="webserver webserver-inmem webserver-inmem2 webserver-file webserver-listfiles webserver-load"
+TESTS="webserver-meg"
 
 # Command to run for seclayer
 SEC_CMD="python repy.py restrictions.full encasementlib.repy"
 NORM_CMD="python repy.py restrictions.full"
 SEC_LAYERS="all-logsec.py ip-seclayer.py forensiclog.repy"
-SERVER="dylink.repy librepy.repy webserver-"
+SERVER="dylink.repy librepy.repy "
 
 # Kill all python instances
 echo "Killing python"
@@ -18,13 +18,10 @@ killall -9 python Python >/dev/null 2>&1
 # CPU benchmarks
 for TEST in $TESTS
 do
-    echo
-    echo "####"
-    echo "$TEST test"
-    echo "####"
+    # Do the tests with the layers
     for LAYER in $SEC_LAYERS
     do
-       echo 
+       echo
        echo "Layer: $LAYER"
        for iter in {1}
        do

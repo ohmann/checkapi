@@ -111,6 +111,9 @@ safe._BUILTIN_OK.remove("quit")
 
 safe._STR_OK.append("__repr__")
 safe._STR_OK.append("__str__")
+
+
+
 # allow __ in strings.   I'm 99% sure this is okay (do I want to risk it?)
 safe._NODE_ATTR_OK.append('value')
 
@@ -126,6 +129,12 @@ if "fork" in dir(os):
   __orig_fork = os.fork
   os.fork = nonSafe_fork
 
+import cPickle
+def repy_cPickle_dumps(dumps_object):
+  return cPickle.dumps(dumps_object)
+
+def repy_cPickle_loads(loads_object):
+  return cPickle.loads(loads_object)
 
 
 def main(resourcefn, program, args):
@@ -165,8 +174,12 @@ def main(resourcefn, program, args):
   # Allow some introspection by providing a reference to the context
   usercontext["_context"] = usercontext
 
+
+
   # BAD:REMOVE all API imports
   usercontext["getresources"] = nonportable.get_resources
+  usercontext["repy_cPickle_dumps"] = repy_cPickle_dumps
+  usercontext["repy_cPickle_loads"] = repy_cPickle_loads    
   #usercontext["openfile"] = emulfile.emulated_open
   #usercontext["listfiles"] = emulfile.listfiles
   #usercontext["removefile"] = emulfile.removefile

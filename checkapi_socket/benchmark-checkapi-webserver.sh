@@ -2,32 +2,33 @@
 # Used to automate benchmarking
 
 # The types of tests
-#TESTS="inmem2 file listfiles load"
-TESTS="listfiles"
-#TESTS="listfiles inmeme2"
+# TESTS="webserver webserver-inmem webserver-inmem2 webserver-file webserver-listfiles webserver-load"
+TESTS="webserver-listfiles"
 
 # Command to run for seclayer
-SEC_CMD="python repy.py restrictions.full encasementlib.repy"
+SEC_CMD="python repy.py restrictions.full"
 NORM_CMD="python repy.py restrictions.full"
-SERVER="dylink.repy check_api.repy librepy.repy webserver-"
+SERVER="dylink.repy check_api.repy librepy.repy "
 CHECKAPIVERIFY="python repy.py restrictions.full dylink.repy check_api_verify.repy"
+
+# Kill all python instances
+echo "Killing python"
+killall -9 python Python >/dev/null 2>&1
 
 # CPU benchmarks
 for TEST in $TESTS
 do
     # Do the tests with the layers
     echo 
-    echo "Benchmark Webserver" $TESTS
+    echo "Benchmark:" $TEST
     for iter in {1}
     do
-	# Kill all python instances
-	echo "Killing python"
-	killall -9 python Python >/dev/null 2>&1
-	
 	echo $CHECKAPIVERIFY
 	$CHECKAPIVERIFY &
-	sleep 2
-	echo $SEC_CMD $LAYER $SERVER$TEST.repy 
+	
+        sleep 2
+	
+        echo $SEC_CMD $LAYER $SERVER $TEST.repy 
         $SEC_CMD $LAYER $SERVER$TEST.repy &
         PID=$!
         sleep 10

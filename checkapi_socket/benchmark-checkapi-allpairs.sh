@@ -2,7 +2,9 @@
 # Used to automate benchmarking
 
 # Command to run for seclayer
-SEC_CMD="python repy.py restrictions.full encasementlib.repy"
+SEC_CMD="python repy.py restrictions.full"
+# SEC_CMD="python repy.py restrictions.full encasementlib.repy"
+
 SERVER="dylink.repy check_api.repy librepy.repy allpairspingv2.repy 12345"
 CHECKAPIVERIFY="python repy.py restrictions.full dylink.repy check_api_verify.repy"
 

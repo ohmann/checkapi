@@ -3,7 +3,7 @@
 TEST="Block Store Server in CheckAPI"
 
 # Command to run for seclayer
-SEC_CMD="python repy.py restrictions.full encasementlib.repy"
+SEC_CMD="python repy.py restrictions.full"
 SERVER="dylink.repy check_api.repy librepy.repy blockstore.py test_benchmark 12345"
 CHECKAPIVERIFY="python repy.py restrictions.full dylink.repy check_api_verify.repy"
 

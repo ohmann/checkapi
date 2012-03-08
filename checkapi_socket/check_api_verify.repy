@@ -32,34 +32,6 @@ MAX_STRING_LENGTH_FOR_WRITE_LOG = 4096
 if WRITE_OUT_TRACE:
   dy_import_module_symbols("check_api_output_file.repy")
 
-# Exception dictionary
-EXCEPTION_CALLS_DICT = {'RepyException'            : RepyException,
-                        'RepyArgumentError'        : RepyArgumentError,
-                        'CodeUnsafeError'          : CodeUnsafeError,
-                        'ContextUnsafeError'       : ContextUnsafeError,
-                        'ResourceUsageError'       : ResourceUsageError,
-                        'ResourceExhaustedError'   : ResourceExhaustedError,
-                        'ResourceForbiddenError'   : ResourceForbiddenError,
-                        'FileError'                : FileError,
-                        'FileNotFoundError'        : FileNotFoundError,
-                        'FileInUseError'           : FileInUseError,
-                        'SeekPastEndOfFileError'   : SeekPastEndOfFileError,
-                        'FileClosedError'          : FileClosedError,
-                        'LockDoubleReleaseError'   : LockDoubleReleaseError,
-                        'NetworkError'             : NetworkError,
-                        'NetworkAddressError'      : NetworkAddressError,
-                        'AlreadyListeningError'    : AlreadyListeningError,
-                        'DuplicateTupleError'      : DuplicateTupleError,
-                        'CleanupInProgressError'   : CleanupInProgressError,
-                        'InternetConnectivityError': InternetConnectivityError,
-                        'AddressBindingError'      : AddressBindingError,
-                        'ConnectionRefusedError'   : ConnectionRefusedError,
-                        'LocalIPChanged'           : LocalIPChanged,
-                        'SocketClosedLocal'        : SocketClosedLocal,
-                        'SocketClosedRemote'       : SocketClosedRemote,
-                        'SocketWouldBlockError'    : SocketWouldBlockError,
-                        'TimeoutError'             : TimeoutError,
-                        }
 
 
 # Model Function Dictionary
@@ -93,6 +65,8 @@ CORE_MODEL_CALLS_DICT = {# FileIO
                          'createlock'              : model_createlock,
                          }
 
+
+
 # Object create function list
 OBJ_CREATE_CALLS_LIST = ['openfile',
                          'listenforconnection',
@@ -100,6 +74,7 @@ OBJ_CREATE_CALLS_LIST = ['openfile',
                          'listenformessage',
                          'tcpserver_getconnection',
                          'createlock']
+
 
 
 def log_start_action(start_tuple):
@@ -142,31 +117,8 @@ def log_finish_action(finish_tuple):
 
 
 
-def deserialize_string_to_tuple(action_tuple_line):
-  offset = 0
-  for i in xrange(4):
-    offset += action_tuple_line[offset:].find(",") + 1
-  
-  action_tuple_line_head = action_tuple_line[:offset - 1]
-  action_tuple_line_rear = action_tuple_line[offset:]  
-
-  action_array = action_tuple_line_head.split(",")
-  fnc_name = action_array[0]
-  action = action_array[1]
-  threadname = action_array[2]
-
-  if action_array[3] == "None":
-    obj_id = None
-  else:
-    obj_id = action_array[3]
-  args_or_rtn_tuple = serialize_deserializedata(action_tuple_line_rear)
-
-  return fnc_name, action, threadname, obj_id, args_or_rtn_tuple
-
-
-
 def derive_tuple_to_action_dict(action_tuple_line):
-  fnc_name, action, threadname, obj_id, args_or_rtn_tuple = deserialize_string_to_tuple(action_tuple_line)
+  fnc_name, action, threadname, obj_id, args_or_rtn_tuple = repy_cPickle_loads(action_tuple_line)
 
   # Get dead object id
   if fnc_name.find("__del__") != -1:
@@ -185,17 +137,6 @@ def derive_tuple_to_action_dict(action_tuple_line):
   # Get finish action tuple
   else: 
     impl_ret, impl_exp = args_or_rtn_tuple
-    impl_exp_real = impl_exp 
-    
-    # Get Exception Object
-    if impl_exp:
-      for exception_name in EXCEPTION_CALLS_DICT:
-        if impl_exp.find(exception_name) != -1:
-          exception_array = impl_exp.split(',')
-          impl_exp_real = EXCEPTION_CALLS_DICT[exception_name](exception_array[1])
-          break
-    args_or_rtn_tuple = impl_ret, impl_exp_real
-
     # For special function in finish action
     if fnc_name in ["lock_release", "createthread"]:
       mycontext['special_pending_calls'] -= 1
@@ -225,7 +166,6 @@ def derive_tuple_to_action_dict(action_tuple_line):
 def derive_recv_data_to_tuple_and_verify():
 
   while True:
-    # write_str_to_log(str(len(mycontext['received_data_buffer_list'])) + ", ")
     if mycontext['received_data_buffer_list']:
       received_data = mycontext['received_data_buffer_list'].pop(0)
       received_data = mycontext['unfinish_block'] + received_data

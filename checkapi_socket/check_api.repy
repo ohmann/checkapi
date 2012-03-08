@@ -44,10 +44,10 @@ CLIENT_PORT = 50002
 RECV_BLOCK_SIZE = 1024*64 # 10**16
 
 # Size For one time send data
-SEND_BLOCK_SIZE = 1024*4 # 10**12
+SEND_BLOCK_SIZE = 1024*16 # 10**14
 
 # Size For Check the string block if need to send
-CHECK_STRING_BUFFER_SIZE = 1024*32  # 10**15
+CHECK_STRING_BUFFER_SIZE = 1024*64  # 10**16
 
 # Are you using CheckAPI for shims or not? 
 # *Not fully supported in this version yet*
@@ -151,8 +151,7 @@ if callfunc == "initialize":
     # Open CheckAPI Socket Connection
     open_checkapi_connection()
     # Start the thread
-    createthread(collect_and_send_action_data)
-  
+
   runtime_verification_wrap_calls()
   starting_threads = active_threads()
 
@@ -168,9 +167,10 @@ if callfunc == "initialize":
     # Set interposition finished flag as True
     mycontext['interposition_finished_flag'] = True
     # We must wait until the send thread has been finished
-    wait_until_finished(starting_threads - 1)
+    
+    if mycontext['thread_start_flag'] == True:
+      wait_until_finished(starting_threads - 1)
   
-  # Send the rest of data in string buffer, then close connection
-  if mycontext['send_socket_data']:  
+    # Send the rest of data in string buffer, then close connection
     send_all_action_data(mycontext['interposition_send_string_buffer'])  
     close_checkapi_connection()

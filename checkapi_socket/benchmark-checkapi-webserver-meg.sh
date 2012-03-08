@@ -2,12 +2,12 @@
 # Used to automate benchmarking
 
 # The types of tests
-#TESTS="inmem inmem2 file listfiles load uptime"
-TESTS="meg"
+# TESTS="webserver webserver-inmem webserver-inmem2 webserver-file webserver-listfiles webserver-load"
+TESTS="webserver-meg"
 
 # Command to run for seclayer
-SEC_CMD="python repy.py restrictions.full encasementlib.repy"
-SERVER="dylink.repy check_api.repy librepy.repy webserver-"
+SEC_CMD="python repy.py restrictions.full"
+SERVER="dylink.repy check_api.repy librepy.repy "
 CHECKAPIVERIFY="python repy.py restrictions.full dylink.repy check_api_verify.repy"
 
 # Kill all python instances
@@ -21,8 +21,7 @@ do
     echo "##############################"
     echo "$TEST test"
     echo "##############################"
-    echo 
-    echo "Layer: $LAYER"
+    echo
     for iter in {1}
     do
 

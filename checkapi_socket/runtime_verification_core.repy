@@ -114,32 +114,15 @@ def send_all_action_data(action_data):
   
 
 
-def serialize_tuple_to_string(action_tuple):
-
-  # Head include fnc_name, action, threadname, obj_id, 
-  action_string_head = ""
-  # Rear include args_list or impl_obj_id or impl_ret
-  action_string_rear = ""
-  
-  # Save Head as String
-  for i in xrange(4):
-    action_string_head += str(action_tuple[i]) + ","
-  
-  # Serialize Rear
-  action_string_rear = serialize_serializedata(action_tuple[4])
-  
-  # Return Head and Rear
-  return action_string_head + action_string_rear
-
-
-
 def collect_and_send_action_data():
+
   while True:  
     if mycontext['interposition_action_buffer_list']:
+      # Pop action data from interposition buffer
       action_tuple_line = mycontext['interposition_action_buffer_list'].pop(0)
-
+     
       # Serialize tuple to string
-      action_string = serialize_tuple_to_string(action_tuple_line)
+      action_string = repy_cPickle_dumps(action_tuple_line)
         
       # Append data to string buffer
       mycontext['interposition_send_string_buffer'] += str(len(action_string)) + "#" + str(action_string)
@@ -152,9 +135,10 @@ def collect_and_send_action_data():
         mycontext['interposition_send_string_buffer'] = ""   
 
     else:
-     sleep(COLLECT_DATA_SLEEP_TIME)
-     if mycontext['interposition_finished_flag'] == True:
-       break
+      if mycontext['interposition_finished_flag'] == True:
+        break
+      sleep(COLLECT_DATA_SLEEP_TIME)
+
 
 
 def exec_model_impl(fnc_name, threadname, impl_func, args_list, obj_id=None, impl_obj=None):
@@ -193,10 +177,18 @@ def exec_model_impl(fnc_name, threadname, impl_func, args_list, obj_id=None, imp
       mycontext['interposition_action_buffer_list'].append(del_object_tuple)
     return
 
-  # Log start action.
-  start_tuple = (fnc_name, 'start', threadname, obj_id, tuple(args_list))   
-  # Append start tuple to action list
   if mycontext['send_socket_data']:
+    if mycontext['thread_start_flag'] == False:
+      createthread(collect_and_send_action_data)
+      mycontext['thread_start_flag'] = True  
+
+    # Log start action.
+    if fnc_name == "createthread":
+      start_tuple = (fnc_name, 'start', threadname, obj_id, tuple([str(args_list[0])]))  
+    else:
+      start_tuple = (fnc_name, 'start', threadname, obj_id, tuple(args_list))
+
+    # Append start tuple to action list
     mycontext['interposition_action_buffer_list'].append(start_tuple)
   
   # Execute in the implementation.
@@ -211,15 +203,16 @@ def exec_model_impl(fnc_name, threadname, impl_func, args_list, obj_id=None, imp
   # unique object id to a model object id.
   if impl_error == None and fnc_name in OBJ_CREATE_CALLS_DICT:
     impl_ret = _wrap_and_store_object(fnc_name, impl_ret)
- 
-  impl_obj_id_or_ret = impl_ret
-  # Log finish action.
-  if fnc_name in OBJ_CREATE_CALLS_DICT and is_model_object(impl_ret):
-    impl_obj_id_or_ret = _get_obj_id(fnc_name, impl_ret)
-  finish_tuple = (fnc_name, 'finish', threadname, obj_id, tuple([impl_obj_id_or_ret, impl_error]))
-  
-  # Append finish tuple to action list
+
   if mycontext['send_socket_data']:
+    impl_obj_id_or_ret = impl_ret
+    
+    # Log finish action.
+    if fnc_name in OBJ_CREATE_CALLS_DICT and is_model_object(impl_ret):
+      impl_obj_id_or_ret = _get_obj_id(fnc_name, impl_ret)
+    finish_tuple = (fnc_name, 'finish', threadname, obj_id, tuple([impl_obj_id_or_ret, impl_error]))
+
+    # Append finish tuple to action list
     mycontext['interposition_action_buffer_list'].append(finish_tuple)
 
   # We are done, return or raise to caller!

@@ -159,6 +159,7 @@ def send_reply(response, client):
   count = 0
   length_of_msg = len(response)
 
+  send_count = 0
   while(count < length_of_msg):
     string_to_send = ''
     max= count + MSG_SIZE
@@ -168,9 +169,10 @@ def send_reply(response, client):
     else:
       string_to_send = response[count:max]
 
+    send_count += 1
     num_sent = client.sendall(string_to_send)
     count += num_sent
-
+  # log("Send Count:" + str(send_count) + "\n")
   client.close()
 
 

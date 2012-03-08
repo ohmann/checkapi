@@ -23,14 +23,14 @@ def action_randombytes():
   return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
 
 
+
 ################## EG: exitall action ##################
 def action_exitall():
-  # EG:
-  mycontext['action_lock'].acquire(True)
-  try:
-    systolic_verify(force=True)
-  finally:
-    mycontext['action_lock'].release()
+
+  if mycontext['send_socket_data']:
+    # Send the rest of data in string buffer, then close connection
+    send_all_action_data(mycontext['interposition_send_string_buffer'])  
+  close_checkapi_connection()
 
   # Everything is ok, we can now call the real exitall!
   exitall() 

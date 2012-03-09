@@ -45,7 +45,8 @@ for iter in {1}
 do
     $NORM_CMD $SERVER  >/dev/null 2>&1 &
     PID=$!
-    sleep 4
+    # Wait for blockstore is started.
+    sleep 10
     for i in {1..10}
     do
         { time ./test_blockstore_fetch.sh; } 2>&1 | grep real | sed -e 's|^.*0m\([0-9.]*s\)$|\1|' -e 's|s||'

@@ -22,7 +22,7 @@ FILE_NAME = "skype.strace_network"
 SIGS = ["---", "+++"]
 DEBUG = False
 pendingStraceTable = []
-ignore_fd = []
+ignore_fds = []
 
 
 ###########
@@ -73,7 +73,10 @@ def getValidTraceLine(fh):
             if line.strip() == "<unfinished ...>":
                 pass
             else:
-                pid = int(line[line.find(" ")+1:line.find("]")])
+                try:
+                    pid = int(line[line.find(" ")+1:line.find("]")])
+                except:
+                    pid = int(line[:line.find(" ")])
                 command = line[line.find("]")+2:line.find("(")]
                 pendingStraceTable.append(PendingStrace(pid, command, line[:line.find("<unfinished ...>")].strip()))
             continue
@@ -83,7 +86,7 @@ def getValidTraceLine(fh):
             try:
                 pid = int(line[line.find(" ")+1:line.find("]")])
             except:
-                continue
+                pid = int(line[:line.find(" ")])
             command = line[line.find("<... ") + 5:line.find(" resumed>")]
             pendingIdx = findPendingStrace(pendingStraceTable, pid, command)
             # If pending strace isn't found, ignore and continue
@@ -108,6 +111,8 @@ def getValidTraceLine(fh):
             log(line)
         if line[0] == '[':
             command = line[line.find(']')+2:line.find('(')]
+        elif len(line[:line.find('(')].split(" ")) > 1:
+            command = line[:line.find('(')].split(" ")[-1]
         else:
             command = line[:line.find('(')]
         parameterChunk = line[line.find('(')+1:line.rfind('=')].strip()
@@ -159,7 +164,7 @@ def getValidTraceLine(fh):
                 log(command, domain, socktype, protocol, straceResult, '\n')
             if domain == UNIMPLEMENTED_ERROR or socktype == UNIMPLEMENTED_ERROR or protocol == UNIMPLEMENTED_ERROR:
                 if straceResult[0] != -1:
-                    ignore_fd.append(straceResult[0])
+                    ignore_fds.append(straceResult[0])
                 if DEBUG:
                     log("Unimplemented parameter, skipping...\n")
             else:
@@ -168,7 +173,7 @@ def getValidTraceLine(fh):
         ##### BIND #####
         elif command == "bind":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             localip = UNIMPLEMENTED_ERROR
@@ -192,7 +197,7 @@ def getValidTraceLine(fh):
         ##### CONNECT #####
         elif command == "connect":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             remoteip = UNIMPLEMENTED_ERROR
@@ -217,7 +222,7 @@ def getValidTraceLine(fh):
         elif command == "sendto":
 
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             # Get the message without quotes
@@ -228,14 +233,18 @@ def getValidTraceLine(fh):
             except:
                 flags = splitAndCombine(parameters[3])
 
-            remoteip = UNIMPLEMENTED_ERROR
-            remoteport = UNIMPLEMENTED_ERROR
-            for index in range(4,len(parameters)-1, 1):
-                p = parameters[index]
-                if p.find("sin_addr") != -1:
-                    remoteip = p[p.find("\"")+1:p.rfind("\"")]
-                elif p.find("sin_port") != -1:
-                    remoteport = int(p[p.find("(")+1:p.rfind(")")])
+            if parameters[4] == "NULL":
+                remoteip = ''
+                remoteport = 0
+            else:
+                remoteip = UNIMPLEMENTED_ERROR
+                remoteport = UNIMPLEMENTED_ERROR
+                for index in range(4,len(parameters)-1, 1):
+                    p = parameters[index]
+                    if p.find("sin_addr") != -1:
+                        remoteip = p[p.find("\"")+1:p.rfind("\"")]
+                    elif p.find("sin_port") != -1:
+                        remoteport = int(p[p.find("(")+1:p.rfind(")")])
             
             if DEBUG:
                 log(command, sockfd, message, remoteip, remoteport, flags, straceResult)
@@ -251,7 +260,7 @@ def getValidTraceLine(fh):
                 merge(parameters, 1, len(parameters)-2)
 
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             # Get the message without quotes
@@ -273,7 +282,7 @@ def getValidTraceLine(fh):
         ##### RECVFROM #####
         elif command == "recvfrom":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             # Get the message without quotes
@@ -286,15 +295,19 @@ def getValidTraceLine(fh):
             except:
                 flags = splitAndCombine(parameters[3])
 
-            remoteip = UNIMPLEMENTED_ERROR
-            remoteport = UNIMPLEMENTED_ERROR
-            for index in range(4,len(parameters)-1, 1):
-                p = parameters[index]
-                if p.find("sin_addr") != -1:
-                    remoteip = p[p.find("\"")+1:p.rfind("\"")]
-                elif p.find("sin_port") != -1:
-                    remoteport = int(p[p.find("(")+1:p.rfind(")")])
-            
+            if parameters[4] == "NULL":
+                remoteip = ''
+                remoteport = 0
+            else:
+                remoteip = UNIMPLEMENTED_ERROR
+                remoteport = UNIMPLEMENTED_ERROR
+                for index in range(4,len(parameters)-1, 1):
+                    p = parameters[index]
+                    if p.find("sin_addr") != -1:
+                        remoteip = p[p.find("\"")+1:p.rfind("\"")]
+                    elif p.find("sin_port") != -1:
+                        remoteport = int(p[p.find("(")+1:p.rfind(")")])
+
             if DEBUG:
                 log(command, sockfd, message, remoteip, remoteport, flags, straceResult)
             if remoteip == UNIMPLEMENTED_ERROR or remoteport == UNIMPLEMENTED_ERROR or flags == UNIMPLEMENTED_ERROR:
@@ -310,7 +323,7 @@ def getValidTraceLine(fh):
                 merge(parameters, 1, len(parameters)-2)
 
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             # Get the message without quotes
@@ -335,7 +348,7 @@ def getValidTraceLine(fh):
         ##### GETSOCKNAME #####
         elif command == "getsockname":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             localip = UNIMPLEMENTED_ERROR
@@ -360,7 +373,7 @@ def getValidTraceLine(fh):
         ##### GETPEERNAME #####
         elif command == "getpeername":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             remoteip = UNIMPLEMENTED_ERROR
@@ -384,7 +397,7 @@ def getValidTraceLine(fh):
         ##### LISTEN  #####
         elif command == "listen":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             try:
@@ -397,9 +410,9 @@ def getValidTraceLine(fh):
             TRACE.append(('listen_syscall',(sockfd, backlog), straceResult))
 
         ##### ACCEPT #####
-        elif command == "accept":
+        elif command == "accept" or command == "accept4":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             remoteip = UNIMPLEMENTED_ERROR
@@ -422,7 +435,7 @@ def getValidTraceLine(fh):
         ##### GETSOCKOPT #####
         elif command == "getsockopt":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             try:
@@ -458,7 +471,7 @@ def getValidTraceLine(fh):
             if sockfd == 10:
                 TRACE.append(line)
                 return TRACE
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             try:
@@ -487,7 +500,7 @@ def getValidTraceLine(fh):
         ##### SHUTDOWN #####
         elif command == "shutdown":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
+            if sockfd in ignore_fds:
                 continue
 
             try:
@@ -506,8 +519,8 @@ def getValidTraceLine(fh):
         ##### CLOSE #####
         elif command == "close":
             sockfd = int(parameters[0])
-            if sockfd in ignore_fd:
-                ignore_fd.pop(ignore_fd.index(sockfd))
+            if sockfd in ignore_fds:
+                ignore_fds.pop(ignore_fds.index(sockfd))
                 continue
 
             if DEBUG:
@@ -571,10 +584,10 @@ def getValidTraceLine(fh):
         #################### FILE SYSTEM CALLS ####################
 
         ##### FSTATFS #####
-        elif command == "fstatfs":
+        elif command == "fstatfs" or command == "fstatfs64":
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
                 continue
 
             if DEBUG:
@@ -582,7 +595,7 @@ def getValidTraceLine(fh):
             TRACE.append(('fstatfs_syscall', (fd,), straceResult))
 
         ##### STATFS #####
-        elif command == "statfs":
+        elif command == "statfs" or command == "statfs64":
             path = parameters[0].strip("\"")
 
             if DEBUG:
@@ -658,7 +671,7 @@ def getValidTraceLine(fh):
             TRACE.append(('unlink_syscall', (path,), straceResult))
 
         ##### STAT #####
-        elif command == "stat":
+        elif command == "stat" or command == "stat64":
             path = parameters[0].strip("\"")
 
             if DEBUG:
@@ -666,10 +679,10 @@ def getValidTraceLine(fh):
             TRACE.append(('stat_syscall', (path,), straceResult))
 
         ##### FSTAT #####
-        elif command == "fstat":
+        elif command == "fstat" or command == "fstat64":
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
                 continue
 
             if DEBUG:
@@ -697,7 +710,7 @@ def getValidTraceLine(fh):
                     if DEBUG:
                         log("Unimplemented parameter, skipping...")
                     if straceResult[0] != -1:
-                        ignore_fd.append(straceResult[0])
+                        ignore_fds.append(straceResult[0])
 
                 else:
                     TRACE.append(('open_syscall', (path, flags, mode), straceResult))
@@ -709,7 +722,7 @@ def getValidTraceLine(fh):
                     if DEBUG:
                         log("Unimplemented parameter, skipping...")
                     if straceResult[0] != -1:
-                        ignore_fd.append(straceResult[0])
+                        ignore_fds.append(straceResult[0])
                 else:
                     # POTENTIAL BUG: I have to put some kind of mode value for the open syscall. For now it's 0.
                     TRACE.append(('open_syscall', (path, flags, 0), straceResult))
@@ -727,7 +740,7 @@ def getValidTraceLine(fh):
                 log(command, path, mode, straceResult)
             if mode == UNIMPLEMENTED_ERROR:
                 if straceResult[0] != -1:
-                    ignore_fd.append(straceResult[0])
+                    ignore_fds.append(straceResult[0])
                 if DEBUG:
                     log("Unimplemented parameter, skipping...")
             else:
@@ -737,7 +750,7 @@ def getValidTraceLine(fh):
         elif command == "lseek":
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
                 continue
 
             try:
@@ -765,7 +778,7 @@ def getValidTraceLine(fh):
 
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
                 continue
 
             count = int(parameters[-1])
@@ -781,7 +794,7 @@ def getValidTraceLine(fh):
 
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
                 continue
 
             # Remove ... and then remove "'s without changing data
@@ -800,7 +813,9 @@ def getValidTraceLine(fh):
 
             newfd = int(parameters[1])
 
-            if oldfd in ignore_fd:
+            if oldfd in ignore_fds:
+                if straceResult[0] != -1:
+                    ignore_fds.append(straceResult[0])
                 continue
 
             if DEBUG:
@@ -811,7 +826,9 @@ def getValidTraceLine(fh):
         elif command == "dup":
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
+                if straceResult[0] != -1:
+                    ignore_fds.append(straceResult[0])
                 continue
 
             if DEBUG:
@@ -819,10 +836,12 @@ def getValidTraceLine(fh):
             TRACE.append(('dup_syscall', (fd,), straceResult))
 
         ##### FCNTL #####
-        elif command == "fcntl":
+        elif command == "fcntl" or command == "fcntl64":
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
+                if ("F_DUPFD" in str(parameters[1]).split("|") or "F_DUPFD_CLOEXEC" in str(parameters[1]).split("|")) and straceResult[0] != -1:
+                    ignore_fds.append(straceResult[0])
                 continue
 
             try:
@@ -847,7 +866,7 @@ def getValidTraceLine(fh):
             else:
                 if DEBUG:
                     log(command, fd, cmd, straceResult)
-                if flags == UNIMPLEMENTED_ERROR:
+                if cmd == UNIMPLEMENTED_ERROR:
                     if DEBUG:
                         log("Unimplemented parameter, skipping...")
                 else:
@@ -855,10 +874,10 @@ def getValidTraceLine(fh):
                     TRACE.append(('fcntl_syscall', (fd, cmd, 0), straceResult))
 
         ##### GETDENTS #####
-        elif command == "getdents":
+        elif command == "getdents" or command == "getdents64":
             fd = int(parameters[0])
 
-            if fd in ignore_fd:
+            if fd in ignore_fds:
                 continue
 
             quantity = int(parameters[2])
@@ -867,6 +886,16 @@ def getValidTraceLine(fh):
                 log(command, fd, quantity, straceResult)
             TRACE.append(('getdents_syscall', (fd, quantity), straceResult))
 
+        ##### PIPE #####
+        elif (command == "pipe" or command == "pipe2") and straceResult[0] != -1:
+            fd1 = int(parameters[0].strip('['))
+            fd2 = int(parameters[1].strip(']'))
+            # Parent fd
+            ignore_fds.append(fd1)
+            ignore_fds.append(fd2)
+            # Child fd
+            ignore_fds.append(fd1)
+            ignore_fds.append(fd2)
 
         ##### NOT IMPLEMENTED #####
         else:
@@ -924,6 +953,7 @@ def splitAndCombine(string):
     stringParts = string.split("|")
     for param in stringParts:
         paramValue = convert(param)
+
         if paramValue == UNIMPLEMENTED_ERROR:
             return UNIMPLEMENTED_ERROR
         result |= paramValue
@@ -1158,6 +1188,7 @@ def convert(string):
     elif string == "IPPROTO_IPPC":
         return IPPROTO_IPPC
     elif string == "IPPROTO_ADFS":
+
         return IPPROTO_ADFS
     elif string == "IPPROTO_SATMON":
         return IPPROTO_SATMON
@@ -1187,6 +1218,7 @@ def convert(string):
         return IPPROTO_VMTP
     elif string == "IPPROTO_SVMTP":
         return IPPROTO_SVMTP
+
     elif string == "IPPROTO_VINES":
         return IPPROTO_VINES
     elif string == "IPPROTO_TTP":

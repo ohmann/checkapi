@@ -600,6 +600,10 @@ def recvfrom_syscall(fd,length,flags):
     raise UnimplementedError("Flags are not understood by recvfrom!")
 
 
+  # if there is no IP / port, call recv instead.   It will assume the other
+  # end is connected...
+  if remoteip == '' and remoteport == 0:
+    return send_syscall(fd,length,flags)
 
 
   # What I do depends on the protocol...

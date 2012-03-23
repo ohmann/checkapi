@@ -92,12 +92,13 @@ def _translate_fd(impl_fd):
 # the posix model. We are also responsible for keeping track of file-descriptor 
 # mappings since the implementation may use different ones from us.
 def verify_trace(trace, lNum):
+    ERRORS = []
     lineNum = READ_AMNT * lNum
     for action in trace:
         lineNum += 1
         print str(lineNum) + " ===> " + str(action)
-        print str(ignore_fd)
-        print str(posix_fd_map)
+        #print str(ignore_fd)
+        #print str(posix_fd_map)
         #log(str(lineNum) + "\n")
         name, args, ret = action
         impl_ret, impl_errno = ret
@@ -214,16 +215,15 @@ def verify_trace(trace, lNum):
         # verify we are getting something sane.
         if impl_ret != model_ret or impl_errno != model_errno:
             print str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
-            return False
+            ERRORS.append(str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno)))
         else:
             print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
-    return True
+    return ERRORS
 
 #TRACE_FILE_NAME = "putty_ubuntu.strace_full"
 #TRACE_FILE_NAME = "firefox.strace_full"
-TRACE_FILE_NAME = "firefox.strace_full"
-#TRACE_FILE_NAME = "simple.trace"
-READ_AMNT = 9000
+TRACE_FILE_NAME = "bind.strace_result"
+READ_AMNT = -1
 
 fh = open(TRACE_FILE_NAME, "r")
 
@@ -236,7 +236,9 @@ fh = open(TRACE_FILE_NAME, "r")
 
 trace = getNumberValidTraceLines(fh, READ_AMNT)
 num = 0
-verify_trace(trace, num)
+ERRORS = verify_trace(trace, num)
+print "\n\n\n\n\n\n\n"
+print str(ERRORS)
 #while len(trace) > 0:
 #    if not verify_trace(trace, num):
 #        break

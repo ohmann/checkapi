@@ -15,6 +15,7 @@ dy_import_module_symbols("lind_net_constants")
 #############
 # CONSTANTS #
 #############
+ALL_COMMANDS = ["socket", "bind", "connect", "sendto", "send", "recvfrom", "recv", "getsockname", "getpeername", "listen", "accept", "getsockopt", "setsockopt", "shutdown", "close", "fstatfs", "statfs", "access", "chdir", "mkdir", "rmdir", "link", "unlink", "stat", "fstat", "open", "creat", "lseek", "read", "write", "dup2", "dup", "fcntl", "getdents", "pipe", "eventfd", "eventfd2", "dup3", "inotify_init", "inotify_init1"]
 UNIMPLEMENTED_ERROR = -1
 FILE_NAME = "skype.strace_network"
 #FILE_NAME = "ktorrent.strace_full"
@@ -33,6 +34,10 @@ class PendingStrace(object):
         self.pid = pid
         self.command = command
         self.firstHalf = firstHalf
+
+    def __str__(self):
+        line = str([self.pid, self.command, self.firstHalf])
+        return line
 
 
 #############
@@ -70,15 +75,15 @@ def getValidTraceLine(fh):
         # Did the strace get interrupted?
         if line.find("<unfinished ...>") != -1:
             # Ignore lines with only unfinished
-            if line.strip() == "<unfinished ...>":
-                pass
-            else:
+            if line != "<unfinished ...>":
                 try:
                     pid = int(line[line.find(" ")+1:line.find("]")])
+                    command = line[line.find("]")+2:line.find("(")]
                 except:
                     pid = int(line[:line.find(" ")])
-                command = line[line.find("]")+2:line.find("(")]
-                pendingStraceTable.append(PendingStrace(pid, command, line[:line.find("<unfinished ...>")].strip()))
+                    command = line[line.find(" ")+1:line.find("(")]
+                if command in ALL_COMMANDS:
+                    pendingStraceTable.append(PendingStrace(pid, command, line[:line.find("<unfinished ...>")].strip()))
             continue
 
         # Is the strace resuming?
@@ -94,7 +99,10 @@ def getValidTraceLine(fh):
                 continue
             else:
                 pending = pendingStraceTable[pendingIdx]
-                secondHalf = line[line.find("resumed>")+8:]
+                secondHalf = line[line.find("resumed>")+8:].strip()
+                if secondHalf[0] != ')':
+                    secondHalf = " " + secondHalf
+                oldLine = line
                 line = pending.firstHalf + secondHalf
                 pendingStraceTable.pop(pendingIdx)
 
@@ -468,9 +476,6 @@ def getValidTraceLine(fh):
         ##### SETSOCKOPT #####
         elif command == "setsockopt":
             sockfd = int(parameters[0])
-            if sockfd == 10:
-                TRACE.append(line)
-                return TRACE
             if sockfd in ignore_fds:
                 continue
 
@@ -711,7 +716,6 @@ def getValidTraceLine(fh):
                         log("Unimplemented parameter, skipping...")
                     if straceResult[0] != -1:
                         ignore_fds.append(straceResult[0])
-
                 else:
                     TRACE.append(('open_syscall', (path, flags, mode), straceResult))
 
@@ -840,10 +844,9 @@ def getValidTraceLine(fh):
             fd = int(parameters[0])
 
             if fd in ignore_fds:
-                if ("F_DUPFD" in str(parameters[1]).split("|") or "F_DUPFD_CLOEXEC" in str(parameters[1]).split("|")) and straceResult[0] != -1:
+                if ("F_DUPFD" in parameters[1].split("|") or "F_DUPFD_CLOEXEC" in parameters[1].split("|")) and straceResult[0] != -1:
                     ignore_fds.append(straceResult[0])
                 continue
-
             try:
                 cmd = int(parameters[1])
             except:
@@ -858,6 +861,9 @@ def getValidTraceLine(fh):
                 if DEBUG:
                     log(command, fd, cmd, args, straceResult)
                 if cmd == UNIMPLEMENTED_ERROR or args == UNIMPLEMENTED_ERROR:
+                    if ("F_DUPFD" in parameters[1].split("|") or "F_DUPFD_CLOEXEC" in parameters[1].split("|")) and straceResult[0] != -1:
+                        ignore_fds.append(straceResult[0])
+
                     if DEBUG:
                         log("Unimplemented parameter, skipping...")
                 else:
@@ -867,6 +873,9 @@ def getValidTraceLine(fh):
                 if DEBUG:
                     log(command, fd, cmd, straceResult)
                 if cmd == UNIMPLEMENTED_ERROR:
+                    if ("F_DUPFD" in parameters[1].split("|") or "F_DUPFD_CLOEXEC" in parameters[1].split("|")) and straceResult[0] != -1:
+                        ignore_fds.append(straceResult[0])
+
                     if DEBUG:
                         log("Unimplemented parameter, skipping...")
                 else:
@@ -896,6 +905,35 @@ def getValidTraceLine(fh):
             # Child fd
             ignore_fds.append(fd1)
             ignore_fds.append(fd2)
+
+        ##### EVENTFD #####
+        elif command == "eventfd":
+            if straceResult[0] != -1:
+                ignore_fds.append(straceResult[0])
+
+        ##### EVENTFD2 #####
+        elif command == "eventfd2":
+            if straceResult[0] != -1:
+                ignore_fds.append(straceResult[0])
+
+        ##### DUP3 #####
+        elif command == "dup3":
+            oldfd = int(parameters[0])
+
+            newfd = int(parameters[1])
+
+            if straceResult[0] != -1:
+                ignore_fds.append(straceResult[0])
+
+        ##### INOTIFY_INIT #####
+        elif command == "inotify_init":
+            if straceResult[0] != -1:
+                ignore_fds.append(straceResult[0])
+
+        ##### INOTIFY_INIT1 #####
+        elif command == "inotify_init1":
+            if straceResult[0] != -1:
+                ignore_fds.append(straceResult[0])
 
         ##### NOT IMPLEMENTED #####
         else:
@@ -1652,6 +1690,7 @@ def convert(string):
     elif string == "DT_WHT":
         return DT_WHT
     # Parameters that don't translate to POSIX model but are often used...
+
     # Ignoring MSG_NOSIGNAL
     elif string == "MSG_NOSIGNAL":
         return 0

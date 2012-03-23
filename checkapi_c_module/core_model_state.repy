@@ -1,0 +1,170 @@
+"""
+<Program Name>
+  core_model_state.repy
+
+<Author>
+  Jeff Rasley
+  jeffra45@cs.washington.edu
+
+<Purpose> 
+  All of CheckAPI's model state is defined and modified by this file. The core 
+  model files call into here to modify model state. This makes it easy to 
+  isolate where the state can be changed.
+"""
+
+THREAD_NAME_PREFIX = "_EVENT:Thread:"
+
+# EG: make use of the Revertive structures
+# The developer can use the Rdict(), Rlist() and Rset(), exactly like the 
+# corresponding dict, list and set in python
+
+mycontext['model_state'] = Rdict()
+
+mycontext['model_state']['network_open_identities_list'] = Rlist()
+
+mycontext['model_state']['network_open_obj_identity_map'] = Rdict()
+
+mycontext['model_state']['objects_max_id_map'] = Rdict({'socket':1,      # socket
+                                                  'udpserver':1,   # udp-server
+                                                  'tcpserver':1,   # tcp-server
+                                                  'fd':1,          # file desc.
+                                                  'lock':1,        # lock
+                                                  THREAD_NAME_PREFIX:2}) # thread
+
+mycontext['model_state']['file_system_contents'] = Rdict()
+
+mycontext['model_state']['file_obj_map'] = Rdict()
+
+mycontext['model_state']['open_files_list'] = Rlist()
+
+mycontext['model_state']['held_locks_set'] = Rset()
+
+mycontext['model_state']['resource_restriction_table'] = Rdict()
+
+mycontext['model_state']['resource_consumption_table'] = Rdict()
+
+
+
+
+def model_state_identity_exists(identity):
+  return identity in mycontext['model_state']['network_open_identities_list']
+
+
+
+
+# Helper function to get the type and instance number from an object id.
+def model_state_assert_objid_against_max(objid):
+  objnum = int(filter(str.isdigit, objid))
+  objtype = filter(str.isalpha, objid)
+  maxid = mycontext['model_state']['objects_max_id_map'][objtype]
+  if maxid <= objnum:
+    raise InternalModelError("Object id: " + str(objnum) + " should be " + \
+        "less than max id: " + str(maxid))
+
+
+
+
+## Model state modification functions ##
+def model_state_create_net_obj(identity, objtype):
+  assert objtype in mycontext['model_state']['objects_max_id_map'], "Not " + \
+      "valid, only: %s" % mycontext['model_state']['objects_max_id_map'].keys()
+  assert not model_state_identity_exists(identity), "Identity should not exist!"
+
+  objid = objtype + str(mycontext['model_state']['objects_max_id_map'][objtype])
+  mycontext['model_state']['objects_max_id_map'][objtype] += 1
+  mycontext['model_state']['network_open_obj_identity_map'][objid] = identity
+  mycontext['model_state']['network_open_identities_list'].append(identity)
+  return objid
+
+
+
+
+def model_state_close_net_obj(objid):
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+  assert model_state_identity_exists(identity), "Identity should exist!"
+  mycontext['model_state']['network_open_identities_list'].remove(identity)
+  del mycontext['model_state']['network_open_obj_identity_map'][objid]
+
+
+
+
+def model_state_open_new_file(filename):
+  assert filename not in mycontext['model_state']['file_system_contents'], \
+      "File %s should not yet exist!" % filename
+  objid = 'fd' + str(mycontext['model_state']['objects_max_id_map']['fd'])
+  mycontext['model_state']['objects_max_id_map']['fd'] += 1
+  mycontext['model_state']['file_system_contents'][filename] = ""
+  mycontext['model_state']['file_obj_map'][objid] = filename
+  mycontext['model_state']['open_files_list'].append(filename)
+  return objid
+
+
+
+
+def model_state_open_existing_file(filename):
+  assert filename in mycontext['model_state']['file_system_contents'], \
+      "File %s should already exist" % filename
+  objid = 'fd' + str(mycontext['model_state']['objects_max_id_map']['fd'])
+  mycontext['model_state']['objects_max_id_map']['fd'] += 1
+  mycontext['model_state']['file_obj_map'][objid] = filename
+  mycontext['model_state']['open_files_list'].append(filename)
+  return objid
+
+
+
+
+def model_state_file_write(objid, filename, data, offset):
+  contents = mycontext['model_state']['file_system_contents'][filename]
+  newcontents = contents[:offset] + data + contents[offset + len(data):]
+  olddata = contents[offset:len(data) + offset]
+  mycontext['model_state']['file_system_contents'][filename] = newcontents  
+
+
+
+
+def model_state_file_close(objid):
+  filename = mycontext['model_state']['file_obj_map'][objid]
+  del mycontext['model_state']['file_obj_map'][objid]
+  mycontext['model_state']['open_files_list'].remove(filename)
+
+
+
+
+def model_state_remove_file(filename):
+  assert filename not in mycontext['model_state']['open_files_list'], \
+      "The file is still open, should have been checked."
+  assert filename in mycontext['model_state']['file_system_contents'], \
+      "File does not exist, it should!"
+  contents = mycontext['model_state']['file_system_contents'][filename]
+  del mycontext['model_state']['file_system_contents'][filename]
+
+
+
+
+def model_state_acquire_lock(objid):
+  assert objid not in mycontext['model_state']['held_locks_set']
+  mycontext['model_state']['held_locks_set'].add(objid)
+
+
+
+
+def model_state_create_lock():
+  objid = 'lock' + str(mycontext['model_state']['objects_max_id_map']['lock'])
+  mycontext['model_state']['objects_max_id_map']['lock'] += 1
+  return objid
+
+
+
+
+def model_state_release_lock(objid):
+  assert objid in mycontext['model_state']['held_locks_set']
+  mycontext['model_state']['held_locks_set'].remove(objid)
+
+
+
+
+def model_state_create_thread():
+  maxid = mycontext['model_state']['objects_max_id_map'][THREAD_NAME_PREFIX]
+  objid = THREAD_NAME_PREFIX + str(maxid)
+  mycontext['model_state']['objects_max_id_map'][THREAD_NAME_PREFIX] += 1
+  return objid

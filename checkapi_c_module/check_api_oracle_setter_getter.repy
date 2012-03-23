@@ -1,0 +1,279 @@
+'''
+<Program Name>
+  check_api_oracle_setter_getter.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  The CheckAPI Oracle is used to set/get and verify observed behavior or the 
+  Repy V2 implementation, this is used with systolic verification.
+'''
+
+# Used to designate a non-value, since None is a proper return value.
+class Null(object):
+  pass
+
+
+# Stores a return value and an error.
+mycontext['setter_getter_value'] = (Null, Null)
+
+
+
+
+def convert_error(err):
+  """
+  <Purpose>
+    Convert an exception object into a string representation of its type.
+  <Argument>
+    err
+      An exception instance itself.
+  <Return>
+    A String representation of an exception.
+  """
+  if err != None:
+    return str(type(err)).split('.')[1][:-2]
+
+
+  
+
+def regex_cond_range(min, max, wrap=True):
+  # "<RANGE 0, 10>, matches numerical ranges [0, 10] inclusive."
+  return _wrap_regex("<RANGE " + str(min) + ", " + str(max) + ">", wrap)
+
+
+
+
+def regex_cond_ip(wrap=True):
+  return _wrap_regex("<IP>", wrap)
+
+
+
+
+def regex_cond_obj(wrap=True):
+  return _wrap_regex("<OBJ>", wrap)
+
+
+
+
+def _wrap_regex(substring, wrap=True):
+  if wrap:
+    return "^" + substring + "$"
+  else:
+    return substring
+
+
+
+
+def regex_cond_triple(one, two, three, wrap=True):
+  # "^<TUPLE (one:two:three)>$", where one/two/tree are regexes all separated 
+  # by a ':' character and each one could be a 'special' regex. This triple
+  # function could easily be converted to handle N-tuples but for Repy it
+  # is not needed.
+  return _wrap_regex("<TUPLE (" + one + ":" + two + ":" + three + ")>", wrap)
+
+
+
+
+def assert_value_okay(cond_regex, value):
+  # Attempt to find upper and lower bounds for 'special' regex that is wrapped
+  # inside of < >.
+  lower, upper = cond_regex.find("<"), cond_regex.rfind(">")
+  if lower != -1 and upper != -1:
+    special_regex = cond_regex[lower+1:upper]
+    leftover_regex = cond_regex[:lower] + cond_regex[upper+1:]
+  else:
+    # No 'special' regex found.
+    special_regex = ""
+    leftover_regex = cond_regex
+  
+  # Begin to try and determine what 'special' regex was used.
+  if special_regex.startswith("RANGE"):
+    range_min, range_max = special_regex.strip("RANGE").split(",")
+    if value < int(range_min) or value > int(range_max):
+      error_str = "Value: " + str(value) + ", does not match regex: " + cond_regex
+      raise ModelConformanceFailure(error_str)
+  
+  elif special_regex.startswith("IP"):
+    if not validate_ip(value):
+      error_str = "IP address: " + str(value) + ", is not a valid address."
+      raise ModelConformanceFailure(error_str)
+    
+  elif special_regex.startswith("OBJ"):
+    # Not sure what to do with an object here...
+    if not isinstance(value, str): #is_model_object(value):
+      error_str = "The object returned by the implementation was not an object. " + str(type(value))
+      raise ModelConformanceFailure(error_str)
+      
+  elif special_regex.startswith("TUPLE"):
+    # Unpack each element in the tuple and validate each part individually.
+    plower, pupper = special_regex.find("(")+1, special_regex.rfind(")")
+    inner_regexes = special_regex[plower:pupper].split(":")
+    
+    assert(isinstance(value, tuple))
+    assert(len(value) == len(inner_regexes))
+    
+    # Verify all of the inner values using this same function.
+    i = 0
+    for cond in inner_regexes:
+      assert_value_okay(cond, value[i])
+      i += 1
+      
+      
+  elif special_regex == "":
+    if leftover_regex == "None":
+      if value != None:
+        raise ModelConformanceFailure("Thread did not return proper value of None.")
+    else:
+      # This is the case where there was no special regex and we would use the 
+      # Repy regex module if it existed to match our value. For now we will only
+      # support the {min,max} length matcher since that is all we need.
+      leftb, rightb = leftover_regex.find("{"), leftover_regex.rfind("}")
+      minlen, maxlen = leftover_regex[leftb+1:rightb].split(",")
+      if len(value) > int(maxlen) or len(value) < int(minlen):
+        error_str = "The length of the value returned by the implementation is "
+        error_str += "not between " + str(minlen) + "-" + str(maxlen) + ", it is "
+        error_str += str(len(value)) + "."
+        raise ModelConformanceFailure(error_str)
+          
+          
+  else:
+    # No idea what kind of regex this is, raise an error!
+    error_str = "The condition regex value in setter/getter did not match"
+    error_str += " anything it knows about, there is a problem." 
+    raise InternalCheckAPIError(error_str)
+    
+
+
+
+def oracle_getter(cond_regex, error_list):
+  """
+  <Purpose>
+    Verifies and returns the current value in the setter/getter.
+    
+  <Arguments>
+    cond_regex
+      A regex-line string that expresses a condition for the implementations
+      return value.
+    error_list
+      A list of non-deterministic errors that could have occurred for this call.
+  
+  <Exceptions>
+    ModelConformanceFailure 
+      If the value in the setter/getter does not match the regex condition and 
+      is not in the error list.
+        
+  <Returns>
+    The current tuple value/error from the setter/getter.
+  """
+  
+  value, error = mycontext['setter_getter_value']
+  mycontext['setter_getter_value'] = (Null, Null)
+  
+  # Error raised by the implementation, and no return value.
+  if error != None and value == None:
+    # Check to see if error is in the ND errors if okay, raise it, if not raise conformance error.
+    if type(error) not in map(type, error_list):
+      error_str = "Impl raised the error: " + convert_error(error)
+      error_str += ", this does not match any of the known acceptable errors."
+      raise ModelConformanceFailure(error_str)
+    else:
+      # The error is acceptable to raise, return it.
+      return (None, error)
+  
+  # Error raised by implementation and a return value, shouldn't happen.
+  elif error != None and value != None:
+    error_str = "Oracle getter should not return both a value and error."
+    raise InternalCheckAPIError(error_str)
+
+  # No error seen, but has a return value.
+  elif error == None and value != None:
+    if cond_regex is not None:
+      assert_value_okay(cond_regex, value)
+      
+    # If we don't have a regex, we can ignore it.
+    return (value, None)
+    
+  # If there was no error and no return value, ignore.
+  elif error == None and value == None:
+    return (value, error)
+  
+  # If the setter was set to anything but the above conditions, such as Null, 
+  # we didn't properly set values. Raise an internal error.
+  else:
+    error_str = "Oracle getter should not return (Null, Null), it was."
+    raise InternalCheckAPIError(error_str)
+
+
+
+
+def oracle_setter(value, error=None):
+  """
+  <Purpose>
+    Stores a value in the setter/getter for later use.
+  
+  <Argument>
+    value
+      The given value that is going to be stored in the setter/getter.
+  """
+  mycontext['setter_getter_value'] = (value, error)
+  
+  
+  
+  
+def validate_ip(ipaddr):
+  """
+  <Purpose>
+    Determines if ipaddr is a valid IP address.
+    0.X and 224-255.X addresses are not allowed.
+
+  <Arguments>
+    ipaddr: String to check for validity. (It will check that this is a string).
+
+  <Returns>
+    True if a valid IP, False otherwise.
+  """
+  # Argument must be of the string type
+  if not type(ipaddr) == str:
+    return False
+
+  # A valid IP should have 4 segments, explode on the period
+  octets = ipaddr.split(".")
+
+  # Check that we have 4 parts
+  if len(octets) != 4:
+    return False
+
+  # Check that each segment is a number between 0 and 255 inclusively.
+  for octet in octets:
+    # Attempt to convert to an integer
+    try:
+      ipnumber = int(octet)
+    except ValueError:
+      # There was an error converting to an integer, not an IP
+      return False
+
+    # IP addresses octets must be between 0 and 255
+    if not (ipnumber >= 0 and ipnumber <= 255):
+      return False
+
+  # should not have a ValueError (I already checked)
+  firstipnumber = int(octets[0])
+
+  # IP addresses with the first octet 0 refer to all local IPs.   These are
+  # not allowed
+  if firstipnumber == 0:
+    return False
+
+  # IP addresses with the first octet >=224 are either Multicast or reserved.
+  # These are not allowed
+  if firstipnumber >= 224:
+    return False
+
+  # At this point, assume the IP is valid
+  return True

@@ -1,0 +1,50 @@
+'''
+<Program Name>
+  check_api_exceptions.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Specifies exceptions used throughout CheckAPI.
+'''
+
+# Exception Definitions
+class CheckAPIError(Exception):
+  """
+  All errors throughout CheckAPI descend from this error.
+  """
+  pass
+
+class InternalModelError(CheckAPIError):
+  """
+  All problems that occur inside the model that would not happen inside the
+  actual Repy implementation will raise an error derived from this one.
+  """
+  pass
+
+class ModelConformanceFailure(CheckAPIError):
+  """
+  If we are unable to find a valid ordering of actions this error is raised. 
+  This is also raised if there is a conformace failure between impl/model 
+  return values.
+  """
+  pass
+
+class InternalCheckAPIError(CheckAPIError):
+  """
+  If there's a problem with CheckAPI this error will be used to alert that there 
+  is problem.
+  """
+
+class ParseError(CheckAPIError):
+  """
+  If for some reason there is a problem with parsing a trace and we cannot 
+  go forward this is raised.
+  """
+  pass

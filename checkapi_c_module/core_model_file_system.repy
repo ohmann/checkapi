@@ -1,0 +1,434 @@
+"""
+<Program Name>
+  core_model_fileio.repy
+
+<Author>
+  Jeff Rasley
+  jeffra45@cs.washington.edu
+
+<Purpose> 
+  File IO model for the Repy V2 API. Used to model the following API calls:
+    openfile
+    file_close
+    file_readat
+    file_writeat
+    listfiles
+    removefile
+
+<Modified Model State>
+  * file_system_state_dict
+      openfile
+      removefile    
+      file_writeat
+      file_close
+  * file_system_obj_map
+      openfile
+      file_close
+  * objects_max_id_list
+      openfile
+"""
+
+
+
+
+# This restricts the number of characters in filenames
+MAX_FILENAME_LENGTH = 120
+
+# This is the set of characters which are allowed in a file name
+ALLOWED_FILENAME_CHAR_SET = set('abcdefghijklmnopqrstuvwxyz0123456789._-')
+
+# This is the set of filenames which are forbidden.
+ILLEGAL_FILENAMES = set(["", ".", ".."])
+
+# Files currently in directory, of the form: {filename : "contents"}
+#file_state_dict = mycontext['fileio_file_state_dict']
+
+# Open files list stores a list of the currently open files.
+#open_files_list = mycontext['fileio_open_files_list']
+
+# Open file object names (key) and their corresponding Filename (value).
+#file_object_dict = mycontext['fileio_file_object_dict']
+
+# Stores file objects that are closed but may still be referenced.
+#closed_file_object_dict = mycontext['fileio_closed_file_object_dict']
+
+# Unique identifier for file objects.
+file_object_name = 'fileobject'
+#file_object_count = mycontext['fileio_file_object_count']
+
+
+
+
+### Private internal model checking functions ###
+def _create_file_object(filename):
+  # Create the unique file object name.
+  unique_file_object = file_object_name + str(mycontext['fileio_file_object_count'][0])
+
+  # Increment the file object count.
+  mycontext['fileio_file_object_count'][0] += 1
+  
+  # Add the file object into object dictionary, indicating it is now open.
+  mycontext['fileio_file_object_dict'][unique_file_object] = filename
+
+  return unique_file_object
+
+
+
+def _assert_is_allowed_filename(filename):
+  """
+  <Purpose>
+    Private method to check if a filename is allowed.
+
+  <Arguments>
+    filename:
+      The filename to check.
+
+  <Exceptions>
+    Raises a RepyArgumentError if the filename is not allowed.
+
+  <Returns>
+    None
+  """
+
+  # Check the type
+  if type(filename) is not str:
+    raise RepyArgumentError("Filename is not a string!")
+
+  # Check the length of the filename
+  if len(filename) > MAX_FILENAME_LENGTH:
+    raise RepyArgumentError("Filename exceeds maximum length! Maximum: " +
+                              str(MAX_FILENAME_LENGTH))
+
+  # Check if the filename is forbidden
+  if filename in ILLEGAL_FILENAMES:
+    raise RepyArgumentError("Illegal filename provided!")
+
+  # Check that each character in the filename is allowed
+  for char in filename:
+    if char not in ALLOWED_FILENAME_CHAR_SET:
+      raise RepyArgumentError("Filename has disallowed character '"+char+"'")
+
+  # Check to make sure the filename does not start with a period.
+    if filename.startswith('.'):
+      raise RepyArgumentError("Filename starts with a period, this is " +
+                                "not allowed!")
+
+
+
+
+### Public API Calls are defined below ###
+def model_openfile(threadname, filename, create):
+  """
+  <Purpose>
+    Allows the user program to open a file safely.
+
+  <Arguments>
+    filename:
+      The file that should be operated on. It must not contain characters other
+      than 'a-zA-Z0-9.-_' and cannot be '.', '..' or the empty string.
+    
+    create:
+      A Boolean flag which specifies if the file should be created if it does 
+      not exist. If the file exists, this flag has no effect.  
+
+  <Exceptions>
+    RepyArgumentError is raised if the filename is invalid or create is not a 
+      boolean type.
+
+    FileInUseError is raised if a handle to the file is already open.
+
+    FileNotFoundError is raised if the filename is not found and create False.
+
+ <Resource Consumption>
+    Consumes 4K of fileread. If the file is created, then 4K of filewrite is 
+    used. If a handle to the object is created, then a file descriptor is used.
+
+  <Returns>
+    A file object identifier that can be used later.
+  """
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  try:
+    # Make sure the filename is ok.
+    _assert_is_allowed_filename(filename)
+
+    # Check the type of create
+    if type(create) is not bool:
+      raise RepyArgumentError("Create argument type is invalid! Must be " +
+                                "a Boolean!")
+
+    # Check to see if the file is already open, if so raise an error.
+    if filename in mycontext['model_state']['open_files_list']:
+      raise FileInUseError('Cannot open file "'+filename+'" because it is ' +
+                             'already open!')
+    
+    # Tattle that we are opening a new file, this may raise an exception.
+    tattle_add_item('filesopened', filename)
+
+    # If the file is not open and it exists, open it.
+    if filename in mycontext['model_state']['file_system_contents']:
+      return model_state_open_existing_file(filename)
+
+    # If the file doesn't exist and create is True, create it and open it.
+    elif create:
+      return model_state_open_new_file(filename)
+
+    # If the file doesn't exist and create is False, raise an error.
+    elif not create:
+      raise FileNotFoundError('Cannot openfile non-existent file "' + 
+                              filename + '" without creating it!')
+
+  except RepyException:
+    # Remove the open file that was tattled.
+    tattle_remove_item('filesopened', filename)
+    raise
+
+
+
+
+def model_removefile(threadname, filename):
+  """
+  <Purpose>
+    Allows the user program to remove a file in their area.
+
+  <Arguments>
+    filename: 
+      the name of the file to remove. It must not contain characters other than 
+      'a-zA-Z0-9.-_' and cannot be '.', '..' or the empty string.
+
+  <Exceptions>
+    RepyArgumentError is raised if the filename is invalid.
+
+    FileNotFoundError is raised if the file does not exist
+
+    FileInUseError is raised if the file is already open.
+
+  <Resource Consumption>
+      Consumes 4K of fileread.   If successful, also consumes 4K of filewrite.
+
+  <Returns>
+    None.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Make sure the filename is ok.
+  _assert_is_allowed_filename(filename)
+
+  # Check to make sure the file isn't open.
+  if filename in mycontext['model_state']['open_files_list']:
+    raise FileInUseError('Cannot remove file "'+filename+'" because it ' +
+                           'is in use!')
+
+  # Make sure the file already exists.
+  if filename in mycontext['model_state']['file_system_contents']:
+    # Remove the file from the dictionary.
+    model_state_remove_file(filename)
+  else:
+    # File does not exist
+    raise FileNotFoundError('Cannot remove non-existent file "'+filename+'".')
+
+
+
+
+def model_listfiles(threadname):
+  """
+  <Purpose>
+    Returns a list of files accessible to the program.
+
+  <Arguments>
+    None.
+
+  <Exceptions>
+    None.
+
+  <Side Effects>
+    None.
+
+  <Resource Consumption>
+    Consumes 4K of fileread.
+
+  <Returns>
+    A list of strings (file names)
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Returns the keys of the file state dictionary, which represent the 
+  # files that exist in the model.
+  return mycontext['model_state']['file_system_contents'].keys()
+
+
+
+
+def model_file_close(threadname, objid):
+  """
+  <Purpose>
+    Allows the user program to close the handle to the file.
+  
+  <Arguments>
+    None.
+  
+  <Exceptions>
+    FileClosedError is raised if the file is already closed.
+  
+  <Resource Consumption>
+    Releases a file handle.
+
+  <Returns>
+    None.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Ensure that the object in question was created at some point.
+  model_state_assert_objid_against_max(objid)
+
+  # Make sure file is open.
+  if objid in mycontext['model_state']['file_obj_map']:
+    # Lookup filename from fileobj.
+    filename = mycontext['model_state']['file_obj_map'][objid]
+
+    # Remove file.
+    model_state_file_close(objid)
+
+    # Tell we're gone.
+    tattle_remove_item('filesopened', filename)
+  
+  else:
+    # File object does not exist, therefore it's closed.
+    raise FileClosedError("File is already closed!")
+
+
+
+
+def model_file_readat(threadname, objid, sizelimit, offset):
+  """
+  <Purpose>
+    Reads from a file handle.
+
+  <Arguments>
+    sizelimit: 
+      The maximum number of bytes to read from the file. Reading EOF will 
+      read less.  By setting this value to None, the entire file is read.
+    offset:
+      Seek to a specific absolute offset before reading.
+
+  <Exceptions>
+    RepyArgumentError is raised if the offset or size is negative.
+    FileClosedError is raised if the file is already closed.
+    SeekPastEndOfFileError is raised if trying to read past the end of the file.
+
+  <Resource Consumption>
+    Consumes 4K of fileread for each 4K aligned-block of the file read.
+    All reads will consume at least 4K.
+
+  <Returns>
+    The data that was read. This may be the empty string if we have reached the
+    end of the file, or if the sizelimit was 0.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Ensure that the fileobj referenced was created at some point.
+  model_state_assert_objid_against_max(objid)
+
+  # Check the arguments
+  if sizelimit < 0 and sizelimit != None:
+    raise RepyArgumentError("Negative sizelimit specified!")
+  if offset < 0:
+    raise RepyArgumentError("Negative read offset speficied!")
+
+  if type(sizelimit) not in [long, float, int] and sizelimit != None:
+    raise RepyArgumentError("Incorrect sizelimit type")
+
+  # Check to make sure the file is open
+  if objid not in mycontext['model_state']['file_obj_map']:
+    raise FileClosedError("File is closed!")
+
+  # Lookup filename from fileobj.
+  filename = mycontext['model_state']['file_obj_map'][objid]
+
+  # Find out the contents of the file.
+  contents = mycontext['model_state']['file_system_contents'][filename]
+
+  # Check the provided offset
+  if offset > len(contents):
+    raise SeekPastEndOfFileError("Seek offset extends past the EOF!")
+
+  if sizelimit == None:
+    data = contents
+  else:
+    data = contents[offset : offset + sizelimit]
+
+  # Check how much we've read, in terms of 4K "blocks"
+  end_offset = len(data) + offset
+  disk_blocks_read = end_offset / 4096 - offset / 4096
+  if end_offset % 4096 > 0:
+    disk_blocks_read += 1
+
+  return data
+
+
+
+
+def model_file_writeat(threadname, objid, data, offset):
+  """
+  <Purpose>
+    Allows the user program to write data to a file.
+
+  <Arguments>
+    data: 
+      The data to write
+
+     offset: 
+      An absolute offset into the file to write
+
+   <Exceptions>
+     RepyArgumentError is raised if the offset is negative or the data is not
+     a string.
+
+     FileClosedError is raised if the file is already closed.
+    
+     SeekPastEndOfFileError is raised if trying to write past the EOF.
+
+   <Resource Consumption>
+     Consumes 4K of filewrite for each 4K aligned-block of the file written.
+     All writes consume at least 4K.
+
+   <Returns>
+    Nothing
+  """
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Ensure that the fileobj referenced was created at some point.
+  model_state_assert_objid_against_max(objid)
+
+  # Check the arguments
+  if offset < 0:
+    raise RepyArgumentError("Negative read offset speficied!")
+  if type(data) is not str:
+    raise RepyArgumentError("Data must be specified as a string!")
+
+  # Check to make sure the file is open
+  if objid not in mycontext['model_state']['file_obj_map']:
+    raise FileClosedError("File is closed!")
+
+  # Lookup filename from fileobj.
+  filename = mycontext['model_state']['file_obj_map'][objid]
+
+  # Find out the contents of the file.
+  contents = mycontext['model_state']['file_system_contents'][filename]
+
+  # Check the provided offset
+  if offset > len(contents):
+    raise SeekPastEndOfFileError("Seek offset extends past the EOF!")
+
+  # Write data to file contents.
+  model_state_file_write(objid, filename, data, offset)

@@ -1,0 +1,254 @@
+
+
+"""
+<Program Name>
+  check_api_verify.repy
+
+<Started>
+  Jan, 15 2012
+
+<Author>
+  yli28@students.poly.edu
+  Jerome Yang Li
+
+<Purpose>
+  This program is for loop-back socket version CheckAPI
+  More information about this program, it's limitations and how to use it can 
+  be found at: https://seattle.cs.washington.edu/wiki/CheckAPI
+
+<Usage>
+  python repy.py <restrictions file> dylink.repy check_api_verify.repy
+
+"""
+
+mycontext['action_tuple_list'] = []
+
+STATE_DATA_START = 00
+
+STATE_LIST_START = 01
+STATE_LIST_FINISH = 02
+
+STATE_LINE_START = 11
+STATE_LINE_FINISH = 12
+
+STATE_ITEM1_START = 21
+STATE_ITEM1_FINISH = 22
+
+STATE_ITEM2_START = 31
+STATE_ITEM2_FINISH = 32
+
+STATE_ITEM3_START = 41
+STATE_ITEM3_FINISH = 42
+
+STATE_ITEM4_START = 51
+STATE_ITEM4_FINISH = 52
+
+
+STATE_ARGTUPLE_START = 61
+STATE_ARGTUPLE_FINISH = 62
+
+STATE_FUNC_CREATETHREAD_START = 210
+STATE_FUNC_CREATETHREAD_FINISH = 211
+
+CORE_MODEL_STATE_DICT = {# FileIO
+                         'openfile'                : 101,
+                         'removefile'              : 102,
+                         'listfiles'               : 103,
+                         'file_close'              : 104,
+                         'file_writeat'            : 105,
+                         'file_readat'             : 106,
+                         # Misc
+                         'randombytes'             : 107,
+                         # Network
+                         'tcpserver_getconnection' : 108,
+                         'tcpserver_close'         : 109,
+                         'listenforconnection'     : 110,
+                         'socket_recv'             : 111,
+                         'socket_send'             : 112,
+                         'socket_close'            : 113,
+                         'openconnection'          : 114,
+                         'udpserver_getmessage'    : 115,
+                         'udpserver_close'         : 116,
+                         'listenformessage'        : 117,
+                         'sendmessage'             : 118,
+                         'getmyip'                 : 119,
+                         'gethostbyname'           : 120,
+                         # Threading
+                         'createthread'            : [STATE_FUNC_CREATETHREAD_START, STATE_FUNC_CREATETHREAD_FINISH],
+                         'lock_acquire'            : 122,
+                         'lock_release'            : 123,
+                         'createlock'              : 124,
+                         }
+
+
+def parser_recv_data_string_to_list(recv_data):
+
+  unfinish_data_length = len(recv_data)
+  item_number = -1
+
+  offset = -1
+ 
+  offset_item_start = 0 
+  offset_item_finish   = 0
+  
+  tuple_line_arg = ()
+  tuple_line = ()
+  
+  bracket_number = 0
+  parser_state = STATE_DATA_START
+ 
+  while offset < len(recv_data) - 1 :
+    offset += 1
+    log(str(tuple_line) + str(tuple_line_arg) + " " + str(item_number) + " " + str(parser_state) +  " \n") 
+    
+    ## parser_state STATE_DATA_START ##  
+    if parser_state == STATE_DATA_START:
+      if recv_data[offset] == '[':
+        parser_state = STATE_LIST_START
+
+    
+    ## parser_state STATE_LIST_START ##
+    elif parser_state == STATE_LIST_START:
+      if recv_data[offset] == '(':
+        parser_state = STATE_LINE_START
+
+    
+    ## parser_state STATE_LINE_START ##  
+    elif parser_state == STATE_LINE_START:
+      if recv_data[offset] == '\'':
+        offset_item_start = offset
+        parser_state = STATE_ITEM1_START
+
+
+    ## parser_state STATE_ITEM1_START ##  
+    elif parser_state == STATE_ITEM1_START:
+      if recv_data[offset] == '\'':
+        offset_item_finish = offset
+        tuple_line = tuple_line + (recv_data[offset_item_start + 1 : offset_item_finish], ) 
+        parser_state = STATE_ITEM1_FINISH
+
+    
+    elif parser_state == STATE_ITEM1_FINISH:
+      if recv_data[offset] == '\'':
+        offset_item_start = offset
+        parser_state = STATE_ITEM2_START
+
+
+    
+    elif parser_state == STATE_ITEM2_START:
+      if recv_data[offset] == '\'':
+        offset_item_finish = offset
+        tuple_line = tuple_line + (recv_data[offset_item_start + 1 : offset_item_finish], ) 
+        parser_state = STATE_ITEM2_FINISH
+
+
+
+    elif parser_state == STATE_ITEM2_FINISH:
+      if recv_data[offset] == '\'':
+        offset_item_start = offset
+        parser_state = STATE_ITEM3_START
+
+
+
+    elif parser_state == STATE_ITEM3_START:
+      if recv_data[offset] == '\'':
+        offset_item_finish = offset
+        tuple_line = tuple_line + (recv_data[offset_item_start + 1 : offset_item_finish], ) 
+        parser_state = STATE_ITEM3_FINISH
+
+
+    
+    elif parser_state == STATE_ITEM3_FINISH:
+      if recv_data[offset] == '\'' or recv_data[offset] == 'N':
+        offset_item_start = offset
+        parser_state = STATE_ITEM4_START
+
+
+
+    elif parser_state == STATE_ITEM4_START:
+      if recv_data[offset] == '\'' or recv_data[offset] == ',':
+        offset_item_finish = offset
+        if recv_data[offset] == '\'':
+          tuple_line = tuple_line + (recv_data[offset_item_start + 1 : offset_item_finish], ) 
+        else:
+          tuple_line = tuple_line + (None, ) 
+        parser_state = STATE_ITEM4_FINISH
+
+
+
+    elif parser_state == STATE_ITEM4_FINISH:
+      if recv_data[offset] == '(':
+        parser_state = STATE_ARGTUPLE_START
+
+
+
+    elif parser_state == STATE_ARGTUPLE_START:
+      if recv_data[offset] == ')':
+        tuple_line = tuple_line + (tuple_line_arg, ) 
+        parser_state = STATE_ARGTUPLE_FINISH
+      
+      else: 
+        if tuple_line[0] in CORE_MODEL_STATE_DICT:
+          offset_item_start = offset
+          if tuple_line[1] == "start":
+            parser_state = CORE_MODEL_STATE_DICT[tuple_line[0]][0]
+          else :
+            parser_state = CORE_MODEL_STATE_DICT[tuple_line[0]][1]
+
+        
+    elif parser_state == STATE_ARGTUPLE_FINISH:
+      if recv_data[offset] == ')':
+        mycontext['action_tuple_list'].append(tuple_line)
+        tuple_line = ()
+        tuple_line_arg = ()
+        parser_state = STATE_LINE_FINISH
+
+
+
+    elif parser_state == STATE_LINE_FINISH:
+      if recv_data[offset] == '(':
+        parser_state = STATE_LINE_START
+        
+    
+        
+    ## parser_state STATE_FUN_CREATETHREAD_START item Start##   
+    elif parser_state == STATE_FUNC_CREATETHREAD_START:
+      if recv_data[offset] == ',':
+        offset_item_end = offset
+        tuple_line_arg = tuple_line_arg + (recv_data[offset_item_start : offset_item_end], )
+        tuple_line = tuple_line + (tuple_line_arg, ) 
+        parser_state = STATE_ARGTUPLE_FINISH
+
+   
+    
+    elif parser_state == STATE_FUNC_CREATETHREAD_FINISH:
+      if recv_data[offset] == ',':
+        offset_item_end = offset
+        tuple_line_arg = tuple_line_arg + (None, )
+        parser_state = STATE_FUNC_CREATETHREAD_FINISH
+
+      elif recv_data[offset] == ')':
+        tuple_line_arg = tuple_line_arg + (None, )
+        tuple_line = tuple_line + (tuple_line_arg, ) 
+        parser_state = STATE_ARGTUPLE_FINISH
+
+      else:
+        parser_state = STATE_FUNC_CREATETHREAD_FINISH
+    
+    continue 
+ 
+  log("-------------------" + "\n\n")
+  for item in mycontext['action_tuple_list']:
+    log(str(item) + "\n")
+    
+  return unfinish_data_length
+
+# Runtime section 
+if callfunc == "initialize":
+  
+  fileobject = openfile("check_api_verify_test_data.repy", True)
+  data = fileobject.readat(4096,0)
+  
+  # log(data + "\n")
+
+  parser_recv_data_string_to_list(data)

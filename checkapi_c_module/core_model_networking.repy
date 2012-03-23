@@ -1,0 +1,1021 @@
+"""
+<Program Name>
+  core_model_networking.repy
+
+<Author>
+  Jeff Rasley
+  jeffra45@cs.washington.edu
+
+<Purpose> 
+  Networking model for the Repy V2 API. Used to model the following API calls:
+    model_gethostbyname
+    model_getmyip
+    model_listenformessage
+    model_sendmessage
+    model_udpserver_close
+    model_udpserver_getmessage
+    model_openconnection
+    model_socket_close
+    model_socket_recv
+    model_socket_send
+    model_listenforconnection
+    model_tcpserver_getconnection
+    model_tcpserver_close
+
+<Modified Model State>
+  * objects_max_id_map, network_open_identities_list & network_open_obj_identity_map
+      tcpserver_getconnection
+      tcpserver_close
+      openconnection
+      listenforconnection
+      socket_close
+      listenformessage
+      udpserver_close
+"""
+
+
+
+
+### Private internal helper functions to this module. ###
+def _is_allowed_localport(restype, localport):
+  # Switch to the proper resource
+  if restype == "TCP":
+    resource = "connport"
+  elif restype == "UDP":
+    resource = "messport"
+  else:
+    raise InternalRepyError("Bad type specified for _is_allowed_localport()")
+
+  # Check what is allowed by nanny
+  return is_item_allowed(resource, float(localport))
+
+
+
+
+def _is_valid_ip_address(ipaddr):
+  """
+  <Purpose>
+    Determines if ipaddr is a valid IP address.
+    0.X and 224-255.X addresses are not allowed.
+
+  <Arguments>
+    ipaddr: String to check for validity. (It will check that this is a string).
+
+  <Returns>
+    True if a valid IP, False otherwise.
+  """
+  # Argument must be of the string type
+  if not type(ipaddr) == str:
+    return False
+
+  if ipaddr == '192.168.0.0':
+    return False
+
+  # A valid IP should have 4 segments, explode on the period
+  octets = ipaddr.split(".")
+
+  # Check that we have 4 parts
+  if len(octets) != 4:
+    return False
+
+  # Check that each segment is a number between 0 and 255 inclusively.
+  for octet in octets:
+    # Attempt to convert to an integer
+    try:
+      ipnumber = int(octet)
+    except ValueError:
+      # There was an error converting to an integer, not an IP
+      return False
+
+    # IP addresses octets must be between 0 and 255
+    if not (ipnumber >= 0 and ipnumber <= 255):
+      return False
+
+  # should not have a ValueError (I already checked)
+  firstipnumber = int(octets[0])
+
+  # IP addresses with the first octet 0 refer to all local IPs.   These are
+  # not allowed
+  if firstipnumber == 0:
+    return False
+
+  # IP addresses with the first octet >=224 are either Multicast or reserved.
+  # These are not allowed
+  if firstipnumber >= 224:
+    return False
+
+  # At this point, assume the IP is valid
+  return True
+
+
+
+
+# Used to decide if an IP is the loopback IP or not for resource accounting.
+def _is_loopback_ipaddr(host):
+  if not host.startswith('127.'):
+    return False
+  if len(host.split('.')) != 4:
+    return False
+
+  for number in host.split('.'):
+    for char in number:
+      if char not in '0123456789':
+        return False
+
+    try:
+      if int(number) > 255 or int(number) < 0:
+        return False
+    except ValueError:
+      return False
+ 
+  return True
+
+
+
+
+def _is_valid_network_port(port):
+  """
+  <Purpose>
+    Determines if a given network port is valid. 
+
+  <Arguments>
+    port: A numeric type (this will be checked) port number.
+
+  <Returns>
+    True if valid, False otherwise.
+  """
+  # Check the type is int or long
+  if not (type(port) == long or type(port) == int):
+    return False
+
+  if port >= 1 and port <= 65535:
+    return True
+  else:
+    return False
+
+
+
+
+### Public API Calls are defined below ###
+def model_gethostbyname(threadname, name):
+  """
+   <Purpose>
+      Provides information about a hostname. Translate a host name to IPv4 
+      address format. The IPv4 address is returned as a string, such as 
+      '100.50.200.5'. If the host name is an IPv4 address itself it is 
+      returned unchanged.
+
+   <Arguments>
+     name:
+         The host name to translate.
+
+   <Exceptions>
+     RepyArgumentError if the name is not a string.
+     NetworkAddressError (descends from NetworkError) if the address cannot
+     be resolved.
+
+   <Side Effects>
+     None.
+
+   <Resource Consumption>
+     This operation consumes network bandwidth of 4K netrecv, 1K netsend.
+     (It's hard to tell how much was actually sent / received at this level.)
+
+   <Returns>
+     The IPv4 address as a string.
+  """
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  if type(name) is not str:
+    raise RepyArgumentError("gethostbyname() takes a string as argument.")
+
+  # Check with the oracle to see if we have network connectivity.
+  network_down = NetworkAddressError("The hostname '"+name+"' could not be resolved.")
+  ipaddr, error = oracle_getter(regex_cond_ip(), [network_down])
+  if error != None:
+    raise error
+
+  return ipaddr
+
+
+
+
+def model_getmyip(threadname):
+  """
+   <Purpose>
+      Provides the external IP of this computer, a random valid ip.
+
+   <Arguments>
+      None
+
+   <Exceptions>
+      InternetConnectivityError is the host is not connected to the internet.
+
+   <Side Effects>
+      None.
+
+   <Resource Consumption>
+      This operations consumes 256 netsend and 128 netrecv.
+
+   <Returns>
+      The localhost's IP address, ie. a random valid ip.
+  """
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  ipaddr, error = oracle_getter(regex_cond_ip(), [InternetConnectivityError])
+  if error != None:
+    raise error
+
+  return ipaddr
+
+
+
+
+def model_listenformessage(threadname, localip, localport):
+  """
+    <Purpose>
+        Sets up a UDPServerSocket to receive incoming UDP messages.
+
+    <Arguments>
+        localip:
+            The local IP to register the handler on.
+        localport:
+            The port to listen on.
+
+    <Exceptions>
+        DuplicateTupleError (descends NetworkError) if the port cannot be
+        listened on because some other process on the system is listening on
+        it.
+
+        AlreadyListeningError if there is already a UDPServerSocket with the same
+        IP and port.
+
+        RepyArgumentError if the port number or ip is wrong type or obviously
+        invalid.
+
+        AddressBindingError (descends NetworkError) if the IP address isn't a
+        local IP.
+
+        ResourceForbiddenError if the port is not allowed.
+
+    <Side Effects>
+        Prevents other UDPServerSockets from using this port / IP
+
+    <Resource Consumption>
+        This operation consumes an insocket and requires that the provided messport is allowed.
+
+    <Returns>
+        A UDPServerSocket identifier.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check the input arguments (type)
+  if type(localip) is not str:
+    raise RepyArgumentError("Provided localip must be a string!")
+
+  if type(localport) is not int:
+    raise RepyArgumentError("Provided localport must be a int!")
+
+
+  # Check the input arguments (sanity)
+  if not _is_valid_ip_address(localip):
+    raise RepyArgumentError("Provided localip is not valid! IP: '"+localip+"'")
+
+  if not _is_valid_network_port(localport):
+    raise RepyArgumentError("Provided localport is not valid! Port: "+str(localport))
+
+  # Check the input arguments (permission)
+  if not _is_allowed_localport("UDP", localport):
+    raise ResourceForbiddenError("Provided localport is not allowed! Port: "+str(localport))
+
+  # Create identity for this connection.
+  identity = ("UDP", localip, localport, None, None)
+
+  # Register this identity as an insocket
+  tattle_add_item('insockets',identity)
+
+  # Check if the tuple is in use
+  if model_state_identity_exists(identity):
+    tattle_remove_item('insockets',identity)
+    raise AlreadyListeningError("The provided localip and localport are already in use!")
+
+  # It is nondeterministic whether or not we should be able to use this
+  # udp server since there might be some other resource using this same 
+  # ip/port configuration.  We must consult the oracle to determine if this 
+  # should or should not be allowed.
+  tuple_error = DuplicateTupleError("Provided Local IP and Local Port is already in use!")
+  binding_error = AddressBindingError("Cannot bind to the specified local ip, invalid!")
+  _, error = oracle_getter(regex_cond_obj(), [tuple_error, binding_error])
+  if error != None:
+    tattle_remove_item('insockets',identity)
+    raise error
+
+  # Create UDP server socket.
+  return model_state_create_net_obj(identity, "udpserver")
+
+
+
+
+def model_sendmessage(threadname, destip, destport, message, localip, localport):
+  """
+   <Purpose>
+      Send a message to a host / port
+
+   <Arguments>
+      destip:
+         The host to send a message to
+      destport:
+         The port to send the message to
+      message:
+         The message to send
+      localhost:
+         The local IP to send the message from 
+      localport:
+         The local port to send the message from
+
+   <Exceptions>
+      AddressBindingError (descends NetworkError) when the local IP isn't
+        a local IP.
+
+      ResourceForbiddenError (descends ResourceException?) when the local
+        port isn't allowed
+
+      RepyArgumentError when the local IP and port aren't valid types
+        or values
+
+      AlreadyListeningError if there is an existing listening UDP socket
+      on the same local IP and port.
+
+      DuplicateTupleError if there is another sendmessage on the same
+      local IP and port to the same remote host.
+
+   <Side Effects>
+      None.
+
+   <Resource Consumption>
+      This operation consumes 64 bytes + number of bytes of the message that
+      were transmitted. This requires that the localport is allowed.
+
+   <Returns>
+      The number of bytes sent on success
+  """
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check the input arguments (type)
+  if type(destip) is not str:
+    raise RepyArgumentError("Provided destip must be a string!")
+  if type(localip) is not str:
+    raise RepyArgumentError("Provided localip must be a string!")
+
+  if type(destport) is not int:
+    raise RepyArgumentError("Provided destport must be an int!")
+  if type(localport) is not int:
+    raise RepyArgumentError("Provided localport must be an int!")
+
+  if type(message) is not str:
+    raise RepyArgumentError("Provided message must be a string!")
+
+
+  # Check the input arguments (sanity)
+  if not _is_valid_ip_address(destip):
+    raise RepyArgumentError("Provided destip is not valid! IP: '"+destip+"'")
+  if not _is_valid_ip_address(localip):
+    raise RepyArgumentError("Provided localip is not valid! IP: '"+localip+"'")
+
+  if not _is_valid_network_port(destport):
+    raise RepyArgumentError("Provided destport is not valid! Port: "+str(destport))
+  if not _is_valid_network_port(localport):
+    raise RepyArgumentError("Provided localport is not valid! Port: "+str(localport))
+
+  # Check that if localip == destip, then localport != destport
+  if localip == destip and localport == destport:
+    raise RepyArgumentError("Local socket name cannot match destination socket name! Local/Dest IP and Port match.")
+
+  if not _is_allowed_localport("UDP", localport):
+    raise ResourceForbiddenError("Provided localport is not allowed! Port: "+str(localport))
+
+  # Check if the tuple is in use
+  identity = ("UDP", localip, localport, destip, destport)
+  listen_identity = ("UDP", localip, localport, None, None)
+  if model_state_identity_exists(identity):
+    raise DuplicateTupleError("The provided localip and localport are already in use!")
+  elif model_state_identity_exists(listen_identity):
+    raise AlreadyListeningError("The provided localip and localport are being listened on!")
+
+  # Tattle this identity as an outsocket. May raise ResourceExhaustedError.
+  tattle_add_item("outsockets", identity)
+
+  # Consult oracle to see if we should raise a nondeterministic error.
+  tuple_error = DuplicateTupleError("Provided Local IP and Local Port is already in use!")
+  bind_error = AddressBindingError("Cannot bind to the specified local ip, invalid!")
+  
+  # Register regex condition for verification of this function.
+  cond_regex = regex_cond_range(0, len(message))
+  
+  bytessent, error = oracle_getter(cond_regex, [tuple_error, bind_error])
+  if error != None:
+    tattle_remove_item("outsockets", identity)
+    raise error
+
+  # So that a mocked version of oracle is supported.
+  if bytessent == None:
+    bytessent = len(message)
+
+  return bytessent
+
+
+
+
+def model_udpserver_close(threadname, objid):
+  """
+  <Purpose>
+      Closes a socket that is listening for messages.
+
+  <Arguments>
+      None.
+
+  <Exceptions>
+      None.
+
+  <Side Effects>
+      The IP address and port can be reused by other UDPServerSockets after
+      this.
+
+  <Returns>
+      True if this is the first close call to this socket, False otherwise.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+  
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(objid)
+
+  # Is the object currently open?
+  open_status = objid in mycontext['model_state']['network_open_obj_identity_map']
+
+  # If already closed, return!
+  if not open_status:
+    return open_status
+
+  # Cleanup/close insocket.
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+  tattle_remove_item('insockets', identity)
+
+  # Close/remove object.
+  model_state_close_net_obj(objid)
+
+  return open_status
+
+
+
+
+def model_udpserver_getmessage(threadname, udp_obj):
+  """
+  <Purpose>
+      Obtains an incoming message that was sent to an IP and port.
+
+  <Arguments>
+      None.
+
+  <Exceptions>
+      SocketClosedLocal if UDPServerSocket.close() was called.
+
+      Raises SocketWouldBlockError if the operation would block.
+
+  <Side Effects>
+      None
+
+  <Resource Consumption>
+      This operation consumes 64 + size of message bytes of netrecv
+
+  <Returns>
+      A tuple consisting of the remote IP, remote port, and message.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(udp_obj)
+
+  # Check to see if the udp server is open.
+  if udp_obj not in mycontext['model_state']['network_open_obj_identity_map']:
+    raise SocketClosedLocal("The socket has been closed!")
+
+  # Grab this object's identity.
+  identity = mycontext['model_state']['network_open_obj_identity_map'][udp_obj]
+
+  # Check if we are on loopback, check the local ip
+  on_loopback = _is_loopback_ipaddr(identity[1])
+
+  # We must consult the oracle to see if this call would block.
+  block_error = SocketWouldBlockError("No messages currently available!")
+  
+  # (IP, Port, message length between 0-65535)
+  regex_ip = regex_cond_ip(False)
+  regex_port = regex_cond_range(1,65535, False)
+  regex_msg = "^.{0,65535}$"
+  regex_cond = regex_cond_triple(regex_ip, regex_port, regex_msg)
+  value, error = oracle_getter(regex_cond, [block_error])
+  if error != None:
+    raise error
+
+  # Unpack value into each part of the triple.
+  if value is not None:
+    remoteip, remoteport, message = value
+  else:
+    remoteip, remoteport, message = ("", "", "")
+
+  return (remoteip, remoteport, message)
+
+
+
+
+def model_openconnection(threadname, destip, destport,localip, localport, timeout):
+  """
+    <Purpose>
+      Opens a connection, returning a socket-like object
+
+
+    <Arguments>
+      destip: The destination ip to open communications with
+
+      destport: The destination port to use for communication
+
+      localip: The local ip to use for the communication
+
+      localport: The local port to use for communication
+
+      timeout: The maximum amount of time to wait to connect.   This may
+               be a floating point number or an integer
+
+
+    <Exceptions>
+      RepyArgumentError if the arguments are invalid.   This includes both
+      the types and values of arguments. If the localip matches the destip,
+      and the localport matches the destport this will also be raised.
+
+      AddressBindingError (descends NetworkError) if the localip isn't 
+      associated with the local system or is not allowed.
+
+      ResourceForbiddenError (descends ResourceError) if the localport isn't 
+      allowed.
+
+      DuplicateTupleError (descends NetworkError) if the (localip, localport, 
+      destip, destport) tuple is already used.   This will also occur if the 
+      operating system prevents the local IP / port from being used.
+
+      AlreadyListeningError if the (localip, localport) tuple is already used
+      for a listening TCP socket.
+
+      CleanupInProgressError if the (localip, localport, destip, destport) tuple is
+      still being cleaned up by the OS.
+
+      ConnectionRefusedError (descends NetworkError) if the connection cannot 
+      be established because the destination port isn't being listened on.
+
+      TimeoutError (common to all API functions that timeout) if the 
+      connection times out
+
+      InternetConnectivityError if the network is down, or if the host
+      cannot be reached from the local IP that has been bound to.
+
+    <Resource Consumption>
+      This operation consumes 64*2 bytes of netsend (SYN, ACK) and 64 bytes 
+      of netrecv (SYN/ACK). This requires that the localport is allowed. Upon 
+      success, this call consumes an outsocket.
+
+    <Returns>
+      A socket-like object that can be used for communication. Use send, 
+      recv, and close just like you would an actual socket object in python.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check the input arguments (type)
+  if type(destip) is not str:
+    raise RepyArgumentError("Provided destip must be a string!")
+  if type(localip) is not str:
+    raise RepyArgumentError("Provided localip must be a string!")
+
+  if type(destport) is not int:
+    raise RepyArgumentError("Provided destport must be an int!")
+  if type(localport) is not int:
+    raise RepyArgumentError("Provided localport must be an int!")
+
+  if type(timeout) not in [float, int]:
+    raise RepyArgumentError("Provided timeout must be an int or float!")
+
+
+  # Check the input arguments (sanity)
+  if not _is_valid_ip_address(destip):
+    raise RepyArgumentError("Provided destip is not valid! IP: '"+destip+"'")
+  if not _is_valid_ip_address(localip):
+    raise RepyArgumentError("Provided localip is not valid! IP: '"+localip+"'")
+
+  if not _is_valid_network_port(destport):
+    raise RepyArgumentError("Provided destport is not valid! Port: "+str(destport))
+  if not _is_valid_network_port(localport):
+    raise RepyArgumentError("Provided localport is not valid! Port: "+str(localport))
+
+  if timeout <= 0:
+    raise RepyArgumentError("Provided timeout is not valid, must be positive! Timeout: "+str(timeout))
+
+  # Check that if localip == destip, then localport != destport
+  if localip == destip and localport == destport:
+    raise RepyArgumentError("Local socket name cannot match destination socket name! Local/Dest IP and Port match.")
+
+  if not _is_allowed_localport("TCP", localport):
+    raise ResourceForbiddenError("Provided localport is not allowed! Port: "+str(localport))
+
+  # Check if the tuple is in use
+  identity = ("TCP", localip, localport, destip, destport)
+  listen_identity = ("TCP", localip, localport, None, None)
+
+  if model_state_identity_exists(identity):
+    raise DuplicateTupleError("There is a duplicate connection which conflicts with the request!")
+
+  # Check for a listening socket on the same ip/port
+  if model_state_identity_exists(listen_identity):
+    raise AlreadyListeningError("There is a listening socket on the provided localip and localport!")
+
+  # Register as an outsocket.
+  tattle_add_item('outsockets',identity)
+
+  # Check oracle for nondeterministic errors.
+  error_list = [AddressBindingError("Cannot bind to the specified local ip, invalid!")]
+  error_list.append(CleanupInProgressError("The socket is being cleaned up by the operating system!"))
+  error_list.append(ConnectionRefusedError("The connection was refused!"))
+  error_list.append(TimeoutError("Timed-out connecting to the remote host!"))
+  error_list.append(InternetConnectivityError("The network is down or cannot be reached from the local IP!"))
+  _, error = oracle_getter(regex_cond_obj(), error_list)
+  if error != None:
+    tattle_remove_item('outsockets',identity)
+    raise error
+
+  # Create and return a socket object.
+  return model_state_create_net_obj(identity, "socket")
+
+
+
+
+def model_socket_close(threadname, objid):
+  """
+  <Purpose>
+    Closes a socket.
+
+  <Arguments>
+    None
+
+  <Exceptions>
+    None
+
+  <Resource Consumption>
+    If the connection is closed, no resources are consumed. This operation
+    uses 64 bytes of netrecv, and 128 bytes of netsend.
+    This call also stops consuming an outsocket.
+
+  <Returns>
+    True if this is the first close call to this socket, False otherwise.
+  """
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+  
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(objid)
+
+  # Is the object currently open?
+  open_status = objid in mycontext['model_state']['network_open_obj_identity_map']
+
+  # Already closed, return!
+  if not open_status:
+    return open_status
+
+  # Grab identity and check if it's loopback.
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+
+  # Cleanup/remove outsocket.
+  tattle_remove_item('outsockets',identity)
+
+  # Close/remove object.
+  model_state_close_net_obj(objid)
+
+  return open_status
+
+
+
+
+def model_socket_recv(threadname, objid, bytes):
+  """
+  <Purpose>
+    Receives data from a socket.   It may receive fewer bytes than 
+    requested.   
+
+  <Arguments>
+    bytes: 
+       The maximum number of bytes to read.   
+
+  <Exceptions>
+    SocketClosedLocal is raised if the socket was closed locally.
+    SocketClosedRemote is raised if the socket was closed remotely.
+    SocketWouldBlockError is raised if the socket operation would block.
+
+  <Side Effects>
+    None.
+
+  <Resource Consumptions>
+    This operations consumes 64 + amount of data  in bytes
+    worth of netrecv, and 64 bytes of netsend.
+  
+  <Returns>
+    The data received from the socket (as a string).   If '' is returned,
+    the other side has closed the socket and no more data will arrive.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(objid)
+
+  # Is the socket closed?
+  if objid not in mycontext['model_state']['network_open_obj_identity_map']:
+    raise SocketClosedLocal("The socket is closed!")
+
+  # Retrieve socket identity, is it on loopback?
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+  on_loopback = _is_loopback_ipaddr(identity[3])
+
+  # Check with the oracle to see if the connection was closed remotely.
+  remote_close = SocketClosedRemote("The socket has been closed remotely!")
+  block_error = SocketWouldBlockError("There is no data! recv() would block.")
+  regex_cond = ".{0, " + str(bytes) + "}"
+  data_received, error = oracle_getter(regex_cond, [remote_close, block_error])
+  if error != None:
+    raise error
+
+  # Support mock tests.
+  if data_received is None:
+    data_received = ""
+
+  data_length = len(data_received)
+
+  return data_received
+
+
+
+
+def model_socket_send(threadname, objid, message):
+  """
+  <Purpose>
+    Sends data on a socket.   It may send fewer bytes than requested.   
+
+  <Arguments>
+    message:
+      The string to send.
+
+  <Exceptions>
+    SocketClosedLocal is raised if the socket is closed locally.
+    SocketClosedRemote is raised if the socket is closed remotely.
+    SocketWouldBlockError is raised if the operation would block.
+
+  <Side Effects>
+    None.
+
+  <Resource Consumption>
+    This operations consumes 64 + size of sent data of netsend and
+    64 bytes of netrecv.
+
+  <Returns>
+    The number of bytes sent. Be sure not to assume this is always the 
+    complete amount!
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(objid)
+
+  # Is the socket closed?
+  if objid not in mycontext['model_state']['network_open_obj_identity_map']:
+    raise SocketClosedLocal("The socket is closed!")
+
+  # Retrieve socket identity, check if loopback.
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+  on_loopback = _is_loopback_ipaddr(identity[3])
+
+  # Check oracle for nondeterministic errors.
+  remote_close = SocketClosedRemote("The socket has been closed remotely!")
+  block_error = SocketWouldBlockError("send() would block.")
+  regex_cond = regex_cond_range(0, len(message))
+  num_bytes_sent, error = oracle_getter(regex_cond, [remote_close, block_error])
+  if error != None:
+    raise error
+
+  # Support mock tests.
+  if num_bytes_sent is None:
+    num_bytes_sent = 0
+
+  return num_bytes_sent
+
+
+
+
+def model_listenforconnection(threadname, localip, localport):
+  """
+  <Purpose>
+    Sets up a TCPServerSocket to recieve incoming TCP connections. 
+
+  <Arguments>
+    localip:
+        The local IP to listen on
+    localport:
+        The local port to listen on
+
+  <Exceptions>
+    Raises AlreadyListeningError if another TCPServerSocket or process has bound
+    to the provided localip and localport.
+
+    Raises DuplicateTupleError if another process has bound to the
+    provided localip and localport.
+
+    Raises RepyArgumentError if the localip or localport are invalid
+    Raises ResourceForbiddenError if the ip or port is not allowed.
+    Raises AddressBindingError if the IP address isn't a local ip.
+
+  <Side Effects>
+    The IP / Port combination cannot be used until the TCPServerSocket
+    is closed.
+
+  <Resource Consumption>
+    Uses an insocket for the TCPServerSocket.
+
+  <Returns>
+    A TCPServerSocket object.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check the input arguments (type)
+  if type(localip) is not str:
+    raise RepyArgumentError("Provided localip must be a string!")
+
+  if type(localport) is not int:
+    raise RepyArgumentError("Provided localport must be a int!")
+
+
+  # Check the input arguments (sanity)
+  if not _is_valid_ip_address(localip):
+    raise RepyArgumentError("Provided localip is not valid! IP: '"+localip+"'")
+
+  if not _is_valid_network_port(localport):
+    raise RepyArgumentError("Provided localport is not valid! Port: "+str(localport))
+
+  ## Not implemented ##
+  # Check the input arguments (permission)
+  #if not _ip_is_allowed(localip):
+  #  raise ResourceForbiddenError("Provided localip is not allowed! IP: '"+localip+"'")
+
+  if not _is_allowed_localport("TCP", localport):
+    raise ResourceForbiddenError("Provided localport is not allowed! Port: "+str(localport))
+
+  # Check if tuple is already in use.
+  identity = ("TCP", localip, localport, None, None)
+  if model_state_identity_exists(identity):
+    raise AlreadyListeningError("The provided localip and localport are already in use!")
+
+  # Register this identity as an insocket
+  tattle_add_item('insockets',identity)
+
+  # Check oracle for nondeterministic errors.
+  bind_error = AddressBindingError("Cannot bind to the specified local ip, invalid!")
+  tuple_error = DuplicateTupleError("Provided Local IP and Local Port is already in use!")
+  resource_error = ResourceForbiddenError("Provided localip is not allowed!")
+  _, error = oracle_getter(regex_cond_obj(), [bind_error, tuple_error, resource_error])
+  if error != None:
+    tattle_remove_item('insockets',identity)
+    raise error
+
+  return model_state_create_net_obj(identity, "tcpserver")
+
+
+
+
+def model_tcpserver_getconnection(threadname, objid):
+  """
+  <Purpose>
+    Accepts an incoming connection to a listening TCP socket.
+
+  <Arguments>
+    None
+
+  <Exceptions>
+    Raises SocketClosedLocal if close() has been called.
+    Raises SocketWouldBlockError if the operation would block.
+    Raises ResourcesExhaustedError if there are no free outsockets.
+
+  <Resource Consumption>
+    If successful, consumes 128 bytes of netrecv (64 bytes for
+    a SYN and ACK packet) and 64 bytes of netsend (1 ACK packet).
+    Uses an outsocket.
+
+  <Returns>
+    A tuple containing: (remote ip, remote port, socket object)
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(objid)
+
+  # Is the socket closed?
+  if objid not in mycontext['model_state']['network_open_obj_identity_map']:
+    raise SocketClosedLocal("The socket is closed!")
+
+  # Retrieve socket identity, check if loopback.
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+  on_loopback = _is_loopback_ipaddr(identity[1])
+
+  block_error = SocketWouldBlockError("No connections currently available!")
+  resource_error = ResourceExhaustedError()
+  regex_ip = regex_cond_ip()
+  regex_port = regex_cond_range(1, 65535)
+  regex_cond = regex_cond_triple(regex_ip, regex_port, regex_cond_obj())
+  value, error = oracle_getter(regex_cond, [block_error, resource_error])
+  if error != None:
+    raise error
+
+  # Support mock tests.
+  if value is None:
+    value = ("", "", None)
+
+  # Ignore 3 value, as it's a socket object.
+  remote_ip, remote_port, _ = value
+
+  # Create new identity and name for the new socket object.
+  new_identity = ("TCP", identity[1], identity[2], remote_ip, remote_port)
+  new_socket = model_state_create_net_obj(new_identity, "socket")
+
+  # Register new socket's identity as an outsocket.
+  tattle_add_item('outsockets', new_identity)
+
+  return (remote_ip, remote_port, new_socket)
+
+
+
+
+def model_tcpserver_close(threadname, objid):
+  """
+  <Purpose>
+    Closes the listening TCP socket.
+
+  <Arguments>
+    None
+
+  <Exceptions>
+    None
+
+  <Side Effects>
+    The IP and port can be re-used after closing.
+
+  <Resource Consumption>
+    Releases the insocket used.
+
+  <Returns>
+    True, if this is the first call to close.
+    False otherwise.
+  """
+
+  # Check to ensure thread is ok to run.
+  assert_thread_ok(threadname)
+  
+  # Check to ensure that the object that is named was actually created.
+  model_state_assert_objid_against_max(objid)
+
+  # Is the object currently open?
+  open_status = objid in mycontext['model_state']['network_open_obj_identity_map']
+
+  # Already closed, return!
+  if not open_status:
+    return open_status
+
+  # Grab identity for socket.
+  identity = mycontext['model_state']['network_open_obj_identity_map'][objid]
+
+  # Report that we are no longer using an insocket.
+  tattle_remove_item('insockets', identity)
+
+  # Close/remove object.
+  model_state_close_net_obj(objid)
+
+  return open_status

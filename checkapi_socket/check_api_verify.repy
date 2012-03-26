@@ -115,10 +115,18 @@ def log_finish_action(finish_tuple):
     write_out_action(finish_tuple, start_action_number)
   return finish_action_number
 
+def derive_tuple_to_action_list(action_tuple_list):
 
-
+  action_list = repy_cPickle_loads(action_tuple_list)   
+  # log(str(len(action_list)) + "\n")
+  for action_tuple_line in action_list:
+    derive_tuple_to_action_dict(action_tuple_line)                     
+                                               
+  
 def derive_tuple_to_action_dict(action_tuple_line):
-  fnc_name, action, threadname, obj_id, args_or_rtn_tuple = repy_cPickle_loads(action_tuple_line)
+
+  # write_str_to_log(str(action_tuple_line) + "\n")
+  fnc_name, action, threadname, obj_id, args_or_rtn_tuple = action_tuple_line
 
   # Get dead object id
   if fnc_name.find("__del__") != -1:
@@ -179,9 +187,9 @@ def derive_recv_data_to_tuple_and_verify():
             break
           else:
             # Get one data line
-            action_tuple_line = received_data[size + offset_data + 1:size + offset_data + 1 + length]
+            action_tuple_list = received_data[size + offset_data + 1:size + offset_data + 1 + length]
             # Derive tuple to action dictionary
-            derive_tuple_to_action_dict(action_tuple_line)
+            derive_tuple_to_action_list(action_tuple_list)
             size += offset_data + 1 +length
         else:
           mycontext['unfinish_block'] = received_data[size:]
@@ -193,12 +201,11 @@ def derive_recv_data_to_tuple_and_verify():
       if mycontext['verification_finished_flag'] == True:
         break
       
-mycontext['start_time_of_socket_close'] = 0
 
 def check_api_receive_data():
   # Listen connection for loop back address
   mycontext['verification_connection_handle'] = listenforconnection(LOOP_BACK_IP, SERVER_PORT)
-  # log('CheckAPI Verification Process is Listening...\n')
+  log('CheckAPI Verification Process is Listening...\n')
 
   while True:
     try:
@@ -215,11 +222,16 @@ def check_api_receive_data():
         # Receive data from interposition side
         received_data = block_call(sock.recv, RECV_BLOCK_SIZE)
 
+        # To test how long the verification process from it recive data
+        if mycontext['running_time_for_verification_start_flag'] == False:
+          mycontext['running_time_for_verification'] = getruntime()
+          mycontext['running_time_for_verification_start_flag'] = True
+        
         # Append dat to received data list
         mycontext['received_data_buffer_list'].append(received_data)
 
       except SocketClosedRemote:
-        mycontext['start_time_of_socket_close'] = getruntime()
+        mycontext['running_time_after_interposition'] = getruntime()
         log("CheckAPI Interposition's Socket is Closed.\n")
         mycontext['verification_connection_handle'].close()
         mycontext['verification_finished_flag'] = True
@@ -245,6 +257,9 @@ def block_call(func, *p, **q):
       break
 
 
+mycontext['running_time_for_verification'] = 0
+mycontext['running_time_for_verification_start_flag'] = False
+mycontext['running_time_after_interposition'] = 0
 
 # Runtime section 
 if callfunc == "initialize":
@@ -257,5 +272,8 @@ if callfunc == "initialize":
   # Write the buffer string to log file
   if WRITE_OUT_TRACE:
     write_out_last_string_buffer_action()
+
+  log("Running Time for Verification: " + str(getruntime() - mycontext['running_time_for_verification']) + "\n")
+  log("Running Time after Interposition: " + str(getruntime() - mycontext['running_time_after_interposition']) + "\n")
 
   log("Verification Finished\n")

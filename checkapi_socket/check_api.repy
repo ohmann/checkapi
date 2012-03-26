@@ -26,7 +26,7 @@ DEBUG = False
 BLOCKING_SLEEP_TIME = 0.05
 
 # For the Sleep Time of Collect data
-COLLECT_DATA_SLEEP_TIME = 0.004
+COLLECT_DATA_SLEEP_TIME = 0.04
 
 # For the Sleep Time of Derive data
 DERIVE_DATA_SLEEP_TIME = 0.004
@@ -136,12 +136,10 @@ def open_checkapi_connection():
   mycontext['interposition_connection_handle'] = openconnection(LOOP_BACK_IP, SERVER_PORT, LOOP_BACK_IP, CLIENT_PORT, 10)    
 
 
-
 def close_checkapi_connection():
   # log('CheckAPI Interposition Socket Closed...\n')
   # Close socket.
   mycontext['interposition_connection_handle'].close()    
-
 
 
 # Runtime section 
@@ -150,7 +148,6 @@ if callfunc == "initialize":
   if mycontext['send_socket_data']:
     # Open CheckAPI Socket Connection
     open_checkapi_connection()
-    # Start the thread
 
   runtime_verification_wrap_calls()
   starting_threads = active_threads()

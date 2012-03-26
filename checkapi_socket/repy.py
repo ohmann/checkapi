@@ -129,6 +129,9 @@ if "fork" in dir(os):
   __orig_fork = os.fork
   os.fork = nonSafe_fork
 
+
+# modified for CheckAPI Interposition
+
 import cPickle
 def repy_cPickle_dumps(dumps_object):
   return cPickle.dumps(dumps_object)
@@ -178,6 +181,8 @@ def main(resourcefn, program, args):
 
   # BAD:REMOVE all API imports
   usercontext["getresources"] = nonportable.get_resources
+  
+  # modified for CheckAPI Interposition
   usercontext["repy_cPickle_dumps"] = repy_cPickle_dumps
   usercontext["repy_cPickle_loads"] = repy_cPickle_loads    
   #usercontext["openfile"] = emulfile.emulated_open

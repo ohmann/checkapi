@@ -119,7 +119,7 @@ def log_finish_action(finish_tuple):
 
 def derive_tuple_to_action_list(action_tuple_list):
   action_list = repy_cPickle_loads(action_tuple_list)   
-  # log(str(len(action_list)) + "\n")
+
   for action_tuple_line in action_list:
     derive_tuple_to_action_dict(action_tuple_line)                   
 
@@ -213,7 +213,7 @@ if callfunc == "initialize":
   mycontext['running_time_for_verification'] = getruntime()
   
   # Set serialized trace log file name
-  filename = "checkapi_trace_webserver_meg.log"
+  filename = "checkapi_trace_allpairsping.log"
 
   read_log_and_deserilalize_to_verification(filename)
 

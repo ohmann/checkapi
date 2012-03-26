@@ -115,17 +115,42 @@ def log_finish_action(finish_tuple):
     write_out_action(finish_tuple, start_action_number)
   return finish_action_number
 
-def derive_tuple_to_action_list(action_tuple_list):
 
+
+def derive_tuple_to_action_list(action_tuple_list):
   action_list = repy_cPickle_loads(action_tuple_list)   
   # log(str(len(action_list)) + "\n")
   for action_tuple_line in action_list:
-    derive_tuple_to_action_dict(action_tuple_line)                     
+    mycontext['test_action_buffer_list'].append(action_tuple_line)                     
+
+mycontext['time_pop_data_from_action_buffer_list'] = 0
                                                
+def pop_data_from_trace_list_and_do_verification():
+
+  # log(str(len(mycontext['test_action_buffer_list'])) + "\n")
+  
+  end_location = 1024*8
+
+  # pop_start_time = getruntime()  
+  
+  # It is very slow when pop data from very big list object
+  # Therefore, separate it into a small list then pop it.
+  
+  for i in xrange((len(mycontext['test_action_buffer_list'])/end_location) + 1):
+    temp_list = mycontext['test_action_buffer_list'][0:end_location]
+    for item in xrange(len(temp_list)):
+      temp_list.pop(0)
+      #derive_tuple_to_action_dict(temp_list.pop(0))
+    mycontext['test_action_buffer_list'] = mycontext['test_action_buffer_list'][end_location:]
+  
+  # log("Pop list time:" + str(getruntime() - pop_start_time) + "\n")
+
+
+
+  
   
 def derive_tuple_to_action_dict(action_tuple_line):
 
-  # write_str_to_log(str(action_tuple_line) + "\n")
   fnc_name, action, threadname, obj_id, args_or_rtn_tuple = action_tuple_line
 
   # Get dead object id
@@ -171,105 +196,59 @@ def derive_tuple_to_action_dict(action_tuple_line):
 
 
 
-def derive_recv_data_to_tuple_and_verify():
+def derive_recv_data_to_tuple_and_verify_from_file(received_data):
 
+  received_data = mycontext['unfinish_block'] + received_data
+  size = 0
   while True:
-    if mycontext['received_data_buffer_list']:
-      received_data = mycontext['received_data_buffer_list'].pop(0)
-      received_data = mycontext['unfinish_block'] + received_data
-      size = 0
-      while True:
-        offset_data = received_data[size:].find('#')
-        if offset_data != -1:
-          length = int(received_data[size:size + offset_data])
-          if length > len(received_data[size:]) - offset_data -1 :
-            mycontext['unfinish_block'] = received_data[size:]
-            break
-          else:
-            # Get one data line
-            action_tuple_list = received_data[size + offset_data + 1:size + offset_data + 1 + length]
-            # Derive tuple to action dictionary
-            derive_tuple_to_action_list(action_tuple_list)
-            size += offset_data + 1 +length
-        else:
-          mycontext['unfinish_block'] = received_data[size:]
-          break
-
+    offset_data = received_data[size:].find('#')
+    if offset_data != -1:
+      length = int(received_data[size:size + offset_data])
+      if length > len(received_data[size:]) - offset_data -1 :
+        mycontext['unfinish_block'] = received_data[size:]
+        break
+      else:
+        # Get one data line
+        action_tuple_line = received_data[size + offset_data + 1:size + offset_data + 1 + length]
+        # Derive tuple to action dictionary
+        derive_tuple_to_action_list(action_tuple_line)
+        size += offset_data + 1 +length
     else:
-      # This will make the program use less CPU in the MainThread
-      sleep(DERIVE_DATA_SLEEP_TIME)
-      if mycontext['verification_finished_flag'] == True:
-        break
-      
-
-def check_api_receive_data():
-  # Listen connection for loop back address
-  mycontext['verification_connection_handle'] = listenforconnection(LOOP_BACK_IP, SERVER_PORT)
-  log('CheckAPI Verification Process is Listening...\n')
-
-  while True:
-    try:
-      # Get the connection
-      ip, port, sock = block_call(mycontext['verification_connection_handle'].getconnection)
+      mycontext['unfinish_block'] = received_data[size:]
       break
-    except SocketWouldBlockError:
-      sleep(BLOCKING_SLEEP_TIME)
-    
-  def handle_client():
-    # Receive data.
-    while True:
-      try:
-        # Receive data from interposition side
-        received_data = block_call(sock.recv, RECV_BLOCK_SIZE)
 
-        # To test how long the verification process from it recive data
-        if mycontext['running_time_for_verification_start_flag'] == False:
-          mycontext['running_time_for_verification'] = getruntime()
-          mycontext['running_time_for_verification_start_flag'] = True
-        
-        # Comment this line, then run benchmark
-        # All the serialized data will be write in "checkapi_trace_log.output" file
-        # write_str_to_log(received_data)
- 
-        # Append dat to received data list
-        # Comment this line, when you want to write serialized data to log file
-        mycontext['received_data_buffer_list'].append(received_data)
+     
 
-      except SocketClosedRemote:
-        mycontext['running_time_after_interposition'] = getruntime()
-        log("CheckAPI Interposition's Socket is Closed.\n")
-        mycontext['verification_connection_handle'].close()
-        mycontext['verification_finished_flag'] = True
-        break
-    
-  # Start Receive data thread
-  createthread(handle_client)
-
-
-
-def block_call(func, *p, **q):
-  """
-  Blocks the execution of the function until it exits without raising the
-  SocketWouldBlockError. Returns the result of the function.
-  """
+def read_log_and_deserilalize_to_trace_list(filename):
+  fileobj = openfile(filename, True)
+  offset = 0
   while True:
-    try:
-      return func(*p, **q)
-    except SocketWouldBlockError:
-      sleep(BLOCKING_SLEEP_TIME)
-      continue
-    except SocketClosedLocal:
+    data = fileobj.readat(1024*8, offset)
+    if data:
+      derive_recv_data_to_tuple_and_verify_from_file(data)
+      offset += len(data)
+    else:
       break
 
 
 mycontext['running_time_for_verification'] = 0
 mycontext['running_time_for_verification_start_flag'] = False
-mycontext['running_time_after_interposition'] = 0
+mycontext['test_action_buffer_list'] = []
 
 # Runtime section 
 if callfunc == "initialize":
-  createthread(check_api_receive_data)
-  derive_recv_data_to_tuple_and_verify()
+
+  read_file_time = getruntime()
+
+  # Set serialized trace log file name
+  filename = "checkapi_trace_allpairsping.log"
+  
+  read_log_and_deserilalize_to_trace_list(filename)
+  log("Read_and_deserialized_data_time: " + str(getruntime()-read_file_time) + "\n")
+
+
+  mycontext['running_time_for_verification'] = getruntime()
+  pop_data_from_trace_list_and_do_verification()
 
   # Do the last verification
   check_and_possibly_verify(True)
@@ -279,6 +258,4 @@ if callfunc == "initialize":
     write_out_last_string_buffer_action()
 
   log("Running Time for Verification: " + str(getruntime() - mycontext['running_time_for_verification']) + "\n")
-  log("Running Time after Interposition: " + str(getruntime() - mycontext['running_time_after_interposition']) + "\n")
-
   log("Verification Finished\n")

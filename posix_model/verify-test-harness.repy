@@ -95,134 +95,141 @@ def verify_trace(trace, lNum):
     ERRORS = []
     lineNum = READ_AMNT * lNum
     for action in trace:
-        lineNum += 1
-        print str(lineNum) + " ===> " + str(action)
-        #print str(ignore_fd)
-        #print str(posix_fd_map)
-        #log(str(lineNum) + "\n")
-        name, args, ret = action
-        impl_ret, impl_errno = ret
+        #try:
+		lineNum += 1
+		print str(lineNum) + " ===> " + str(action)
+		#print str(ignore_fd)
+		#print str(posix_fd_map)
+		#log(str(lineNum) + "\n")
+		name, args, ret = action
+		impl_ret, impl_errno = ret
 
-        # Get the proper function from the function string.
-        if name in net_syscall_map:
-            fnc = net_syscall_map[name]
-            #log(name, '\n')
-        elif name in fs_syscall_map:
-            fnc = fs_syscall_map[name]
-            #log(name, '\n')
-
-        # Ignore syscalls to nonexistant file descriptors
-        if name in ['fstatfs_syscall', 'fstat_syscall', 'lseek_syscall', 'read_syscall', 'write_syscall', 'getdents_syscall', 'bind_syscall', 'connect_syscall', 'sendto_syscall', 'send_syscall', 'recvfrom_syscall', 'recv_syscall', 'getsockname_syscall', 'getpeername_syscall', 'listen_syscall', 'accept_syscall', 'getsockopt_syscall', 'setsockopt_syscall', 'setshutdown_syscall']:
-            if args[0] in ignore_fd:
-                #print "IGNORING: " + str(action)
-                continue
-
-        if name in ['dup2_syscall', 'dup_syscall']:
-            if args[0] in ignore_fd:
-                if impl_ret != -1:
-                    ignore_fd.append(impl_ret)
-                #print "IGNORING: " + str(action)
-                continue
-
-
-        if name == 'fcntl_syscall':
-            if args[0] in ignore_fd:
-                if args[1] == F_DUPFD and impl_ret != -1:
-                    ignore_fd.append(impl_ret)
-                #print "IGNORING: " + str(action)
-                continue
-
-        # Is an ignored file descriptor being closed?
-        if name == 'close_syscall':
-            if args[0] in ignore_fd:
-                #print "REMOVING: " + str(action)
-                ignore_fd.pop(ignore_fd.index(args[0]))
-                #print str(ignore_fd)
-                continue
-            else:
-                #print str(args[0]) + " ==> " + str(ignore_fd)
-                pass
-
-        # Deal with various fd impl->model replacements.
-        if name in fd_call_map:
-            if name != "dup2_syscall":
-                impl_fd = args[0]
-                model_fd = _translate_fd(impl_fd)
-                if model_fd is None:
-                    print "Unknown fd:", action
-                    #return
-                    #log('Unknown fd:', action, '\n')
+                # Skipping getsockname for now...
+                if name == 'getsockname_syscall':
                     continue
-                args = (model_fd,) + args[1:]
-            else:
-                model_fd1 = _translate_fd(args[0])
-                model_fd2 = _translate_fd(args[1])
-                if model_fd1 is None or model_fd2 is None:
-                    print "Unknown fd:", action
-                    #return
-                    #log('Unknown fd(s):', action, '\n')
-                    continue
-                args = (model_fd1, model_fd2)
 
-        action = (name, args, ret)
-        model_errno = None
-        try:
-            mycontext['posix_oracle'].append((impl_ret, impl_errno))
-            model_ret = fnc(*args)
-        except UnimplementedError:
-            log('UnimplmentedError Not Supported:', action, '\n')
-            if name in ['open_syscall', 'creat_syscall', 'socket_syscall']:
-                ignore_fd.append(impl_ret)
+		# Get the proper function from the function string.
+		if name in net_syscall_map:
+		    fnc = net_syscall_map[name]
+		    #log(name, '\n')
+		elif name in fs_syscall_map:
+		    fnc = fs_syscall_map[name]
+		    #log(name, '\n')
 
-            if name == 'fcntl_syscall':
-                if args[1] == F_DUPFD and impl_ret != -1:
-                    ignore_fd.append(impl_ret)
+		# Ignore syscalls to nonexistant file descriptors
+		if name in ['fstatfs_syscall', 'fstat_syscall', 'lseek_syscall', 'read_syscall', 'write_syscall', 'getdents_syscall', 'bind_syscall', 'connect_syscall', 'sendto_syscall', 'send_syscall', 'recvfrom_syscall', 'recv_syscall', 'getsockname_syscall', 'getpeername_syscall', 'listen_syscall', 'accept_syscall', 'getsockopt_syscall', 'setsockopt_syscall', 'setshutdown_syscall']:
+		    if args[0] in ignore_fd:
+		        #print "IGNORING: " + str(action)
+		        continue
 
-            continue
+		if name in ['dup2_syscall', 'dup_syscall']:
+		    if args[0] in ignore_fd:
+		        if impl_ret != -1:
+		            ignore_fd.append(impl_ret)
+		        #print "IGNORING: " + str(action)
+		        continue
 
-        except SyscallError, err:
-            model_ret = -1
-            model_errno = err[1]
-            pass
 
-        # Skip file syscalls on files that don't already exist in posix model
-        if name in ['statfs_syscall', 'access_syscall', 'link_syscall', 'unlink_syscall', 'stat_syscall', 
-                    'chdir_syscall', 'mkdir_syscall', 'rmdir_syscall']:
-            if model_errno != impl_errno or model_ret != impl_ret:
-                #print "IGNORING: " + str(action)
-                continue
+		if name == 'fcntl_syscall':
+		    if args[0] in ignore_fd:
+		        if args[1] == F_DUPFD and impl_ret != -1:
+		            ignore_fd.append(impl_ret)
+		        #print "IGNORING: " + str(action)
+		        continue
 
-        # If file doesn't exist in POSIX but exists on system, then add open fd to ignore_fd to ignore future calls to that fd
-        if name in ['open_syscall', 'creat_syscall']:
-            if impl_errno == None and model_errno != impl_errno:
-                #print "IGNORING: " + str(action)
-                ignore_fd.append(impl_ret)
-                continue
-            else:
-                #print "NOT IGNORING: " + str(action)
-                pass
+		# Is an ignored file descriptor being closed?
+		if name == 'close_syscall':
+		    if args[0] in ignore_fd:
+		        #print "REMOVING: " + str(action)
+		        ignore_fd.pop(ignore_fd.index(args[0]))
+		        #print str(ignore_fd)
+		        continue
+		    else:
+		        #print str(args[0]) + " ==> " + str(ignore_fd)
+		        pass
 
-        if name in ['socket_syscall', 'open_syscall', 'creat_syscall'] and impl_ret != -1:
-            posix_fd_map[impl_ret] = model_ret
-            model_ret = impl_ret
+		# Deal with various fd impl->model replacements.
+		if name in fd_call_map:
+		    if name != "dup2_syscall":
+		        impl_fd = args[0]
+		        model_fd = _translate_fd(impl_fd)
+		        if model_fd is None:
+		            print "Unknown fd:", action
+		            #return
+		            #log('Unknown fd:', action, '\n')
+		            continue
+		        args = (model_fd,) + args[1:]
+		    else:
+		        model_fd1 = _translate_fd(args[0])
+		        model_fd2 = _translate_fd(args[1])
+		        if model_fd1 is None or model_fd2 is None:
+		            print "Unknown fd:", action
+		            #return
+		            #log('Unknown fd(s):', action, '\n')
+		            continue
+		        args = (model_fd1, model_fd2)
 
-        # FS model doesn't need the oracle and a handful of network calls also 
-        # don't need it.
-        if name in fs_syscall_map or name not in oracle_required_funcs:
-            mycontext['posix_oracle'].pop()
+		action = (name, args, ret)
+		model_errno = None
+		try:
+		    mycontext['posix_oracle'].append((impl_ret, impl_errno))
+		    model_ret = fnc(*args)
+		except UnimplementedError:
+		    log('UnimplmentedError Not Supported:', action, '\n')
+		    if name in ['open_syscall', 'creat_syscall', 'socket_syscall']:
+		        ignore_fd.append(impl_ret)
 
-        # VERIFY RESULTS! Currently we are just printing them out to visually 
-        # verify we are getting something sane.
-        if impl_ret != model_ret or impl_errno != model_errno:
-            print str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
-            ERRORS.append(str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno)))
-        else:
-            print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
+		    if name == 'fcntl_syscall':
+		        if args[1] == F_DUPFD and impl_ret != -1:
+		            ignore_fd.append(impl_ret)
+
+		    continue
+
+		except SyscallError, err:
+		    model_ret = -1
+		    model_errno = err[1]
+		    pass
+
+		# Skip file syscalls on files that don't already exist in posix model
+		if name in ['statfs_syscall', 'access_syscall', 'link_syscall', 'unlink_syscall', 'stat_syscall', 
+		            'chdir_syscall', 'mkdir_syscall', 'rmdir_syscall']:
+		    if model_errno != impl_errno or model_ret != impl_ret:
+		        #print "IGNORING: " + str(action)
+		        continue
+
+		# If file doesn't exist in POSIX but exists on system, then add open fd to ignore_fd to ignore future calls to that fd
+		if name in ['open_syscall', 'creat_syscall']:
+		    if impl_errno == None and model_errno != impl_errno:
+		        #print "IGNORING: " + str(action)
+		        ignore_fd.append(impl_ret)
+		        continue
+		    else:
+		        #print "NOT IGNORING: " + str(action)
+		        pass
+
+		if name in ['socket_syscall', 'open_syscall', 'creat_syscall'] and impl_ret != -1:
+		    posix_fd_map[impl_ret] = model_ret
+		    model_ret = impl_ret
+
+		# FS model doesn't need the oracle and a handful of network calls also 
+		# don't need it.
+		if name in fs_syscall_map or name not in oracle_required_funcs:
+		    mycontext['posix_oracle'].pop()
+
+		# VERIFY RESULTS! Currently we are just printing them out to visually 
+		# verify we are getting something sane.
+		if impl_ret != model_ret or impl_errno != model_errno:
+		    print str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
+		    ERRORS.append(str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno)))
+		else:
+		    print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
+        #except:
+        #    ERRORS.append("SOMETHING REALLY BAD HAPPENED")
     return ERRORS
 
 #TRACE_FILE_NAME = "putty_ubuntu.strace_full"
 #TRACE_FILE_NAME = "firefox.strace_full"
-TRACE_FILE_NAME = "bind.strace_result"
+TRACE_FILE_NAME = "setsockoptafterclose.strace_result"
 READ_AMNT = -1
 
 fh = open(TRACE_FILE_NAME, "r")

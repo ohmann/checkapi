@@ -1,0 +1,51 @@
+3535  socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
+3535  bind(3, {sa_family=AF_INET, sin_port=htons(0), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+3535  getsockname(3, {sa_family=AF_INET, sin_port=htons(53929), sin_addr=inet_addr("127.0.0.1")}, [16]) = 0
+3535  close(3)                          = 0
+3535  mmap(NULL, 8392704, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7fc3f840b000
+3535  mprotect(0x7fc3f840b000, 4096, PROT_NONE) = 0
+3535  clone(child_stack=0x7fc3f8c0afd0, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, parent_tidptr=0x7fc3f8c0b9d0, tls=0x7fc3f8c0b700, child_tidptr=0x7fc3f8c0b9d0) = 3536
+3536  set_robust_list(0x7fc3f8c0b9e0, 0x18 <unfinished ...>
+3535  futex(0x1190ac0, FUTEX_WAIT_PRIVATE, 0, NULL <unfinished ...>
+3536  <... set_robust_list resumed> )   = 0
+3536  futex(0x1190ac0, FUTEX_WAKE_PRIVATE, 1) = 1
+3535  <... futex resumed> )             = 0
+3535  futex(0x119e780, FUTEX_WAIT_PRIVATE, 0, NULL <unfinished ...>
+3536  futex(0x119e780, FUTEX_WAKE_PRIVATE, 1 <unfinished ...>
+3535  <... futex resumed> )             = -1 EAGAIN (Resource temporarily unavailable)
+3536  <... futex resumed> )             = 0
+3536  socket(PF_INET, SOCK_STREAM, IPPROTO_IP <unfinished ...>
+3535  select(0, NULL, NULL, NULL, {1, 0} <unfinished ...>
+3536  <... socket resumed> )            = 3
+3536  bind(3, {sa_family=AF_INET, sin_port=htons(53929), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+3536  listen(3, 1)                      = 0
+3536  accept(3,  <unfinished ...>
+3535  <... select resumed> )            = 0 (Timeout)
+3535  socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 5
+3535  connect(5, {sa_family=AF_INET, sin_port=htons(53929), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+3536  <... accept resumed> {sa_family=AF_INET, sin_port=htons(38862), sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+3535  select(0, NULL, NULL, NULL, {3, 0} <unfinished ...>
+3536  close(3)                          = 0
+3536  fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 0), ...}) = 0
+3536  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc3faaf1000
+3536  write(1, "[Server] Closed socket from serv"..., 43) = 43
+3536  select(0, NULL, NULL, NULL, {5, 0} <unfinished ...>
+3535  <... select resumed> )            = 0 (Timeout)
+3535  write(1, "[Client] Setting socket option a"..., 84) = 84
+3535  setsockopt(5, SOL_SOCKET, SO_REUSEADDR, [1], 4) = 0
+3535  write(1, "[Client] No error raised.\n", 26) = 26
+3535  futex(0x1190ac0, FUTEX_WAIT_PRIVATE, 0, NULL <unfinished ...>
+3536  <... select resumed> )            = 0 (Timeout)
+3536  close(4)                          = 0
+3536  futex(0x1190ac0, FUTEX_WAKE_PRIVATE, 1) = 1
+3535  <... futex resumed> )             = 0
+3536  futex(0x119e780, FUTEX_WAKE_PRIVATE, 1 <unfinished ...>
+3535  futex(0x119e780, FUTEX_WAIT_PRIVATE, 0, NULL <unfinished ...>
+3536  <... futex resumed> )             = 0
+3535  <... futex resumed> )             = -1 EAGAIN (Resource temporarily unavailable)
+3536  madvise(0x7fc3f840b000, 8368128, MADV_DONTNEED) = 0
+3535  rt_sigaction(SIGINT, {SIG_DFL, [], SA_RESTORER, 0x7fc3fa6c5c60},  <unfinished ...>
+3536  _exit(0)                          = ?
+3535  <... rt_sigaction resumed> {0x431400, [], SA_RESTORER, 0x7fc3fa6c5c60}, 8) = 0
+3535  close(5)                          = 0
+3535  exit_group(0)                     = ?

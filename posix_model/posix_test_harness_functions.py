@@ -78,11 +78,12 @@ def getValidTraceLine(fh):
             if line != "<unfinished ...>":
                 try:
                     pid = int(line[line.find(" ")+1:line.find("]")])
-                    command = line[line.find("]")+2:line.find("(")]
+                    command = line[line.find("]")+1:line.find("(")].strip()
                 except:
                     pid = int(line[:line.find(" ")])
-                    command = line[line.find(" ")+1:line.find("(")]
+                    command = line[line.find(" ")+1:line.find("(")].strip()
                 if command in ALL_COMMANDS:
+                    #return [(pid, command)]
                     pendingStraceTable.append(PendingStrace(pid, command, line[:line.find("<unfinished ...>")].strip()))
             continue
 
@@ -880,7 +881,7 @@ def getValidTraceLine(fh):
                         log("Unimplemented parameter, skipping...")
                 else:
                     # POTENTIAL BUG: I have to put some kind of mode value for the fcntl syscall. For now it's 0.
-                    TRACE.append(('fcntl_syscall', (fd, cmd, 0), straceResult))
+                    TRACE.append(('fcntl_syscall', (fd, cmd), straceResult))
 
         ##### GETDENTS #####
         elif command == "getdents" or command == "getdents64":

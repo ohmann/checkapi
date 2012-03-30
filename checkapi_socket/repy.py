@@ -132,6 +132,12 @@ if "fork" in dir(os):
 
 # modified for CheckAPI Interposition
 
+import time
+
+def get_time_python():
+  return time.time()
+
+
 import cPickle
 def repy_cPickle_dumps(dumps_object):
   return cPickle.dumps(dumps_object)
@@ -183,8 +189,10 @@ def main(resourcefn, program, args):
   usercontext["getresources"] = nonportable.get_resources
   
   # modified for CheckAPI Interposition
+  usercontext["get_time_python"] = get_time_python
   usercontext["repy_cPickle_dumps"] = repy_cPickle_dumps
   usercontext["repy_cPickle_loads"] = repy_cPickle_loads    
+
   #usercontext["openfile"] = emulfile.emulated_open
   #usercontext["listfiles"] = emulfile.listfiles
   #usercontext["removefile"] = emulfile.removefile

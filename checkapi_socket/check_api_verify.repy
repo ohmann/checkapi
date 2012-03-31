@@ -25,7 +25,7 @@ dy_import_module_symbols("check_api.repy")
 SYSTOLIC_LEVELS = 32
 
 # Write out the entire trace to a file instead of discarding it.
-WRITE_OUT_TRACE = True
+WRITE_OUT_TRACE = False
 OUTPUT_TRACE_FILE = "checkapi_trace.output"
 MAX_STRING_LENGTH = 200
 MAX_STRING_LENGTH_FOR_WRITE_LOG = 4096

@@ -223,6 +223,8 @@ def getValidTraceLine(fh):
             if remoteip == UNIMPLEMENTED_ERROR or remoteport == UNIMPLEMENTED_ERROR:
                 if DEBUG:
                     log("Unimplemented parameter, skipping...")
+
+
             else:
                 TRACE.append(('connect_syscall',(sockfd, remoteip, remoteport), straceResult))
 
@@ -439,7 +441,7 @@ def getValidTraceLine(fh):
                 if DEBUG:
                     log("Unimplemented parameter, skipping...")
             else:
-                TRACE.append(('accept_syscall',(sockfd,), straceResult))
+                TRACE.append(('accept_syscall',(sockfd,remoteip,remoteport), straceResult))
 
         ##### GETSOCKOPT #####
         elif command == "getsockopt":

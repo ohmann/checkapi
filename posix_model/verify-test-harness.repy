@@ -108,8 +108,8 @@ def verify_trace(trace, lNum):
 		name, args, ret = action
 		impl_ret, impl_errno = ret
 
-                # Skipping getsockname for now...
-                if name == 'getsockname_syscall':
+                # EFM: Skipping problem calls like getsockname and fcntl for now...
+                if name == 'getsockname_syscall' or name == 'fcntl_syscall':
                     continue
 
 		# Get the proper function from the function string.
@@ -237,17 +237,21 @@ def verify_trace(trace, lNum):
 
 		# VERIFY RESULTS! Currently we are just printing them out to visually 
 		# verify we are getting something sane.
-		if impl_ret != model_ret or impl_errno != model_errno:
+                if name == "accept_syscall" and impl_errno == model_errno:
+                    # We don't care about the fd returned so lets ignore that comparison
+		    print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))                    
+		elif impl_ret != model_ret or impl_errno != model_errno:
 		    print str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
 		    ERRORS.append(str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno)))
 		else:
 		    print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
         #except:
-        #    ERRORS.append("SOMETHING REALLY BAD HAPPENED")
+        #    ERRORS.append("SOMETHING REALLY BAD HAPPENED: " + name + str(args))
     return ERRORS
 
 #TRACE_FILE_NAME = "putty_ubuntu.strace_full"
-TRACE_FILE_NAME = "setsockoptafterclose.strace_result"
+TRACE_FILE_NAME = "buffull.strace_result"
+ERROR_FILE = "errors.txt"
 #TRACE_FILE_NAME = "setsockoptafterclose.strace_result"
 READ_AMNT = -1
 
@@ -263,8 +267,19 @@ fh = open(TRACE_FILE_NAME, "r")
 trace = getNumberValidTraceLines(fh, READ_AMNT)
 num = 0
 ERRORS = verify_trace(trace, num)
-print "\n\n\n\n\n\n\n"
-print str(ERRORS)
+fh.close()
+print "\n\n\n\n\n"
+fh = open(ERROR_FILE, "w")
+numLines = 0
+for line in ERRORS:
+    print line
+    fh.write(line + "\n")
+    numLines += 1
+fh.write(str(numLines) + " error(s)...\n")
+fh.close()
+
+print str(numLines) + " error(s)..."
+
 #while len(trace) > 0:
 #    if not verify_trace(trace, num):
 #        break

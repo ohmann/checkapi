@@ -225,6 +225,8 @@ def getValidTraceLine(fh):
                     log("Unimplemented parameter, skipping...")
 
 
+
+
             else:
                 TRACE.append(('connect_syscall',(sockfd, remoteip, remoteport), straceResult))
 
@@ -238,6 +240,8 @@ def getValidTraceLine(fh):
 
             # Get the message without quotes
             message = parameters[1].strip("...")[1:len(parameters[1])-1]
+
+            message += "*" * (int(parameters[2]) - len(message))
 
             try:
                 flags = int(parameters[3])
@@ -276,6 +280,8 @@ def getValidTraceLine(fh):
 
             # Get the message without quotes
             message = parameters[1].strip("...")[1:len(parameters[1])-1]
+
+            message += "*" * (int(parameters[2]) - len(message))
 
             try:
                 flags = int(parameters[-1])

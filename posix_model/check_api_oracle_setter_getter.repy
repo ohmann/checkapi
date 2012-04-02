@@ -115,8 +115,8 @@ def assert_value_okay(cond_regex, value):
     plower, pupper = special_regex.find("(")+1, special_regex.rfind(")")
     inner_regexes = special_regex[plower:pupper].split(":")
     
-    assert(isinstance(value, tuple))
-    assert(len(value) == len(inner_regexes))
+    assert isinstance(value, tuple)
+    assert len(value) == len(inner_regexes), "len of value and inner_regex don't match: " + str(value) + ", " + str(inner_regexes)
     
     # Verify all of the inner values using this same function.
     i = 0
@@ -171,7 +171,7 @@ def oracle_getter(cond_regex, error_list):
   <Returns>
     The current tuple value/error from the setter/getter.
   """
-  assert len(mycontext['setter_getter_value']) > 0
+  assert len(mycontext['setter_getter_value']) > 0, "Unable to get value, nothing was previously set."
   value, error = mycontext['setter_getter_value'].pop()
   
   # Error raised by the implementation, and no return value.

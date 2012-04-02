@@ -1,3 +1,7 @@
+'''
+NOTE: Must be executed with librepy.repy.
+'''
+
 dy_import_module_symbols("check_api.repy")
 dy_import_module_symbols("wrapped_lind_net_calls.py")
 dy_import_module_symbols("wrapped_lind_fs_calls.py")
@@ -44,7 +48,7 @@ fs_syscall_map = {'access_syscall':access_syscall,
                'write_syscall':write_syscall}
 
 oracle_required_funcs = ['connect_syscall', 'sendto_syscall', 
-                         'getsockname_syscall']
+                         'getsockname_syscall', 'accept_syscall']
 
 fd_call_map = {"fstatfs_syscall":fstatfs_syscall,
                "fstat_syscall":fstat_syscall,
@@ -169,10 +173,18 @@ def verify_trace(trace, lNum):
 		            continue
 		        args = (model_fd1, model_fd2)
 
+                # Special socket side effect patch.
+                if name == "accept_syscall":
+                    fd, acceptip, acceptport = args
+                    args = (fd,)
+                    newfd = impl_ret
+                    impl_ret = (acceptip, acceptport, newfd)
+                    log("ACCEPT: ", action, '\n')
+
 		action = (name, args, ret)
 		model_errno = None
 		try:
-		    mycontext['posix_oracle'].append((impl_ret, impl_errno))
+                    mycontext['posix_oracle'].append((impl_ret, impl_errno))
 		    model_ret = fnc(*args)
 		except UnimplementedError:
 		    log('UnimplmentedError Not Supported:', action, '\n')
@@ -189,6 +201,13 @@ def verify_trace(trace, lNum):
 		    model_ret = -1
 		    model_errno = err[1]
 		    pass
+
+                # JR: This is a conformance failure, since a POSIX call should 
+                # never raise a Repy exception. The Repy model should be
+                # transparent to the POSIX model caller.
+                except RepyException, err:
+                    log('ConformanceFaulure! RepyException with action: ', action, '\n')
+                    raise err
 
 		# Skip file syscalls on files that don't already exist in posix model
 		if name in ['statfs_syscall', 'access_syscall', 'link_syscall', 'unlink_syscall', 'stat_syscall', 
@@ -228,8 +247,8 @@ def verify_trace(trace, lNum):
     return ERRORS
 
 #TRACE_FILE_NAME = "putty_ubuntu.strace_full"
-#TRACE_FILE_NAME = "firefox.strace_full"
 TRACE_FILE_NAME = "setsockoptafterclose.strace_result"
+#TRACE_FILE_NAME = "setsockoptafterclose.strace_result"
 READ_AMNT = -1
 
 fh = open(TRACE_FILE_NAME, "r")

@@ -901,6 +901,9 @@ def accept_syscall(fd):
     # now we should loop (block) until we get an incoming connection
     while True:
       try:
+        impl_ret, impl_errno = mycontext['posix_oracle'].pop() # real impl return.
+        remoteip, remoteport, sockfd = impl_ret
+        oracle_setter((remoteip, remoteport, str(sockfd)), None)
         remoteip, remoteport, acceptedsocket = model_tcpserver_getconnection('MainThread', listeningsocket)
         #remoteip, remoteport, acceptedsocket = listeningsocket.getconnection()
 

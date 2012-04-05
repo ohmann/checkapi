@@ -78,10 +78,16 @@ fd_call_map = {"fstatfs_syscall":fstatfs_syscall,
 #       like we can't verify anything in terms of reads...
 
 posix_fd_map = {}
-ignore_fd = [0,1,2]
+ignore_fd = [0,1,2] #standard in/out/error
 mycontext['posix_oracle'] = []
 
 
+# Create string that has a max length, this helps when printing large strings.
+def sstr(data):
+    data_short = str(data)[:800]
+    if len(str(data)) > len(str(data_short)):
+        data_short += "!!SHORTENED STRING!!"
+    return data_short
 
 
 def _translate_fd(impl_fd):
@@ -101,7 +107,7 @@ def verify_trace(trace, lNum):
     for action in trace:
         #try:
 		lineNum += 1
-		print str(lineNum) + " ===> " + str(action)
+		print sstr(lineNum) + " ===> " + sstr(action)
 		#print str(ignore_fd)
 		#print str(posix_fd_map)
 		#log(str(lineNum) + "\n")
@@ -158,7 +164,7 @@ def verify_trace(trace, lNum):
 		        impl_fd = args[0]
 		        model_fd = _translate_fd(impl_fd)
 		        if model_fd is None:
-		            print "Unknown fd:", action
+		            print "Unknown fd:", sstr(action)
 		            #return
 		            #log('Unknown fd:', action, '\n')
 		            continue
@@ -167,7 +173,7 @@ def verify_trace(trace, lNum):
 		        model_fd1 = _translate_fd(args[0])
 		        model_fd2 = _translate_fd(args[1])
 		        if model_fd1 is None or model_fd2 is None:
-		            print "Unknown fd:", action
+		            print "Unknown fd:", sstr(action)
 		            #return
 		            #log('Unknown fd(s):', action, '\n')
 		            continue
@@ -179,7 +185,6 @@ def verify_trace(trace, lNum):
                     args = (fd,)
                     newfd = impl_ret
                     impl_ret = (acceptip, acceptport, newfd)
-                    log("ACCEPT: ", action, '\n')
 
 		action = (name, args, ret)
 		model_errno = None
@@ -239,12 +244,12 @@ def verify_trace(trace, lNum):
 		# verify we are getting something sane.
                 if name == "accept_syscall" and impl_errno == model_errno:
                     # We don't care about the fd returned so lets ignore that comparison
-		    print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))                    
+		    print sstr(lineNum) + " OK: " + name + sstr(args) + ' -> ' + sstr((impl_ret, impl_errno)) + "  " + sstr((model_ret, model_errno))
 		elif impl_ret != model_ret or impl_errno != model_errno:
-		    print str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
-		    ERRORS.append(str(lineNum * num) + " ERROR: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno)))
+		    print sstr(lineNum * num) + " ERROR: " + name + sstr(args) + ' -> ' + sstr((impl_ret, impl_errno)) + "  " + sstr((model_ret, model_errno))
+		    ERRORS.append(sstr(lineNum * num) + " ERROR: " + name + sstr(args) + ' -> ' + sstr((impl_ret, impl_errno)) + "  " + sstr((model_ret, model_errno)))
 		else:
-		    print str(lineNum) + " OK: " + name + str(args) + ' -> ' + str((impl_ret, impl_errno)) + "  " + str((model_ret, model_errno))
+		    print sstr(lineNum) + " OK: " + name + sstr(args) + ' -> ' + sstr((impl_ret, impl_errno)) + "  " + sstr((model_ret, model_errno))
         #except:
         #    ERRORS.append("SOMETHING REALLY BAD HAPPENED: " + name + str(args))
     return ERRORS
@@ -272,13 +277,13 @@ print "\n\n\n\n\n"
 fh = open(ERROR_FILE, "w")
 numLines = 0
 for line in ERRORS:
-    print line
+    print sstr(line)
     fh.write(line + "\n")
     numLines += 1
 fh.write(str(numLines) + " error(s)...\n")
 fh.close()
 
-print str(numLines) + " error(s)..."
+print sstr(numLines) + " error(s)..."
 
 #while len(trace) > 0:
 #    if not verify_trace(trace, num):

@@ -454,6 +454,7 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
   # if there is no IP / port, call send instead.   It will assume the other
   # end is connected...
   if remoteip == '' and remoteport == 0:
+    mycontext['posix_oracle'].append((impl_ret,impl_errno))
     return send_syscall(fd,message,flags)
 
   if filedescriptortable[fd]['state'] == CONNECTED or filedescriptortable[fd]['state'] == LISTEN:
@@ -478,7 +479,7 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
 
     try:
       # BUG: The timeout it configurable, right?
-      oracle_setter('', None)
+      oracle_setter(impl_ret, None)
       bytessent = sendmessage(remoteip, remoteport, message, localip, localport)
 
     except AddressBindingError, e:
@@ -516,6 +517,11 @@ def send_syscall(fd, message, flags):
 
   # TODO: Change write() to call send when on a socket!!!
 
+  # Nondeterministic errors that could occur with this call.
+  send_nondeter_errors = ["EWOULDBLOCK","EPIPE","EBADF","EBADR","ENOLINK","EBADFD",
+                          "ENETRESET","ECONNRESET","WSAEBADF","WSAENOTSOCK",
+                          "WSAECONNRESET","EAGAIN"]
+
   if fd not in filedescriptortable:
     raise SyscallError("send_syscall","EBADF","The file descriptor is invalid.")
 
@@ -533,6 +539,12 @@ def send_syscall(fd, message, flags):
   if filedescriptortable[fd]['protocol'] != IPPROTO_TCP:
     raise SyscallError("send_syscall","EOPNOTSUPP","send not supported on this protocol.")
     
+  # Check with impl behavior, was it non-deterministic??
+  impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+  if impl_errno != None:
+    assert impl_errno in send_nondeter_errors, "errno " +str(impl_errno)+ ", is unknown!"
+    raise SyscallError("send_syscall", impl_errno, "Non-deterministic error")
+
   # I'll check this anyways, because I later might have multiple protos 
   # supported
   if filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
@@ -543,8 +555,10 @@ def send_syscall(fd, message, flags):
     # retry until it does not block...
     while True:
       try:
+        oracle_setter(impl_ret, None)
         bytessent = model_socket_send('MainThread', sockobj, message)
         #bytessent = sockobj.send('MainThread', objid, message)
+        break
 
       except Exception, e:
         # I think this shouldn't happen.   A closed socket should go to
@@ -552,7 +566,8 @@ def send_syscall(fd, message, flags):
         raise 
     
       # sleep and retry
-      except SocketWouldBlock, e:
+      except SocketWouldBlockError, e:
+        raise Exception("MODEL ERROR: I dont think this should happen.")
         sleep(RETRYWAITAMOUNT)
  
 

@@ -1,0 +1,282 @@
+"""
+<Program Name>
+  check_api_verify.repy
+
+<Started>
+  Jan, 15 2012
+
+<Author>
+  yli28@students.poly.edu
+  Jerome Yang Li
+
+<Purpose>
+  This program is for loop-back socket version CheckAPI
+  More information about this program, it's limitations and how to use it can 
+  be found at: https://seattle.cs.washington.edu/wiki/CheckAPI
+
+<Usage>
+  python repy.py <restrictions file> dylink.repy check_api_verify.repy
+
+"""
+# Include CheckAPI module.
+dy_import_module_symbols("check_api.repy")
+
+# Systolic verification constant, keep only N levels of state at any given time.
+SYSTOLIC_LEVELS = 32
+
+# Write out the entire trace to a file instead of discarding it.
+WRITE_OUT_TRACE = True
+OUTPUT_TRACE_FILE = "checkapi_trace.output"
+MAX_STRING_LENGTH = 200
+MAX_STRING_LENGTH_FOR_WRITE_LOG = 4096
+if WRITE_OUT_TRACE:
+  dy_import_module_symbols("check_api_output_file.repy")
+
+
+
+# Model Function Dictionary
+CORE_MODEL_CALLS_DICT = {# FileIO
+                         'openfile'                : model_openfile,
+                         'removefile'              : model_removefile,
+                         'listfiles'               : model_listfiles,
+                         'file_close'              : model_file_close,
+                         'file_writeat'            : model_file_writeat,
+                         'file_readat'             : model_file_readat,
+                         # Misc
+                         'randombytes'             : model_randombytes,
+                         # Network
+                         'tcpserver_getconnection' : model_tcpserver_getconnection,
+                         'tcpserver_close'         : model_tcpserver_close,
+                         'listenforconnection'     : model_listenforconnection,
+                         'socket_recv'             : model_socket_recv,
+                         'socket_send'             : model_socket_send,
+                         'socket_close'            : model_socket_close,
+                         'openconnection'          : model_openconnection,
+                         'udpserver_getmessage'    : model_udpserver_getmessage,
+                         'udpserver_close'         : model_udpserver_close,
+                         'listenformessage'        : model_listenformessage,
+                         'sendmessage'             : model_sendmessage,
+                         'getmyip'                 : model_getmyip,
+                         'gethostbyname'           : model_gethostbyname,
+                         # Threading
+                         'createthread'            : model_createthread,
+                         'lock_acquire'            : model_lock_acquire,
+                         'lock_release'            : model_lock_release,
+                         'createlock'              : model_createlock,
+                         }
+
+
+
+# Object create function list
+OBJ_CREATE_CALLS_LIST = ['openfile',
+                         'listenforconnection',
+                         'openconnection',
+                         'listenformessage',
+                         'tcpserver_getconnection',
+                         'createlock']
+
+
+
+def log_start_action(start_tuple):
+  mycontext['action_num'] += 1
+  start_action_number = mycontext['action_num']
+  start_tuple = (start_action_number,) + start_tuple
+  mycontext['trace_dict'][start_action_number] = start_tuple
+  mycontext['pending_actions'].append(start_action_number)
+  # Generate condition dictionary for later disambiguation.
+  mycontext['condition_dict'][start_action_number] = set(mycontext['finished_actions'])
+
+  if WRITE_OUT_TRACE:
+    write_out_action(start_tuple)
+  return start_action_number
+ 
+
+
+def log_finish_action(finish_tuple):
+  finish_fnc_name, finish_action, finish_threadname, finish_obj_id, finish_args_or_rtn_tuple, model_fun = finish_tuple
+  # Get start action number from pending actions list
+  start_action_number = 0  
+  for pending_number in mycontext['pending_actions']:
+    num1, fnc_name, action, threadname, obj_id, args_or_rtn_tuple, model_fun = mycontext['trace_dict'][pending_number]
+    if fnc_name == finish_fnc_name and threadname == finish_threadname:
+      start_action_number = num1
+        
+  mycontext['action_num'] += 1
+  finish_action_number = mycontext['action_num'] 
+  finish_tuple = (finish_action_number,) + finish_tuple
+  mycontext['trace_dict'][finish_action_number] = finish_tuple
+  mycontext['pending_actions'].remove(start_action_number)
+  mycontext['start_finish_map'][start_action_number] = finish_action_number
+  #  # Pending actions remove is O(len(pending_actions)), where pending actions will never be
+  #  # more than the number of current threads.
+  mycontext['finished_actions'].append(start_action_number)
+  
+  if WRITE_OUT_TRACE:
+    write_out_action(finish_tuple, start_action_number)
+  return finish_action_number
+
+def derive_tuple_to_action_list(action_tuple_list):
+
+  action_list = repy_cPickle_loads(action_tuple_list)   
+  # log(str(len(action_list)) + "\n")
+  for action_tuple_line in action_list:
+    derive_tuple_to_action_dict(action_tuple_line)                     
+                                               
+  
+def derive_tuple_to_action_dict(action_tuple_line):
+
+  # write_str_to_log(str(action_tuple_line) + "\n")
+  fnc_name, action, threadname, obj_id, args_or_rtn_tuple = action_tuple_line
+
+  # Get dead object id
+  if fnc_name.find("__del__") != -1:
+    mycontext['dead_object_ids'].append(obj_id)
+    return True
+  
+  # Get start action tuple
+  if action == 'start':
+    action_tuple_line =  (fnc_name, action, threadname, obj_id, args_or_rtn_tuple, CORE_MODEL_CALLS_DICT[fnc_name])
+    log_start_action(action_tuple_line)
+    
+    # For special function in start action 
+    if fnc_name in ["lock_release", "createthread"]:
+     mycontext['special_pending_calls'] += 1
+  
+  # Get finish action tuple
+  else: 
+    impl_ret, impl_exp = args_or_rtn_tuple
+    # For special function in finish action
+    if fnc_name in ["lock_release", "createthread"]:
+      mycontext['special_pending_calls'] -= 1
+
+    # Get translate object id
+    if fnc_name in OBJ_CREATE_CALLS_LIST and impl_ret != None:
+      if fnc_name == "tcpserver_getconnection":
+        ip, port, socket_obj = impl_ret
+        mycontext['translate_ids'][socket_obj] = None
+      else:
+        mycontext['translate_ids'][impl_ret] = None
+     
+    action_tuple_line =  (fnc_name, action, threadname, obj_id, args_or_rtn_tuple, None)
+    log_finish_action(action_tuple_line)
+
+  try:
+    # Do the verification
+    check_and_possibly_verify()
+  except ModelConformanceFailure:
+    mycontext['verification_connection_handle'].close()
+    mycontext['verification_finished_flag'] = True   
+    # make sure here should be exitall()?
+    exitall()
+
+
+
+def derive_recv_data_to_tuple_and_verify():
+
+  while True:
+    if mycontext['received_data_buffer_list']:
+      received_data = mycontext['received_data_buffer_list'].pop(0)
+      received_data = mycontext['unfinish_block'] + received_data
+      size = 0
+      while True:
+        offset_data = received_data[size:].find('#')
+        if offset_data != -1:
+          length = int(received_data[size:size + offset_data])
+          if length > len(received_data[size:]) - offset_data -1 :
+            mycontext['unfinish_block'] = received_data[size:]
+            break
+          else:
+            # Get one data line
+            action_tuple_list = received_data[size + offset_data + 1:size + offset_data + 1 + length]
+            # Derive tuple to action dictionary
+            derive_tuple_to_action_list(action_tuple_list)
+            size += offset_data + 1 +length
+        else:
+          mycontext['unfinish_block'] = received_data[size:]
+          break
+
+    else:
+      # This will make the program use less CPU in the MainThread
+      sleep(DERIVE_DATA_SLEEP_TIME)
+      if mycontext['verification_finished_flag'] == True:
+        break
+      
+
+def check_api_receive_data():
+  # Listen connection for loop back address
+  mycontext['verification_connection_handle'] = listenforconnection(LOOP_BACK_IP, SERVER_PORT)
+  log('CheckAPI Verification Process is Listening...\n')
+
+  while True:
+    try:
+      # Get the connection
+      ip, port, sock = block_call(mycontext['verification_connection_handle'].getconnection)
+      break
+    except SocketWouldBlockError:
+      sleep(BLOCKING_SLEEP_TIME)
+    
+  def handle_client():
+    # Receive data.
+    while True:
+      try:
+        # Receive data from interposition side
+        received_data = block_call(sock.recv, RECV_BLOCK_SIZE)
+
+        # To test how long the verification process from it recive data
+        if mycontext['running_time_for_verification_start_flag'] == False:
+          mycontext['running_time_for_verification'] = getruntime()
+          mycontext['running_time_for_verification_start_flag'] = True
+
+        # All the serialized data will be write in "checkapi_trace_log.output" file
+        write_str_to_log(received_data)
+
+        # Append dat to received data list
+        # mycontext['received_data_buffer_list'].append(received_data)
+
+      except SocketClosedRemote:
+        mycontext['running_time_after_interposition'] = getruntime()
+        log("CheckAPI Interposition's Socket is Closed.\n")
+        mycontext['verification_connection_handle'].close()
+        mycontext['verification_finished_flag'] = True
+        break
+    
+  # Start Receive data thread
+  createthread(handle_client)
+
+
+
+def block_call(func, *p, **q):
+  """
+  Blocks the execution of the function until it exits without raising the
+  SocketWouldBlockError. Returns the result of the function.
+  """
+  while True:
+    try:
+      return func(*p, **q)
+    except SocketWouldBlockError:
+      sleep(BLOCKING_SLEEP_TIME)
+      continue
+    except SocketClosedLocal:
+      break
+
+
+mycontext['running_time_for_verification'] = 0
+mycontext['running_time_for_verification_start_flag'] = False
+mycontext['running_time_after_interposition'] = 0
+
+# Runtime section 
+if callfunc == "initialize":
+  createthread(check_api_receive_data)
+  derive_recv_data_to_tuple_and_verify()
+
+  # Do the last verification
+  check_and_possibly_verify(True)
+  
+  # Write the buffer string to log file
+  if WRITE_OUT_TRACE:
+    write_out_last_string_buffer_action()
+
+  log("Running Time for Verification: " + str(getruntime() - mycontext['running_time_for_verification']) + "\n")
+  log("Running Time after Interposition: " + str(getruntime() - mycontext['running_time_after_interposition']) + "\n")
+
+  log("Verification Finished\n")

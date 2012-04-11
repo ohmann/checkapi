@@ -1,0 +1,29 @@
+resource cpu 2.00
+resource memory 1500000000   # 1500 Million bytes
+resource diskused 10000000000 # 1000 MB
+resource events 100
+resource filewrite 10000000000
+resource fileread 10000000000
+resource filesopened 50
+resource insockets 5000
+resource outsockets 5000
+resource netsend 100000000000
+resource netrecv 100000000000
+resource loopsend 10000000000
+resource looprecv 10000000000
+resource lograte 30000
+resource random 1024000
+resource messport 12345
+resource messport 12346
+resource messport 12347
+resource connport 12345
+resource connport 12346
+resource connport 12347
+resource connport 50001
+resource connport 50002
+resource messport 10001
+resource messport 10002
+resource messport 10003
+resource connport 10001
+resource connport 10002
+resource connport 10003

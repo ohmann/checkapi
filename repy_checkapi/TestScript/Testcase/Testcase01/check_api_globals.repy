@@ -1,0 +1,115 @@
+'''
+<Program Name>
+  check_api_globals.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Specifies a collection of globals that are used throughout CheckAPI.
+'''
+# The main structure that stores actions as they are performed during execution.
+# <Key: action number, Value: action tuple>
+mycontext['trace_dict'] = {}
+
+mycontext['action_lock'] = createlock()
+mycontext['action_num'] = 0
+
+# A map from start action number to its corresponding finish action number.
+mycontext['start_finish_map'] = {}
+
+# List of actions that have not finished.
+mycontext['pending_actions'] = []
+
+# <Key: action_num, Value: set of finished action_nums>
+mycontext['condition_dict'] = {}
+
+# All the start action nums of finished actions.
+mycontext['finished_actions'] = []
+
+# A list of failure messages in case of a conformance failure.
+mycontext['failure_messages'] = []
+
+# Stores a return value and an error.
+mycontext['setter_getter_value'] = (None, None)
+
+
+# Maps unique object implemention ids to model ids.
+mycontext['translate_ids'] = {}
+
+# Once an object is no longer used we can remove the translate it. They are 
+# cleaned up by the systolic verification clear_verification_globals function.
+mycontext['dead_object_ids'] = []
+
+# Handle of connection in Interposition side 
+mycontext['interposition_connection_handle'] = None
+
+# Buffer of send data in Interposition side
+mycontext['interposition_send_string_buffer'] = ""
+
+# Action buffer list in Interposition side
+mycontext['interposition_action_buffer_list'] = []
+
+# String buffer for write log
+mycontext['string_buffer_of_write_out_action'] = ""
+
+# Loop-back socket Flag in Interposition side
+mycontext['send_socket_data'] = False
+
+# The flag of start send data thread
+mycontext['thread_start_flag'] = False
+
+# Special pending calls 
+mycontext['special_pending_calls'] = 0
+
+# Handle of connection in Verification side 
+mycontext['verification_connection_handle'] = None
+
+# The unfinish block when derived data in Verification side 
+mycontext['unfinish_block'] = ""
+
+# Received data buffer list in Verification side
+mycontext['received_data_buffer_list'] = []
+
+# Verification Finished Flag
+mycontext['verification_finished_flag'] = False
+
+# Interposition Finished Flag
+mycontext['interposition_finished_flag'] = False
+
+
+# All wrapper objects inherity from this type.
+class ModelObject(object):
+  """
+  Wrapper objects used in runtime verification code all descend this type.
+  """
+  pass
+
+
+if not CHECKAPI_FOR_SHIMS:
+  class ShimSocketWrapper(object):
+    """
+    If we are not using CheckAPI for shims, we need to specify what a 
+    ShimSocketWrapper is for compatability reasons.
+    """
+    pass
+
+
+def get_global_state_dict():
+  # EG: it calls the 
+  empty_current_list()
+  return "ok"
+    
+  #return deep_copy(mycontext['model_state'])
+
+
+def put_global_state_dict(new_global_state_dict):
+  # EG:
+  restore_state()
+  #mycontext['model_state'] = new_global_state_dict
+

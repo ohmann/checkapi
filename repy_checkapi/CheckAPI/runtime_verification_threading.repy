@@ -1,0 +1,79 @@
+"""
+<Program Name>
+  runtime_verification_threading.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Threading and locking runtime verification.
+"""
+
+############### Create Thread Action ###############
+def action_createthread(fnc):
+  fnc_name = "createthread"
+  impl_func = createthread
+  args_list = [fnc]
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+  
+
+############### Lock object ###############
+class MBTLock(ModelObject):
+  def __init__(self, realobj, implid):
+    self.realobj = realobj
+    self.implid = implid
+
+
+
+
+  def acquire(self, blocking):
+    if not ENABLE_LOCK_VERIF: 
+      return self.realobj.acquire(blocking)
+    fnc_name = "lock_acquire"
+    impl_func = self.realobj.acquire
+    args_list = [blocking]
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+
+
+
+
+  def release(self):
+    if not ENABLE_LOCK_VERIF:
+      return self.realobj.release()
+    fnc_name = "lock_release"
+    impl_func = self.realobj.release
+    args_list = []
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+
+
+
+
+  def __del__(self):
+    fnc_name = "MBTLock__del__"
+    obj_id = self.implid
+    exec_model_impl(fnc_name, None, None, None, obj_id, None)
+
+
+
+
+############### Create Lock Action ###############
+def action_createlock():
+  if not ENABLE_LOCK_VERIF:
+    return createlock()
+  fnc_name = "createlock"
+  impl_func = createlock
+  args_list = []
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+############### Wrap threading calls ###############
+def wrap_threading():
+  CHILD_CONTEXT["createthread"] = action_createthread
+  CHILD_CONTEXT["createlock"] = action_createlock

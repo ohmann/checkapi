@@ -1,0 +1,218 @@
+'''
+<Program Name>
+  runtime_verification_core.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  The core of the runtime verification security layer. All other 
+  runtime_verification_* files call into here via exec_model_impl which then
+  executes and verifies the API calls.
+
+<Note> 
+  Keep in mind, this code can be called by any thread at anytime, be careful 
+  dealing with concurrency.
+'''
+
+mycontext['obj_id_count'] = 0
+
+# API calls that return an object, this is used to match the API call with its
+# corresponding model wrapper object.
+OBJ_CREATE_CALLS_DICT = {'openfile':MBTFileObject,
+                         'listenforconnection':MBTTCPServer,
+                         "openconnection":MBTSocket,
+                         "listenformessage":MBTUDPServer,
+                         "tcpserver_getconnection":MBTSocket,
+                         "createlock":MBTLock}
+
+
+
+
+def _generate_new_obj_id():
+  """
+  Generates a unique object id
+  """
+  mycontext['obj_id_count'] += 1
+  return "obj" + str(mycontext['obj_id_count'])
+
+
+  
+
+def _wrap_and_store_object(fnc_name, impl_obj):
+  # Generate new object id.
+  impl_obj_id = _generate_new_obj_id()
+
+  # TODO: Add support for shims here.
+
+  # Wrap the impl object and the object id into a new object based its 
+  # associated function name.
+  if fnc_name == "tcpserver_getconnection":
+    ip, port, socket_obj = impl_obj
+    wrapped_socket = OBJ_CREATE_CALLS_DICT[fnc_name](socket_obj, impl_obj_id)
+    return (ip, port, wrapped_socket)
+  else:
+    # Create new wrapper object.
+    return OBJ_CREATE_CALLS_DICT[fnc_name](impl_obj, impl_obj_id)
+
+
+
+
+def _get_obj_id(fnc_name, impl_obj):
+  if fnc_name == "tcpserver_getconnection":
+    ip, port, socket_obj = impl_obj
+    return (ip, port, socket_obj.implid)
+  else:
+    return impl_obj.implid
+
+
+
+
+def runtime_verification_wrap_calls():
+  """
+  <Purpose>
+    Used to wrap all of the interposed API calls into CheckAPI's child context.
+    This is done so that we may interpose and verify during runtime.
+
+  <Exceptions>
+    None
+
+  <Returns>
+    None
+  """
+  wrap_fileio()
+  wrap_network()
+  wrap_misc()
+  wrap_threading()
+
+
+
+
+def send_all_action_data(action_data):
+  # Store the bytes sent and message size
+  data_sent = 0
+  data_size = len(action_data)
+  
+  # Loop until all data has been sent
+  while data_sent < data_size:
+    start_time = getruntime()
+    try:
+      # Send data
+      data_sent += mycontext['interposition_connection_handle'].send(action_data[data_sent:data_sent + SEND_BLOCK_SIZE])
+    except SocketWouldBlockError:
+      sleep(BLOCKING_SLEEP_TIME)
+      continue
+    except SocketClosedRemote, SocketClosedLocal:
+      log("CheckAPI Socket is Closed.\n")
+      mycontext['send_socket_data'] = False
+      break
+  
+
+
+def collect_and_send_action_data():
+
+  send_data_list = []
+  while True:  
+      
+    if mycontext['interposition_action_buffer_list']:
+      # Pop action data from interposition buffer
+      mycontext['interposition_action_buffer_list'].pop(0)
+      #send_data_list.append(mycontext['interposition_action_buffer_list'].pop(0))
+      
+      # Send data when the buffer greater than buffer check size
+      #if len(send_data_list) >= 1024:
+        #send_data_block = repy_cPickle_dumps(send_data_list)
+        #send_all_action_data(str(len(send_data_block)) + "#" + send_data_block)
+        #send_data_list = []
+        
+    else:
+      if mycontext['interposition_finished_flag'] == True:
+        break
+      sleep(COLLECT_DATA_SLEEP_TIME)
+
+
+
+def exec_model_impl(fnc_name, threadname, impl_func, args_list, obj_id=None, impl_obj=None):
+  """
+  <Purpose>
+    This is the heart of the runtime verification portion of CheckAPI. All interposed
+    API calls get executed and verified via this function.
+    
+  <Arguments>
+    fnc_name
+      String representation of the API function in question
+    threadname
+      Thread id based on getthreadname()
+    model_func
+      Function pointer to the API function in the model 
+    impl_func
+      Function pointer to the API function in the implementation
+    args_list
+      List of all arguments needed to execute the action in the implementation
+    obj_id (optional)
+      Unique string representation of an object.
+    impl_obj (optional)
+      The actual object that a given method may be calling from
+      
+  <Exceptions>
+    Raises a ModelConformanceFailure or whatever impl_func raises.
+    
+  <Returns>
+    Returns whatever impl_func returns.
+  """
+  # Send Del socket action
+  if fnc_name.find("__del__") != -1:
+    del_object_tuple = (fnc_name, 'del', None, obj_id, None)   
+    # Append del object tuple to action list
+    if mycontext['send_socket_data']:
+      mycontext['interposition_action_buffer_list'].append(del_object_tuple)
+    return
+
+  if mycontext['send_socket_data']:
+    if mycontext['thread_start_flag'] == False:
+      createthread(collect_and_send_action_data)
+      mycontext['thread_start_flag'] = True  
+
+    # Log start action.
+    if fnc_name == "createthread":
+      start_tuple = (fnc_name, 'start', threadname, obj_id, tuple([str(args_list[0])]))  
+    else:
+      start_tuple = (fnc_name, 'start', threadname, obj_id, tuple(args_list))
+
+    # Append start tuple to action list
+    mycontext['interposition_action_buffer_list'].append(start_tuple)
+  
+  # Execute in the implementation.
+  impl_ret = impl_error = None
+  try:
+    impl_ret = impl_func(*args_list)
+  except RepyException, impl_error:
+    # Any other exception is a problem with the API.
+    pass
+  
+  # If the function returned an object, we must store a mapping from an impl 
+  # unique object id to a model object id.
+  if impl_error == None and fnc_name in OBJ_CREATE_CALLS_DICT:
+    impl_ret = _wrap_and_store_object(fnc_name, impl_ret)
+
+  if mycontext['send_socket_data']:
+    impl_obj_id_or_ret = impl_ret
+    
+    # Log finish action.
+    if fnc_name in OBJ_CREATE_CALLS_DICT and is_model_object(impl_ret):
+      impl_obj_id_or_ret = _get_obj_id(fnc_name, impl_ret)
+    finish_tuple = (fnc_name, 'finish', threadname, obj_id, tuple([impl_obj_id_or_ret, impl_error]))
+
+    # Append finish tuple to action list
+    mycontext['interposition_action_buffer_list'].append(finish_tuple)
+
+  # We are done, return or raise to caller!
+  if impl_error != None:
+    raise impl_error
+  else:
+    return impl_ret

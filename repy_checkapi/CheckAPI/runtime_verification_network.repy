@@ -1,0 +1,221 @@
+"""
+<Program Name>
+  runtime_verification_network.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  Networking API runtime verification.
+"""
+
+
+
+
+################## TCP Server Object ##################
+class MBTTCPServer(ModelObject):
+  def __init__(self, realobj, implid):
+    self.realobj = realobj
+    self.implid = implid
+    self.closed = False
+
+
+
+
+  def getconnection(self):
+    fnc_name = "tcpserver_getconnection"
+    impl_func = self.realobj.getconnection
+    args_list = []
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+
+    
+  
+
+  def close(self):
+    fnc_name = "tcpserver_close"
+    impl_func = self.realobj.close
+    args_list = []
+    obj_id = self.implid
+    retval = exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+    self.closed = True
+    return retval
+
+
+
+
+  def __del__(self):
+    if not self.closed:
+      self.close()
+    fnc_name = "MBTTCPServer__del__"
+    obj_id = self.implid
+    exec_model_impl(fnc_name, None, None, None, obj_id, None)    
+
+  
+
+
+################## Listen For Connection Action ##################
+def action_listenforconnection(localip, localport):
+  fnc_name = "listenforconnection"
+  impl_func = listenforconnection
+  args_list = [localip, localport]
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+
+
+################## Emulated Socket Object ##################
+class MBTSocket(ModelObject):
+  def __init__(self, realobj, implid):
+    self.realobj = realobj
+    self.implid = implid
+    self.closed = False
+
+
+
+
+  def recv(self, bytes):
+    fnc_name = "socket_recv"
+    impl_func = self.realobj.recv
+    args_list = [bytes]
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+
+    
+
+
+  def send(self, message):
+    fnc_name = "socket_send"
+    impl_func = self.realobj.send
+    args_list = [message]
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+
+
+  def close(self):
+    fnc_name = "socket_close"
+    impl_func = self.realobj.close
+    args_list = []
+    obj_id = self.implid
+    retval = exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+    self.closed = True
+    return retval
+
+
+
+
+  def __del__(self):
+    if not self.closed:
+      self.close()
+    fnc_name = "MBTSocket__del__"
+    obj_id = self.implid
+    exec_model_impl(fnc_name, None, None, None, obj_id, None)
+    
+
+
+
+
+################## Open Connection Action ##################
+def action_openconnection(destip, destport, localip, localport, timeout):
+  fnc_name = "openconnection"
+  impl_func = openconnection
+  args_list = [destip, destport, localip, localport, timeout]
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+
+
+################## UDP Server Object #################
+class MBTUDPServer(ModelObject):
+  def __init__(self, realobj, implid):
+    self.realobj = realobj
+    self.implid = implid
+    self.closed = False
+
+
+
+
+  def getmessage(self):
+    fnc_name = "udpserver_getmessage"
+    impl_func = self.realobj.getmessage
+    args_list = []
+    obj_id = self.implid
+    return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+
+
+
+
+  def close(self):
+    fnc_name = "udpserver_close"
+    impl_func = self.realobj.close
+    args_list = []
+    obj_id = self.implid
+    retval = exec_model_impl(fnc_name, getthreadname(), impl_func, args_list, obj_id, self)
+    self.closed = True
+    return retval
+
+
+
+
+  def __del__(self):
+    if not self.closed:
+      self.close()
+    fnc_name = "MBTUDPServer__del__"
+    obj_id = self.implid
+    exec_model_impl(fnc_name, None, None, None, obj_id, None)
+
+    
+
+################## Listen For Message Action ##################
+def action_listenformessage(localip, localport):
+  fnc_name = "listenformessage"
+  impl_func = listenformessage
+  args_list = [localip, localport]
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+
+
+################## Send Message Action ##################
+def action_sendmessage(destip, destport, message, localip, localport):
+  fnc_name = "sendmessage"
+  impl_func = sendmessage
+  args_list = [destip, destport, message, localip, localport]
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+
+
+################## Get My IP Action ##################
+def action_getmyip():
+  fnc_name = "getmyip"
+  impl_func = getmyip
+  args_list = []
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+
+
+################## Get Host By Name Action ##################
+def action_gethostbyname(name):
+  fnc_name = "gethostbyname"
+  impl_func = gethostbyname
+  args_list = [name]
+  return exec_model_impl(fnc_name, getthreadname(), impl_func, args_list)
+
+
+
+
+################## wrap network contexts ################## 
+def wrap_network():
+  CHILD_CONTEXT["openconnection"] = action_openconnection
+  CHILD_CONTEXT["listenformessage"] = action_listenformessage
+  CHILD_CONTEXT["sendmessage"] = action_sendmessage
+  CHILD_CONTEXT["getmyip"] = action_getmyip
+  CHILD_CONTEXT["listenforconnection"] = action_listenforconnection
+  CHILD_CONTEXT["gethostbyname"] = action_gethostbyname

@@ -1,0 +1,173 @@
+"""
+<Program Name>
+  check_api.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  More information about this program, it's limitations and how to use it can 
+  be found at: https://seattle.cs.washington.edu/wiki/CheckAPI
+
+<Usage>
+  python repy.py <restrictions file> encasementlib.repy dylink.repy \ 
+    check_api.repy <program under test>
+
+"""
+# Display debugging information during execution.
+DEBUG = False
+
+# For the Sleep Time of Blocking when Send Data 
+BLOCKING_SLEEP_TIME = 0.05
+
+# For the Sleep Time of Collect data
+COLLECT_DATA_SLEEP_TIME = 0.04
+
+# For the Sleep Time of Derive data
+DERIVE_DATA_SLEEP_TIME = 0.004
+
+# Setting of the Loop Back IP address
+LOOP_BACK_IP = '127.0.0.1'
+
+# Setting of the server port
+SERVER_PORT = 50001
+
+# Setting of the client port 
+CLIENT_PORT = 50002
+
+# Size for one time recv data
+RECV_BLOCK_SIZE = 1024*64 # 10**16
+
+# Size For one time send data
+SEND_BLOCK_SIZE = 1024*16 # 10**14
+
+# Size For Check the string block if need to send
+CHECK_STRING_BUFFER_SIZE = 1024*64  # 10**16
+
+# Are you using CheckAPI for shims or not? 
+# *Not fully supported in this version yet*
+CHECKAPI_FOR_SHIMS = False
+
+# Should we use resource restrictions? This was added so that we could use
+# Repy portability since it does not support restrictions.
+ENABLE_RESTRICTIONS = True
+
+# Should we verify thread order? This cannot be done with shims.
+ENABLE_THREAD_VERIF = True
+
+# For certain applications verification can be sped up by turning off lock verification.
+ENABLE_LOCK_VERIF = True
+
+# The filename of a list of associated files that should be imported into the 
+# model's filesystem upon start-up.
+FILES_TO_IMPORT_TO_FS = "check_api_initial_filestate.input"
+
+# EG:
+dy_import_module_symbols("checkapi_rstructures.repy")
+
+# Various global state/methods used throughout CheckAPI.
+dy_import_module_symbols("check_api_globals.repy")
+
+# Various exceptions that are used throughout CheckAPI.
+dy_import_module_symbols("check_api_exceptions.repy")
+
+# Setter/Getter mechanism for CheckAPI.
+dy_import_module_symbols("check_api_oracle_setter_getter.repy")
+
+# Include helper modules.
+#dy_import_module_symbols("deep_copy.repy")
+dy_import_module_symbols("math.repy")
+dy_import_module_symbols("librepyrandom.repy")
+dy_import_module_symbols("random.repy")
+
+# Include the core model itself.
+# EG: Now it makes use of the revertible structures
+dy_import_module_symbols("core_model_state.repy")
+dy_import_module_symbols("core_model_resource.repy")
+dy_import_module_symbols("core_model_thread.repy")
+dy_import_module_symbols("core_model_file_system.repy")
+dy_import_module_symbols("core_model_networking.repy")
+dy_import_module_symbols("core_model_misc.repy")
+
+# Import an initial file state here, reads in a file that lists files that 
+# should be imported. This, by default, includes the first call arg to checkapi.
+dy_import_module_symbols("check_api_bootstrap_state.repy")
+bootstrap_import_filestate(callargs[0:1])
+
+# Initialize restrictions if we need to.
+if ENABLE_RESTRICTIONS:
+  initialize_restrictions()
+
+# Include systolic verification mechanism.
+dy_import_module_symbols("systolic_verification.repy")
+
+# Include the interposition modules, if needed.
+if not CHECKAPI_FOR_SHIMS:
+  dy_import_module_symbols("runtime_verification_fileio.repy")
+  dy_import_module_symbols("runtime_verification_network.repy")
+  dy_import_module_symbols("runtime_verification_threading.repy")
+  dy_import_module_symbols("runtime_verification_misc.repy")
+dy_import_module_symbols("runtime_verification_core.repy")
+
+# Include serialize module.
+dy_import_module_symbols("serialize.repy")
+
+
+def active_threads():
+  lim, usage, stops = getresources()
+  return usage["events"]
+
+
+def wait_until_finished(finished_count):
+  active = active_threads()
+  while active != finished_count:
+    sleep(.1)
+    active = active_threads()
+
+
+def open_checkapi_connection():
+  # log('CheckAPI Interposition Socket Connecting...\n')
+  # Establish connection to server.
+  mycontext['interposition_connection_handle'] = openconnection(LOOP_BACK_IP, SERVER_PORT, LOOP_BACK_IP, CLIENT_PORT, 10)    
+
+
+def close_checkapi_connection():
+  # log('CheckAPI Interposition Socket Closed...\n')
+  # Close socket.
+  mycontext['interposition_connection_handle'].close()    
+
+
+# Runtime section 
+if callfunc == "initialize":
+  
+  if mycontext['send_socket_data']:
+    # Open CheckAPI Socket Connection
+    open_checkapi_connection()
+
+  runtime_verification_wrap_calls()
+  starting_threads = active_threads()
+
+  # Dispatch next layer.
+  dy_dispatch_module()
+  # We must wait until all of the child threads have finished before doing one
+  wait_until_finished(starting_threads)
+
+  #Set sleep time to wait the thread work, I am not sure this is the good way.
+  sleep(0.5)
+ 
+  if mycontext['send_socket_data']:
+    # Set interposition finished flag as True
+    mycontext['interposition_finished_flag'] = True
+    # We must wait until the send thread has been finished
+    
+    if mycontext['thread_start_flag'] == True:
+      wait_until_finished(starting_threads - 1)
+  
+    # Send the rest of data in string buffer, then close connection
+    send_all_action_data(mycontext['interposition_send_string_buffer'])  
+    close_checkapi_connection()

@@ -36,7 +36,10 @@ nanny._resources_consumed_dict = {'messport':set(), 'connport':set(), 'cpu':0,
       'events':set(), 'filesopened':set(), 'insockets':set(), 'outsockets':set()
       }
 '''
+# EG:
 dy_import_module_symbols("lind_fs_constants")
+dy_import_module_symbols("fs_net_handler")
+
 #dy_import_module_symbols("wrapped_lind_net_calls")
 #from lind_fs_constants import *
 
@@ -237,7 +240,8 @@ def _blank_fs_init():
   filesystemmetadata['inodetable'] = {}
   filesystemmetadata['inodetable'][ROOTDIRECTORYINODE] = {'size':0, 
             'uid':1000, 'gid':1000, 
-            'mode':16877,  # DIR+rwxr-xr-x
+            #'mode':16877,  # DIR+rwxr-xr-x 
+            'mode':['S_IFDIR', 'S_IRWXU', 'S_IRGRP', 'S_IXGRP', 'S_IROTH', 'S_IXOTH'],
             'atime':1323630836, 'ctime':1323630836, 'mtime':1323630836,
             'linkcount':2,    # the number of dir entries...
             'filename_to_inode_dict': {'.':ROOTDIRECTORYINODE, 
@@ -520,7 +524,7 @@ def access_syscall(path, amode):
   """
     See: http://linux.die.net/man/2/access
   """
-
+  amode = flag2list(amode)
   
   # lock to prevent things from changing while we look this up...
   filesystemmetadatalock.acquire(True)
@@ -543,7 +547,7 @@ def access_syscall(path, amode):
 
     # if all of the bits for this file are set as requested, then indicate
     # success (return 0)
-    if filesystemmetadata['inodetable'][thisinode]['mode'] & amode == amode:
+    if filesystemmetadata['inodetable'][thisinode]['mode'] == amode:
       return 0
 
     raise SyscallError("access_syscall","EACESS","The requested access is denied.")
@@ -594,6 +598,7 @@ def mkdir_syscall(path, mode):
   """ 
     http://linux.die.net/man/2/mkdir
   """
+  mode = flag2list(mode)
 
   # lock to prevent things from changing while we look this up...
   filesystemmetadatalock.acquire(True)
@@ -622,7 +627,7 @@ def mkdir_syscall(path, mode):
     # TODO: I should check permissions...
 
 
-    assert(mode & S_IRWXA == mode)
+    assert('S_IRWXA' not in mode)
 
     # okay, great!!!   We're ready to go!   Let's make the new directory...
     dirname = truepath.split('/')[-1]
@@ -632,7 +637,7 @@ def mkdir_syscall(path, mode):
     filesystemmetadata['nextinode'] += 1
 
     newinodeentry = {'size':0, 'uid':1000, 'gid':1000, 
-            'mode':mode | S_IFDIR,  # DIR+rwxr-xr-x
+            'mode':mode.append('S_IFDIR'),  # DIR+rwxr-xr-x
             # BUG: I'm listing some arbitrary time values.  I could keep a time
             # counter too.
             'atime':1323630836, 'ctime':1323630836, 'mtime':1323630836,
@@ -976,6 +981,8 @@ def open_syscall(path, flags, mode):
   """ 
     http://linux.die.net/man/2/open
   """
+  flags = flag2list(flags)
+  mode = flag2list(mode)
 
   # in an abundance of caution, lock...   I think this should only be needed
   # with O_CREAT flags...
@@ -989,7 +996,7 @@ def open_syscall(path, flags, mode):
     if truepath not in fastinodelookuptable:
 
       # did they use O_CREAT?
-      if not O_CREAT & flags:
+      if not 'O_CREAT' in flags:
         raise SyscallError("open_syscall","ENOENT","The file does not exist.")
       
       # okay, it doesn't exist (great!).   Does it's parent exist and is it a 
@@ -1010,14 +1017,14 @@ def open_syscall(path, flags, mode):
 
       # first, make the new file's entry...
       newinode = filesystemmetadata['nextinode']
-      filesystemmetadata['nextinode'] += 1
+      filesystemmetadata['nextinode'] += 1      
 
       # be sure there aren't extra mode bits...   No errno seems to exist for 
       # this.
-      assert(mode & S_IRWXA == mode)
+      assert('S_IRWXA' not in mode)
 
       newinodeentry = {'size':0, 'uid':1000, 'gid':1000, 
-            'mode':S_IFREG + mode,  # FILE + their entries
+            'mode': mode.append('S_IFREG'),  # FILE + their entries
             # BUG: I'm listing some arbitrary time values.  I could keep a time
             # counter too.
             'atime':1323630836, 'ctime':1323630836, 'mtime':1323630836,
@@ -1042,12 +1049,12 @@ def open_syscall(path, flags, mode):
     # if the file did exist, were we told to create with exclusion?
     else:
       # did they use O_CREAT and O_EXCL?
-      if O_CREAT & flags and O_EXCL & flags:
+      if 'O_CREAT' in flags and 'O_EXCL' in flags:
         raise SyscallError("open_syscall","EEXIST","The file exists.")
 
       # This file should be removed.   If O_RDONLY is set, the behavior
       # is undefined, so this is okay, I guess...
-      if O_TRUNC & flags:
+      if 'O_TRUNC' in flags:
         inode = fastinodelookuptable[truepath]
 
         # if it exists, close the existing file object so I can remove it...
@@ -1086,7 +1093,7 @@ def open_syscall(path, flags, mode):
 
     # I'm going to assume that if you use O_APPEND I only need to 
     # start the pointer in the right place.
-    if O_APPEND & flags:
+    if 'O_APPEND' in flags:
       position = filesystemmetadata['inodetable'][inode]['size']
     else:
       # else, let's start at the beginning
@@ -1097,7 +1104,7 @@ def open_syscall(path, flags, mode):
 
     # Add the entry to the table!
 
-    filedescriptortable[thisfd] = {'position':position, 'inode':inode, 'lock':createlock(), 'flags':flags&O_RDWRFLAGS}
+    filedescriptortable[thisfd] = {'position':position, 'inode':inode, 'lock':createlock(), 'flags':flags.extend(O_RDWRFLAGS)}
 
     # Done!   Let's return the file descriptor.
     return thisfd
@@ -1118,10 +1125,11 @@ def creat_syscall(pathname, mode):
   """ 
     http://linux.die.net/man/2/creat
   """
+  mode = flag2list(mode)
 
   try:
 
-    return open_syscall(pathname, O_CREAT | O_TRUNC | O_WRONLY, mode)
+    return open_syscall(pathname, ['O_CREAT', 'O_TRUNC', 'O_WRONLY'], mode)
   
   except SyscallError, e:
     # If it's a system call error, return our call name instead.
@@ -1141,6 +1149,8 @@ def lseek_syscall(fd, offset, whence):
   """ 
     http://linux.die.net/man/2/lseek
   """
+  offset = flag2list(offset)
+  whence = flag2list(whence)
 
   # check the fd
   if fd not in filedescriptortable:
@@ -1170,12 +1180,12 @@ def lseek_syscall(fd, offset, whence):
       
 
     # Figure out where we will seek to and check it...
-    if whence == SEEK_SET:
-      eventualpos = offset
-    elif whence == SEEK_CUR:
-      eventualpos = filedescriptortable[fd]['position']+offset
-    elif whence == SEEK_END:
-      eventualpos = filesize+offset
+    if 'SEEK_SET' in whence:
+      eventualpos = int(offset[0])
+    elif 'SEEK_CUR' in whence:
+      eventualpos = filedescriptortable[fd]['position']+int(offset[0])
+    elif 'SEEK_END' in whence:
+      eventualpos = filesize+int(offset[0])
     else:
       raise SyscallError("lseek_syscall","EINVAL","Invalid whence.")
 
@@ -1541,6 +1551,9 @@ def fcntl_syscall(fd, cmd, *args):
   # this call is totally crazy!   I'll just implement the basics and add more
   # as is needed.
 
+  cmd = flag2list(cmd)
+  args = flag2list(args)
+
   # BUG: I probably need a filedescriptortable lock to prevent race conditions
 
   # check the fd
@@ -1554,40 +1567,44 @@ def fcntl_syscall(fd, cmd, *args):
   # ... but always release it...
   try:
 
+    #EG: handle F_DUPFD
+    if 'F_DUPFD' in cmd:
+      return dup_syscall(fd)
+
     # if we're getting the flags, return them... (but this is just CLO_EXEC, 
     # so ignore)
-    if cmd == F_GETFD:
+    if 'F_GETFD' in cmd:
       assert(len(args) == 0)
       return 0
 
     # set the flags... (but this is just CLO_EXEC, so ignore...)
-    elif cmd == F_SETFD:
+    elif 'F_SETFD' in cmd:
       assert(len(args) == 1)
-      assert(type(args[0]) == int or type(args[0]) == long)
+      assert(type(args[0]) == int or type(args[0]) == long or type(args[0]) == str)
       return 0
 
     # if we're getting the flags, return them...
-    elif cmd == F_GETFL:
+    elif 'F_GETFL' in cmd:
       assert(len(args) == 0)
       return filedescriptortable[fd]['flags']
 
     # set the flags...
-    elif cmd == F_SETFL:
+    elif 'F_SETFL' in cmd:
       assert(len(args) == 1)
-      assert(type(args[0]) == int or type(args[0]) == long)
+      assert(type(args[0]) == int or type(args[0]) == long or type(args[0]) == str)
       filedescriptortable[fd]['flags'] = args[0]
       return 0
 
     # This is saying we'll get signals for this.   Let's punt this...
-    elif cmd == F_GETOWN:
+    elif 'F_GETOWN' in cmd:
       assert(len(args) == 0)
       # Saying traditional SIGIO behavior...
       return 0
 
     # indicate that we want to receive signals for this FD...
-    elif cmd == F_SETOWN:
+    elif 'F_SETOWN' in cmd:
       assert(len(args) == 1)
-      assert(type(args[0]) == int or type(args[0]) == long)
+      assert(type(args[0]) == int or type(args[0]) == long or type(args[0]) == str)
       # this would almost certainly say our PID (if positive) or our process
       # group (if negative).   Either way, we do nothing and return success.
       return 0

@@ -1,5 +1,6 @@
 '''
-NOTE: Must be executed with librepy.repy.
+NOTE: Must be executed with librepy.repy:
+python repy.py restrictions.full encasementlib.repy dylink.repy librepy.repy verify-test-harness.repy 
 '''
 
 dy_import_module_symbols("check_api.repy")
@@ -142,7 +143,7 @@ def verify_trace(trace, lNum):
 
 		if name == 'fcntl_syscall':
 		    if args[0] in ignore_fd:
-		        if args[1] == F_DUPFD and impl_ret != -1:
+		        if args[1] == ['F_DUPFD'] and impl_ret != -1:
 		            ignore_fd.append(impl_ret)
 		        #print "IGNORING: " + str(action)
 		        continue
@@ -197,7 +198,7 @@ def verify_trace(trace, lNum):
 		        ignore_fd.append(impl_ret)
 
 		    if name == 'fcntl_syscall':
-		        if args[1] == F_DUPFD and impl_ret != -1:
+		        if args[1] == '[F_DUPFD'] and impl_ret != -1:
 		            ignore_fd.append(impl_ret)
 
 		    continue
@@ -255,7 +256,7 @@ def verify_trace(trace, lNum):
     return ERRORS
 
 #TRACE_FILE_NAME = "putty_ubuntu.strace_full"
-TRACE_FILE_NAME = "buffull.strace_result"
+#TRACE_FILE_NAME = "buffull.strace_result"
 ERROR_FILE = "errors.txt"
 #TRACE_FILE_NAME = "setsockoptafterclose.strace_result"
 READ_AMNT = -1

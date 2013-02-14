@@ -1,0 +1,717 @@
+dy_import_module_symbols("lind_fs_constants")
+dy_import_module_symbols("lind_net_constants")
+
+def flag2list(flag):
+
+    try:
+        if int(flag) == 0:
+            return []
+        return convert(flag)
+    except:
+        return flag
+
+
+def convert(num):
+    if num == SOCK_STREAM:
+        return ['SOCK_STREAM']
+    elif num == SOCK_DGRAM:
+        return ['SOCK_DGRAM']
+    elif num == SOCK_RAW:
+        return ['SOCK_RAW']
+    elif num == SOCK_RDM:
+        return ['SOCK_RDM']
+    elif num == SOCK_SEQPACKET:
+        return ['SOCK_SEQPACKET']
+    elif num == AF_UNSPEC:
+        return ['AF_UNSPEC']
+    elif num == AF_UNIX:
+        return ['AF_UNIX']
+    elif num == AF_LOCAL:
+        return ['AF_LOCAL']
+    elif num == PF_FILE:
+        return ['PF_FILE']
+    elif num == AF_INET:
+        return ['AF_INET']
+    elif num == AF_IMPLINK:
+        return ['AF_IMPLINK']
+    elif num == AF_PUP:
+        return ['AF_PUP']
+    elif num == AF_CHAOS:
+        return ['AF_CHAOS']
+    elif num == AF_NS:
+        return ['AF_NS']
+    elif num == AF_ISO:
+        return ['AF_ISO']
+    elif num == AF_OSI:
+        return ['AF_OSI']
+    elif num == AF_ECMA:
+        return ['AF_ECMA']
+    elif num == AF_DATAKIT:
+        return ['AF_DATAKIT']
+    elif num == AF_CCITT:
+        return ['AF_CCITT']
+    elif num == AF_SNA:
+        return ['AF_SNA']
+    elif num == AF_DECnet:
+        return ['AF_DECnet']
+    elif num == AF_DLI:
+        return ['AF_DLI']
+    elif num == AF_LAT:
+        return ['AF_LAT']
+    elif num == AF_HYLINK:
+        return ['AF_HYLINK']
+    elif num == AF_APPLETALK:
+        return ['AF_APPLETALK']
+    elif num == AF_ROUTE:
+        return ['AF_ROUTE']
+    elif num == AF_LINK:
+        return ['AF_LINK']
+    elif num == pseudo_AF_XTP:
+        return ['pseudo_AF_XTP']
+    elif num == AF_COIP:
+        return ['AF_COIP']
+    elif num == AF_CNT:
+        return ['AF_CNT']
+    elif num == pseudo_AF_RTIP:
+        return ['pseudo_AF_RTIP']
+    elif num == AF_IPX:
+        return ['AF_IPX']
+    elif num == AF_SIP:
+        return ['AF_SIP']
+    elif num == pseudo_AF_PIP:
+        return ['pseudo_AF_PIP']
+    elif num == pseudo_AF_BLUE:
+        return ['pseudo_AF_BLUE']
+    elif num == AF_NDRV:
+        return ['AF_NDRV']
+    elif num == AF_ISDN:
+        return ['AF_ISDN']
+    elif num == AF_E164:
+        return ['AF_E164']
+    elif num == pseudo_AF_KEY:
+        return ['pseudo_AF_KEY']
+    elif num == AF_INET6:
+        return ['AF_INET6']
+    elif num == AF_NATM:
+        return ['AF_NATM']
+    elif num == AF_SYSTEM:
+        return ['AF_SYSTEM']
+    elif num == AF_NETBIOS:
+        return ['AF_NETBIOS']
+    elif num == AF_PPP:
+        return ['AF_PPP']
+    elif num == pseudo_AF_HDRCMPLT:
+        return ['pseudo_AF_HDRCMPLT']
+    elif num == AF_RESERVED_36:
+        return ['AF_RESERVED_36']
+    elif num == AF_IEEE80211:
+        return ['AF_IEEE80211']
+    elif num == AF_MAX:
+        return ['AF_MAX']
+    elif num == IPPROTO_IP:
+        return ['IPPROTO_IP']
+    elif num == IPPROTO_ICMP:
+        return ['IPPROTO_ICMP']
+    elif num == IPPROTO_IGMP:
+        return ['IPPROTO_IGMP']
+    elif num == IPPROTO_GGP:
+        return ['IPPROTO_GGP']
+    elif num == IPPROTO_IPV4:
+        return ['IPPROTO_IPV4']
+    elif num == IPPROTO_IPIP:
+        return ['IPPROTO_IPIP']
+    elif num == IPPROTO_TCP:
+        return ['IPPROTO_TCP']
+    elif num == IPPROTO_ST:
+        return ['IPPROTO_ST']
+    elif num == IPPROTO_EGP:
+        return ['IPPROTO_EGP']
+    elif num == IPPROTO_PIGP:
+        return ['IPPROTO_PIGP']
+    elif num == IPPROTO_RCCMON:
+        return ['IPPROTO_RCCMON']
+    elif num == IPPROTO_NVPII:
+        return ['IPPROTO_NVPII']
+    elif num == IPPROTO_PUP:
+        return ['IPPROTO_PUP']
+    elif num == IPPROTO_ARGUS:
+        return ['IPPROTO_ARGUS']
+    elif num == IPPROTO_EMCON:
+        return ['IPPROTO_EMCON']
+    elif num == IPPROTO_XNET:
+        return ['IPPROTO_XNET']
+    elif num == IPPROTO_CHAOS:
+        return ['IPPROTO_CHAOS']
+    elif num == IPPROTO_UDP:
+        return ['IPPROTO_UDP']
+    elif num == IPPROTO_MUX:
+        return ['IPPROTO_MUX']
+    elif num == IPPROTO_MEAS:
+        return ['IPPROTO_MEAS']
+    elif num == IPPROTO_HMP:
+        return ['IPPROTO_HMP']
+    elif num == IPPROTO_PRM:
+        return ['IPPROTO_PRM']
+    elif num == IPPROTO_IDP:
+        return ['IPPROTO_IDP']
+    elif num == IPPROTO_TRUNK1:
+        return ['IPPROTO_TRUNK1']
+    elif num == IPPROTO_TRUNK2:
+        return ['IPPROTO_TRUNK2']
+    elif num == IPPROTO_LEAF1:
+        return ['IPPROTO_LEAF1']
+    elif num == IPPROTO_LEAF2:
+        return ['IPPROTO_LEAF2']
+    elif num == IPPROTO_RDP:
+        return ['IPPROTO_RDP']
+    elif num == IPPROTO_IRTP:
+        return ['IPPROTO_IRTP']
+    elif num == IPPROTO_TP:
+        return ['IPPROTO_TP']
+    elif num == IPPROTO_BLT:
+        return ['IPPROTO_BLT']
+    elif num == IPPROTO_NSP:
+        return ['IPPROTO_NSP']
+    elif num == IPPROTO_INP:
+        return ['IPPROTO_INP']
+    elif num == IPPROTO_SEP:
+        return ['IPPROTO_SEP']
+    elif num == IPPROTO_3PC:
+        return ['IPPROTO_3PC']
+    elif num == IPPROTO_IDPR:
+        return ['IPPROTO_IDPR']
+    elif num == IPPROTO_XTP:
+        return ['IPPROTO_XTP']
+    elif num == IPPROTO_DDP:
+        return ['IPPROTO_DDP']
+    elif num == IPPROTO_CMTP:
+        return ['IPPROTO_CMTP']
+    elif num == IPPROTO_TPXX:
+        return ['IPPROTO_TPXX']
+    elif num == IPPROTO_IL:
+        return ['IPPROTO_IL']
+    elif num == IPPROTO_IPV6:
+        return ['IPPROTO_IPV6']
+    elif num == IPPROTO_SDRP:
+        return ['IPPROTO_SDRP']
+    elif num == IPPROTO_ROUTING:
+        return ['IPPROTO_ROUTING']
+    elif num == IPPROTO_FRAGMENT:
+        return ['IPPROTO_FRAGMENT']
+    elif num == IPPROTO_IDRP:
+        return ['IPPROTO_IDRP']
+    elif num == IPPROTO_RSVP:
+        return ['IPPROTO_RSVP']
+    elif num == IPPROTO_GRE:
+        return ['IPPROTO_GRE']
+    elif num == IPPROTO_MHRP:
+        return ['IPPROTO_MHRP']
+    elif num == IPPROTO_BHA:
+        return ['IPPROTO_BHA']
+    elif num == IPPROTO_ESP:
+        return ['IPPROTO_ESP']
+    elif num == IPPROTO_AH:
+        return ['IPPROTO_AH']
+    elif num == IPPROTO_INLSP:
+        return ['IPPROTO_INLSP']
+    elif num == IPPROTO_SWIPE:
+        return ['IPPROTO_SWIPE']
+    elif num == IPPROTO_NHRP:
+        return ['IPPROTO_NHRP']
+    elif num == IPPROTO_ICMPV6:
+        return ['IPPROTO_ICMPV6']
+    elif num == IPPROTO_NONE:
+        return ['IPPROTO_NONE']
+    elif num == IPPROTO_DSTOPTS:
+        return ['IPPROTO_DSTOPTS']
+    elif num == IPPROTO_AHIP:
+        return ['IPPROTO_AHIP']
+    elif num == IPPROTO_CFTP:
+        return ['IPPROTO_CFTP']
+    elif num == IPPROTO_HELLO:
+        return ['IPPROTO_HELLO']
+    elif num == IPPROTO_SATEXPAK:
+        return ['IPPROTO_SATEXPAK']
+    elif num == IPPROTO_KRYPTOLAN:
+        return ['IPPROTO_KRYPTOLAN']
+    elif num == IPPROTO_RVD:
+        return ['IPPROTO_RVD']
+    elif num == IPPROTO_IPPC:
+        return ['IPPROTO_IPPC']
+    elif num == IPPROTO_ADFS:
+        return ['IPPROTO_ADFS']
+    elif num == IPPROTO_SATMON:
+        return ['IPPROTO_SATMON']
+    elif num == IPPROTO_VISA:
+        return ['IPPROTO_VISA']
+    elif num == IPPROTO_IPCV:
+        return ['IPPROTO_IPCV']
+    elif num == IPPROTO_CPNX:
+        return ['IPPROTO_CPNX']
+    elif num == IPPROTO_CPHB:
+        return ['IPPROTO_CPHB']
+    elif num == IPPROTO_WSN:
+        return ['IPPROTO_WSN']
+    elif num == IPPROTO_PVP:
+        return ['IPPROTO_PVP']
+    elif num == IPPROTO_BRSATMON:
+        return ['IPPROTO_BRSATMON']
+    elif num == IPPROTO_ND:
+        return ['IPPROTO_ND']
+    elif num == IPPROTO_WBMON:
+        return ['IPPROTO_WBMON']
+    elif num == IPPROTO_WBEXPAK:
+        return ['IPPROTO_WBEXPAK']
+    elif num == IPPROTO_EON:
+        return ['IPPROTO_EON']
+    elif num == IPPROTO_VMTP:
+        return ['IPPROTO_VMTP']
+    elif num == IPPROTO_SVMTP:
+        return ['IPPROTO_SVMTP']
+    elif num == IPPROTO_VINES:
+        return ['IPPROTO_VINES']
+    elif num == IPPROTO_TTP:
+        return ['IPPROTO_TTP']
+    elif num == IPPROTO_IGP:
+        return ['IPPROTO_IGP']
+    elif num == IPPROTO_DGP:
+        return ['IPPROTO_DGP']
+    elif num == IPPROTO_TCF:
+        return ['IPPROTO_TCF']
+    elif num == IPPROTO_IGRP:
+        return ['IPPROTO_IGRP']
+    elif num == IPPROTO_OSPFIGP:
+        return ['IPPROTO_OSPFIGP']
+    elif num == IPPROTO_SRPC:
+        return ['IPPROTO_SRPC']
+    elif num == IPPROTO_LARP:
+        return ['IPPROTO_LARP']
+    elif num == IPPROTO_MTP:
+        return ['IPPROTO_MTP']
+    elif num == IPPROTO_AX25:
+        return ['IPPROTO_AX25']
+    elif num == IPPROTO_IPEIP:
+        return ['IPPROTO_IPEIP']
+    elif num == IPPROTO_MICP:
+        return ['IPPROTO_MICP']
+    elif num == IPPROTO_SCCSP:
+        return ['IPPROTO_SCCSP']
+    elif num == IPPROTO_ETHERIP:
+        return ['IPPROTO_ETHERIP']
+    elif num == IPPROTO_ENCAP:
+        return ['IPPROTO_ENCAP']
+    elif num == IPPROTO_APES:
+        return ['IPPROTO_APES']
+    elif num == IPPROTO_GMTP:
+        return ['IPPROTO_GMTP']
+    elif num == IPPROTO_PIM:
+        return ['IPPROTO_PIM']
+    elif num == IPPROTO_IPCOMP:
+        return ['IPPROTO_IPCOMP']
+    elif num == IPPROTO_PGM:
+        return ['IPPROTO_PGM']
+    elif num == IPPROTO_SCTP:
+        return ['IPPROTO_SCTP']
+    elif num == IPPROTO_DIVERT:
+        return ['IPPROTO_DIVERT']
+    elif num == IPPROTO_RAW:
+        return ['IPPROTO_RAW']
+    elif num == IPPROTO_MAX:
+        return ['IPPROTO_MAX']
+    elif num == IPPROTO_DONE:
+        return ['IPPROTO_DONE']
+    elif num == PF_UNSPEC:
+        return ['PF_UNSPEC']
+    elif num == PF_LOCAL:
+        return ['PF_LOCAL']
+    elif num == PF_UNIX:
+        return ['PF_UNIX']
+    elif num == PF_FILE:
+        return ['PF_FILE']
+    elif num == PF_INET:
+        return ['PF_INET']
+    elif num == PF_IMPLINK:
+        return ['PF_IMPLINK']
+    elif num == PF_PUP:
+        return ['PF_PUP']
+    elif num == PF_CHAOS:
+        return ['PF_CHAOS']
+    elif num == PF_NS:
+        return ['PF_NS']
+    elif num == PF_ISO:
+        return ['PF_ISO']
+    elif num == PF_OSI:
+        return ['PF_OSI']
+    elif num == PF_ECMA:
+        return ['PF_ECMA']
+    elif num == PF_DATAKIT:
+        return ['PF_DATAKIT']
+    elif num == PF_CCITT:
+        return ['PF_CCITT']
+    elif num == PF_SNA:
+        return ['PF_SNA']
+    elif num == PF_DECnet:
+        return ['PF_DECnet']
+    elif num == PF_DLI:
+        return ['PF_DLI']
+    elif num == PF_LAT:
+        return ['PF_LAT']
+    elif num == PF_HYLINK:
+        return ['PF_HYLINK']
+    elif num == PF_APPLETALK:
+        return ['PF_APPLETALK']
+    elif num == PF_ROUTE:
+        return ['PF_ROUTE']
+    elif num == PF_LINK:
+        return ['PF_LINK']
+    elif num == PF_XTP:
+        return ['PF_XTP']
+    elif num == PF_COIP:
+        return ['PF_COIP']
+    elif num == PF_CNT:
+        return ['PF_CNT']
+    elif num == PF_SIP:
+        return ['PF_SIP']
+    elif num == PF_IPX:
+        return ['PF_IPX']
+    elif num == PF_RTIP:
+        return ['PF_RTIP']
+    elif num == PF_PIP:
+        return ['PF_PIP']
+    elif num == PF_NDRV:
+        return ['PF_NDRV']
+    elif num == PF_ISDN:
+        return ['PF_ISDN']
+    elif num == PF_KEY:
+        return ['PF_KEY']
+    elif num == PF_INET6:
+        return ['PF_INET6']
+    elif num == PF_NATM:
+        return ['PF_NATM']
+    elif num == PF_SYSTEM:
+        return ['PF_SYSTEM']
+    elif num == PF_NETBIOS:
+        return ['PF_NETBIOS']
+    elif num == PF_PPP:
+        return ['PF_PPP']
+    elif num == PF_RESERVED_36:
+        return ['PF_RESERVED_36']
+    elif num == PF_MAX:
+        return ['PF_MAX']
+    elif num == SOMAXCONN:
+        return ['SOMAXCONN']
+    elif num == MSG_OOB:
+        return ['MSG_OOB']
+    elif num == MSG_PEEK:
+        return ['MSG_PEEK']
+    elif num == MSG_DONTROUTE:
+        return ['MSG_DONTROUTE']
+    elif num == MSG_EOR:
+        return ['MSG_EOR']
+    elif num == MSG_TRUNC:
+        return ['MSG_TRUNC']
+    elif num == MSG_CTRUNC:
+        return ['MSG_CTRUNC']
+    elif num == MSG_WAITALL:
+        return ['MSG_WAITALL']
+    elif num == MSG_DONTWAIT:
+        return ['MSG_DONTWAIT']
+    elif num == MSG_EOF:
+        return ['MSG_EOF']
+    elif num == MSG_WAITSTREAM:
+        return ['MSG_WAITSTREAM']
+    elif num == MSG_FLUSH:
+        return ['MSG_FLUSH']
+    elif num == MSG_HOLD:
+        return ['MSG_HOLD']
+    elif num == MSG_SEND:
+        return ['MSG_SEND']
+    elif num == MSG_HAVEMORE:
+        return ['MSG_HAVEMORE']
+    elif num == MSG_RCVMORE:
+        return ['MSG_RCVMORE']
+    elif num == MSG_NEEDSA:
+        return ['MSG_NEEDSA']
+    elif num == SHUT_RD:
+        return ['SHUT_RD']
+    elif num == SHUT_WR:
+        return ['SHUT_WR']
+    elif num == SHUT_RDWR:
+        return ['SHUT_RDWR']
+    elif num == SO_DEBUG:
+        return ['SO_DEBUG']
+    elif num == SO_ACCEPTCONN:
+        return ['SO_ACCEPTCONN']
+    elif num == SO_REUSEADDR:
+        return ['SO_REUSEADDR']
+    elif num == SO_KEEPALIVE:
+        return ['SO_KEEPALIVE']
+    elif num == SO_DONTROUTE:
+        return ['SO_DONTROUTE']
+    elif num == SO_BROADCAST:
+        return ['SO_BROADCAST']
+    elif num == SO_USELOOPBACK:
+        return ['SO_USELOOPBACK']
+    elif num == SO_LINGER:
+        return ['SO_LINGER']
+    elif num == SO_OOBINLINE:
+        return ['SO_OOBINLINE']
+    elif num == SO_REUSEPORT:
+        return ['SO_REUSEPORT']
+    elif num == SO_TIMESTAMP:
+        return ['SO_TIMESTAMP']
+    elif num == SO_ACCEPTFILTER:
+        return ['SO_ACCEPTFILTER']
+    elif num == SO_DONTTRUNC:
+        return ['SO_DONTTRUNC']
+    elif num == SO_WANTMORE:
+        return ['SO_WANTMORE']
+    elif num == SO_WANTOOBFLAG:
+        return ['SO_WANTOOBFLAG']
+    elif num == SO_SNDBUF:
+        return ['SO_SNDBUF']
+    elif num == SO_RCVBUF:
+        return ['SO_RCVBUF']
+    elif num == SO_SNDLOWAT:
+        return ['SO_SNDLOWAT']
+    elif num == SO_RCVLOWAT:
+        return ['SO_RCVLOWAT']
+    elif num == SO_SNDTIMEO:
+        return ['SO_SNDTIMEO']
+    elif num == SO_RCVTIMEO:
+        return ['SO_RCVTIMEO']
+    elif num == SO_ERROR:
+        return ['SO_ERROR']
+    elif num == SO_TYPE:
+        return ['SO_TYPE']
+    elif num == SO_NREAD:
+        return ['SO_NREAD']
+    elif num == SO_NKE:
+        return ['SO_NKE']
+    elif num == SO_NOSIGPIPE:
+        return ['SO_NOSIGPIPE']
+    elif num == SO_NOADDRERR:
+        return ['SO_NOADDRERR']
+    elif num == SO_NWRITE:
+        return ['SO_NWRITE']
+    elif num == SO_REUSESHAREUID:
+        return ['SO_REUSESHAREUID']
+    elif num == SO_NOTIFYCONFLICT:
+        return ['SO_NOTIFYCONFLICT']
+    elif num == SO_UPCALLCLOSEWAIT:
+        return ['SO_UPCALLCLOSEWAIT']
+    elif num == SO_LINGER_SEC:
+        return ['SO_LINGER_SEC']
+    elif num == SO_RESTRICTIONS:
+        return ['SO_RESTRICTIONS']
+    elif num == SO_RESTRICT_DENYIN:
+        return ['SO_RESTRICT_DENYIN']
+    elif num == SO_RESTRICT_DENYOUT:
+        return ['SO_RESTRICT_DENYOUT']
+    elif num == SO_RESTRICT_DENYSET:
+        return ['SO_RESTRICT_DENYSET']
+    elif num == SO_RANDOMPORT:
+        return ['SO_RANDOMPORT']
+    elif num == SO_NP_EXTENSIONS:
+        return ['SO_NP_EXTENSIONS']
+    elif num == SO_LABEL:
+        return ['SO_LABEL']
+    elif num == SO_PEERLABEL:
+        return ['SO_PEERLABEL']
+    elif num == TCP_NODELAY:
+        return ['TCP_NODELAY']
+    elif num == TCP_MAXSEG:
+        return ['TCP_MAXSEG']
+    elif num == TCP_NOPUSH:
+        return ['TCP_NOPUSH']
+    elif num == TCP_NOOPT:
+        return ['TCP_NOOPT']
+    elif num == TCP_KEEPALIVE:
+        return ['TCP_KEEPALIVE']
+    elif num == TCP_CONNECTIONTIMEOUT:
+        return ['TCP_CONNECTIONTIMEOUT']
+    elif num == PERSIST_TIMEOUT:
+        return ['PERSIST_TIMEOUT']
+    elif num == TCP_RXT_CONNDROPTIME:
+        return ['TCP_RXT_CONNDROPTIME']
+    elif num == TCP_RXT_FINDROP:
+        return ['TCP_RXT_FINDROP']
+    elif num == SOL_SOCKET:
+        return ['SOL_SOCKET']
+    elif num == SOL_TCP:
+        return ['SOL_TCP']
+    elif num == SOL_UDP:
+        return ['SOL_UDP']
+    elif num == F_OK:
+        return ['F_OK']
+    elif num == X_OK:
+        return ['X_OK']
+    elif num == W_OK:
+        return ['W_OK']
+    elif num == R_OK:
+        return ['R_OK']
+    elif num == O_RDONLY:
+        return ['O_RDONLY']
+    elif num == O_WRONLY:
+        return ['O_WRONLY']
+    elif num == O_RDWR:
+        return ['O_RDWR']
+    elif num == O_RDWRFLAGS:
+        return ['O_RDWRFLAGS']
+    elif num == O_CREAT:
+        return ['O_CREAT']
+    elif num == O_EXCL:
+        return ['O_EXCL']
+    elif num == O_NOCTTY:
+        return ['O_NOCTTY']
+    elif num == O_TRUNC:
+        return ['O_TRUNC']
+    elif num == O_APPEND:
+        return ['O_APPEND']
+    elif num == O_NONBLOCK:
+        return ['O_NONBLOCK']
+    elif num == O_SYNC:
+        return ['O_SYNC']
+    elif num == O_ASYNC:
+        return ['O_ASYNC']
+    elif num == S_IRWXA:
+        return ['S_IRWXA']
+    elif num == S_IRWXU:
+        return ['S_IRWXU']
+    elif num == S_IRUSR:
+        return ['S_IRUSR']
+    elif num == S_IWUSR:
+        return ['S_IWUSR']
+    elif num == S_IXUSR:
+        return ['S_IXUSR']
+    elif num == S_IRWXG:
+        return ['S_IRWXG']
+    elif num == S_IRGRP:
+        return ['S_IRGRP']
+    elif num == S_IWGRP:
+        return ['S_IWGRP']
+    elif num == S_IXGRP:
+        return ['S_IXGRP']
+    elif num == S_IRWXO:
+        return ['S_IRWXO']
+    elif num == S_IROTH:
+        return ['S_IROTH']
+    elif num == S_IWOTH:
+        return ['S_IWOTH']
+    elif num == S_IXOTH:
+        return ['S_IXOTH']
+    elif num == S_IFBLK:
+        return ['S_IFBLK']
+    elif num == S_IFCHR:
+        return ['S_IFCHR']
+    elif num == S_IFDIR:
+        return ['S_IFDIR']
+    elif num == S_IFIFO:
+        return ['S_IFIFO']
+    elif num == S_IFLNK:
+        return ['S_IFLNK']
+    elif num == S_IFREG:
+        return ['S_IFREG']
+    elif num == S_IFSOCK:
+        return ['S_IFSOCK']
+    elif num == S_FILETYPEFLAGS:
+        return ['S_FILETYPEFLAGS']
+    elif num == S_IWRITE:
+        return ['S_IWRITE']
+    elif num == S_ISUID:
+        return ['S_ISUID']
+    elif num == S_IREAD:
+        return ['S_IREAD']
+    elif num == S_ENFMT:
+        return ['S_ENFMT']
+    elif num == S_ISGID:
+        return ['S_ISGID']
+    elif num == SEEK_SET:
+        return ['SEEK_SET']
+    elif num == SEEK_CUR:
+        return ['SEEK_CUR']
+    elif num == SEEK_END:
+        return ['SEEK_END']
+    elif num == F_DUPFD:
+        return ['F_DUPFD']
+    elif num == F_GETFD:
+        return ['F_GETFD']
+    elif num == F_SETFD:
+        return ['F_SETFD']
+    elif num == F_GETFL:
+        return ['F_GETFL']
+    elif num == F_SETFL:
+        return ['F_SETFL']
+    elif num == F_GETLK:
+        return ['F_GETLK']
+    elif num == F_GETLK64:
+        return ['F_GETLK64']
+    elif num == F_SETLK:
+        return ['F_SETLK']
+    elif num == F_SETLK64:
+        return ['F_SETLK64']
+    elif num == F_SETLKW:
+        return ['F_SETLKW']
+    elif num == F_SETLKW64:
+        return ['F_SETLKW64']
+    elif num == F_SETOWN:
+        return ['F_SETOWN']
+    elif num == F_GETOWN:
+        return ['F_GETOWN']
+    elif num == F_SETSIG:
+        return ['F_SETSIG']
+    elif num == F_GETSIG:
+        return ['F_GETSIG']
+    elif num == F_SETLEASE:
+        return ['F_SETLEASE']
+    elif num == F_GETLEASE:
+        return ['F_GETLEASE']
+    elif num == F_NOTIFY:
+        return ['F_NOTIFY']
+    elif num == F_RDLCK:
+        return ['F_RDLCK']
+    elif num == F_WRLCK:
+        return ['F_WRLCK']
+    elif num == F_UNLCK:
+        return ['F_UNLCK']
+    elif num == F_EXLCK:
+        return ['F_EXLCK']
+    elif num == F_SHLCK:
+        return ['F_SHLCK']
+    elif num == PATH_MAX:
+        return ['PATH_MAX']
+    elif num == MAX_FD:
+        return ['MAX_FD']
+    elif num == DT_UNKNOWN:
+        return ['DT_UNKNOWN']
+    elif num == DT_FIFO:
+        return ['DT_FIFO']
+    elif num == DT_CHR:
+        return ['DT_CHR']
+    elif num == DT_DIR:
+        return ['DT_DIR']
+    elif num == DT_BLK:
+        return ['DT_BLK']
+    elif num == DT_REG:
+        return ['DT_REG']
+    elif num == DT_LNK:
+        return ['DT_LNK']
+    elif num == DT_SOCK:
+        return ['DT_SOCK']
+    elif num == DT_WHT:
+        return ['DT_WHT']
+    # Parameters that don't translate to POSIX model but are often used...
+
+    # Ignoring MSG_NOSIGNAL']
+    elif num == MSG_NOSIGNAL:
+        return []
+    # Ignoring SOCK_CLOEXEC because it seems to be needed more for multi-threading']
+    elif num == SOCK_CLOEXEC:
+        return []
+    # SOCK_NONBLOCK is the same as O_NONBLOCK']
+    elif num == SOCK_NONBLOCK:
+        return ['O_NONBLOCK']
+    else:
+        if DEBUG:
+            log("INVALID CONSTANT: " + num, '\n')
+        return ['UNIMPLEMENTED_ERROR']

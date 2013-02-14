@@ -41,6 +41,7 @@ nanny._resources_consumed_dict = {'messport':set(), 'connport':set(), 'cpu':0,
 dy_import_module_symbols("lind_fs_constants")
 dy_import_module_symbols("lind_net_constants")
 dy_import_module_symbols("wrapped_lind_fs_calls")
+dy_import_module_symbols("fs_net_handler")
 
 #from lind_fs_constants import *
 #from lind_net_constants import *
@@ -197,12 +198,13 @@ def _socket_initializer(domain,socktype,protocol):
   # NOTE: I'm intentionally omitting the 'inode' field.  This will make most
   # of the calls I did not change break.
   filedescriptortable[newfd] = {
-      'mode':S_IFSOCK|0666, # set rw-rw-rw- perms too. This is what POSIX does.
+      #'mode':S_IFSOCK|0666, # set rw-rw-rw- perms too. This is what POSIX does.
+      'mode': ['S_IFSOCK', 'S_IRUSR', 'S_IWUSR', 'S_IRGRP', 'S_IWGRP', 'S_IROTH', 'S_IWOTH'],
       'domain':domain,
       'type':socktype,      # I'm using this name because it's used by POSIX.
       'protocol':protocol,
       # BUG: I may need to handle the global setting of options here...
-      'options':0,          # start with all options off...
+      'options':[],          # start with all options off...
       'sndbuf':131070,      # buffersize (only used by getsockopt)
       'rcvbuf':262140,      # buffersize (only used by getsockopt)
       'state':NOTCONNECTED, # we start without any connection
@@ -220,29 +222,34 @@ def socket_syscall(domain, socktype, protocol):
   """
   # this code is basically one huge case statement by domain
 
+  domain = flag2list(domain)
+  socktype = flag2list(socktype)
+  protocol = flag2list(protocol)
+
+
   # okay, let's do different things depending on the domain...
-  if domain == PF_INET:
+  if 'PF_INET' in domain :
 
     
-    if socktype == SOCK_STREAM:
+    if 'SOCK_STREAM' in socktype:
       # If is 0, set to default (IPPROTO_TCP)
-      if protocol == 0:
-        protocol = IPPROTO_TCP
+      if protocol == ['IPPROTO_IP']:
+        protocol = ['IPPROTO_TCP']
 
 
-      if protocol != IPPROTO_TCP:
+      if 'IPPROTO_TCP' not in protocol :
         raise UnimplementedError("The only SOCK_STREAM implemented is TCP.  Unknown protocol:"+str(protocol))
       
       return _socket_initializer(domain,socktype,protocol)
 
 
     # datagram!
-    elif socktype == SOCK_DGRAM:
+    elif 'SOCK_DGRAM' in socktype:
       # If is 0, set to default (IPPROTO_UDP)
-      if protocol == 0:
-        protocol = IPPROTO_UDP
+      if protocol == ['IPPROTO_IP']:
+        protocol = ['IPPROTO_UDP']
 
-      if protocol != IPPROTO_UDP:
+      if 'IPPROTO_UDP' not in protocol:
         raise UnimplementedError("The only SOCK_DGRAM implemented is UDP.  Unknown protocol:"+str(protocol))
     
       return _socket_initializer(domain,socktype,protocol)
@@ -297,7 +304,7 @@ def bind_syscall(fd,localip,localport):
     if 'localip' in filedescriptortable[otherfd] and filedescriptortable[otherfd]['localip'] == localip and filedescriptortable[otherfd]['localport'] == localport:
       # is SO_REUSEPORT in effect on both? I think everyone has to set 
       # SO_REUSEPORT (at least this is true on some OSes.   It's OS dependent)
-      if filedescriptortable[fd]['options'] & filedescriptortable[otherfd]['options'] & SO_REUSEPORT == SO_REUSEPORT:
+      if 'SO_REUSEPORT' in filedescriptortable[fd]['options'] and 'SO_REUSEPORT' in filedescriptortable[otherfd]['options']:
         # all is well, continue...
         pass
       else:
@@ -309,7 +316,7 @@ def bind_syscall(fd,localip,localport):
 
   # If this is a UDP interface, then we should listen for udp datagrams
   # (there is no 'listen' so the time to start now)...
-  if filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+  if 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
     if 'socketobjectid' in filedescriptortable[fd]:
       # BUG: I need to avoid leaking sockets, so I should close the previous...
       raise UnimplementedError("I should close the previous UDP listener when re-binding")
@@ -323,6 +330,7 @@ def bind_syscall(fd,localip,localport):
   # support a separate call for binding...
   filedescriptortable[fd]['localip']=localip
   filedescriptortable[fd]['localport']=localport
+
 
   return 0
 
@@ -364,14 +372,14 @@ def connect_syscall(fd,remoteip,remoteport):
 
   # What I do depends on the protocol...
   # If UDP, set the items and return
-  if filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+  if 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
     filedescriptortable[fd]['remoteip'] = remoteip
     filedescriptortable[fd]['remoteport'] = remoteport
     return 0
 
 
   # it's TCP!
-  elif filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+  elif 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
 
     # Am I already bound?   If not, we'll need to get an ip / port
     if 'localip' not in filedescriptortable[fd]:
@@ -432,6 +440,8 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
   """ 
     http://linux.die.net/man/2/sendto
   """
+  flags = flag2list(flags)
+
   # Specify all non-deterministic errors that could occur.
   sendto_nondeter_errors = ['ENETUNREACH']
 
@@ -441,7 +451,7 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
   if not IS_SOCK(filedescriptortable[fd]['mode']):
     raise SyscallError("sendto_syscall","ENOTSOCK","The descriptor is not a socket.")
 
-  if flags != 0:
+  if flags != []:
     raise UnimplementedError("Flags are not understood by sendto!")
 
 
@@ -461,12 +471,12 @@ def sendto_syscall(fd,message, remoteip,remoteport,flags):
     raise SyscallError("sendto_syscall","EISCONN","The descriptor is connected.")
 
 
-  if filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+  if 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
     raise SyscallError("sendto_syscall","EISCONN","The descriptor is connection-oriented.")
     
   # What I do depends on the protocol...
   # If UDP, set the items and return
-  if filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+  if 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
 
     # If unspecified, use a new local port / the local ip
     if 'localip' not in filedescriptortable[fd]:
@@ -514,6 +524,7 @@ def send_syscall(fd, message, flags):
   """ 
     http://linux.die.net/man/2/send
   """
+  flags = flag2list(flags)
 
   # TODO: Change write() to call send when on a socket!!!
 
@@ -528,7 +539,7 @@ def send_syscall(fd, message, flags):
   if not IS_SOCK(filedescriptortable[fd]['mode']):
     raise SyscallError("send_syscall","ENOTSOCK","The descriptor is not a socket.")
 
-  if flags != 0:
+  if flags != []:
     raise UnimplementedError("Flags are not understood by send!")
 
   # includes NOTCONNECTED and LISTEN
@@ -536,7 +547,7 @@ def send_syscall(fd, message, flags):
     raise SyscallError("send_syscall","ENOTCONN","The descriptor is not connected.")
 
 
-  if filedescriptortable[fd]['protocol'] != IPPROTO_TCP:
+  if 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
     raise SyscallError("send_syscall","EOPNOTSUPP","send not supported on this protocol.")
     
   # Check with impl behavior, was it non-deterministic??
@@ -547,7 +558,7 @@ def send_syscall(fd, message, flags):
 
   # I'll check this anyways, because I later might have multiple protos 
   # supported
-  if filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+  if 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
 
     # get the socket so I can send...
     sockobj = socketobjecttable[filedescriptortable[fd]['socketobjectid']]
@@ -599,10 +610,11 @@ RETRYWAITAMOUNT = .001
 
 
 # Note that this call may be used by recv_syscall since they are so similar
-def recvfrom_syscall(fd,length,flags):
+def recvfrom_syscall(fd, message, length, flags, remoteip, remoteport):
   """ 
     http://linux.die.net/man/2/recvfrom
   """
+  flags = flag2list(flags)
 
   if fd not in filedescriptortable:
     raise SyscallError("recvfrom_syscall","EBADF","The file descriptor is invalid.")
@@ -611,7 +623,7 @@ def recvfrom_syscall(fd,length,flags):
     raise SyscallError("recvfrom_syscall","ENOTSOCK","The descriptor is not a socket.")
 
   # Most of these are uninteresting
-  if flags != 0:
+  if flags != []:
     raise UnimplementedError("Flags are not understood by recvfrom!")
 
 
@@ -622,7 +634,7 @@ def recvfrom_syscall(fd,length,flags):
 
 
   # What I do depends on the protocol...
-  if filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+  if 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
 
     # includes NOTCONNECTED and LISTEN
     if filedescriptortable[fd]['state'] != CONNECTED:
@@ -650,7 +662,7 @@ def recvfrom_syscall(fd,length,flags):
 
 
   # If UDP, recieve a message and return...
-  elif filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+  elif 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
 
     # BUG / HELP!!!: Calling this with UDP and without binding does something I
     # don't really understand...   It seems to block but I don't know what is 
@@ -696,7 +708,7 @@ def recv_syscall(fd, length, flags):
   """ 
     http://linux.die.net/man/2/recv
   """
-
+  flags = flag2list(flags)
   # TODO: Change read() to call recv when on a socket!!!
 
   remoteip, remoteport, message = recvfrom_syscall(fd, length, flags)
@@ -729,6 +741,7 @@ def getsockname_syscall(fd):
     raise SyscallError("getsockname_syscall","ENOTSOCK","The descriptor is not a socket.")
 
   # if we know this, return it...
+  print  filedescriptortable[fd]
   if 'localip' in filedescriptortable[fd]:
     # JR: Model specific, since we now know what the IP should have been we can store it.
     if filedescriptortable[fd]['localip'] == UNKNOWN_IP:
@@ -738,12 +751,33 @@ def getsockname_syscall(fd):
       localip = model_getmyip('MainThread')
       filedescriptortable[fd]['localip'] = localip
       filedescriptortable[fd]['localport'] = localport
-      
+     
+    # EG: handle cases of OS-assigned random ports
+    # This is usually happens when socket is bound to port 0
+    if  filedescriptortable[fd]['localport'] == 0:
+      print mycontext['posix_oracle']
+      impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+      impl_ip, impl_port = impl_ret
+      if impl_ip == filedescriptortable[fd]['localip']:
+      	filedescriptortable[fd]['localport'] = impl_port
+
     return filedescriptortable[fd]['localip'], filedescriptortable[fd]['localport']
   
-  # otherwise, return '0.0.0.0', 0
+    # what if socket is not bound? 
   else:
-    return '0.0.0.0',0
+    print mycontext['posix_oracle']
+    impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+    localip, localport = impl_ret
+    oracle_setter(localip, impl_errno)
+    localip = model_getmyip('MainThread')
+    filedescriptortable[fd]['localip'] = localip
+    filedescriptortable[fd]['localport'] = localport
+ 
+    return filedescriptortable[fd]['localip'], filedescriptortable[fd]['localport']
+    
+  # otherwise, return '0.0.0.0', 0
+  #else:  
+  #  return '0.0.0.0',0
   
 
     
@@ -794,6 +828,8 @@ def listen_syscall(fd,backlog):
   """ 
     http://linux.die.net/man/2/listen
   """
+  backlog = flag2list(backlog)
+
   if fd not in filedescriptortable:
     raise SyscallError("listen_syscall","EBADF","The file descriptor is invalid.")
 
@@ -804,12 +840,12 @@ def listen_syscall(fd,backlog):
 
 
   # If UDP, raise an exception
-  if filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+  if 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
     raise SyscallError("listen_syscall","EOPNOTSUPP","This protocol does not support listening.")
 
 
   # it's TCP!
-  elif filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+  elif 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
 
     if filedescriptortable[fd]['state'] == LISTEN:
       # already done!
@@ -900,12 +936,12 @@ def accept_syscall(fd):
 
 
   # If UDP, raise an exception
-  if filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+  if 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
     raise SyscallError("accept_syscall","EOPNOTSUPP","This protocol does not support listening.")
 
 
   # it's TCP!
-  elif filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+  elif 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
 
     # must be listening
     if filedescriptortable[fd]['state'] != LISTEN:
@@ -953,11 +989,11 @@ def accept_syscall(fd):
 
 # I'm just going to set these binary options or return the previous setting.   
 # In most cases, this will be while doing nothing.
-STOREDSOCKETOPTIONS = [ SO_LINGER, # ignored
-                        SO_KEEPALIVE, # ignored
-                        SO_SNDLOWAT, # ignored
-                        SO_RCVLOWAT, # ignored
-                        SO_REUSEPORT, # used to allow duplicate binds...
+STOREDSOCKETOPTIONS = [ 'SO_LINGER', # ignored
+                        'SO_KEEPALIVE', # ignored
+                        'SO_SNDLOWAT', # ignored
+                        'SO_RCVLOWAT', # ignored
+                        'SO_REUSEPORT', # used to allow duplicate binds...
                       ]
 
 
@@ -966,6 +1002,8 @@ def getsockopt_syscall(fd, level, optname):
   """ 
     http://linux.die.net/man/2/getsockopt
   """
+  level = flag2list(level)
+  optname = flag2list(optname)
 
   if fd not in filedescriptortable:
     raise SyscallError("getsockopt_syscall","EBADF","The file descriptor is invalid.")
@@ -974,21 +1012,21 @@ def getsockopt_syscall(fd, level, optname):
     raise SyscallError("getsockopt_syscall","ENOTSOCK","The descriptor is not a socket.")
 
   # This should really be SOL_SOCKET, however, we'll also handle a few others
-  if level == SOL_UDP:
+  if 'SOL_UDP' in level :
     raise UnimplementedError("UDP is not supported for getsockopt")
 
   # TCP...  Ignore most things...
-  elif level == SOL_TCP:
+  elif 'SOL_TCP' in level:
     # do nothing
     
     raise UnimplementedError("TCP options not remembered by getsockopt")
 
 
 
-  elif level == SOL_SOCKET:
+  elif 'SOL_SOCKET' in level:
     # this is where the work happens!!!
 
-    if optname == SO_ACCEPTCONN:
+    if 'SO_ACCEPTCONN' in optname:
       # indicate if we are accepting connections...
       if filedescriptortable[fd]['state'] == LISTEN:
         return 1
@@ -996,31 +1034,31 @@ def getsockopt_syscall(fd, level, optname):
         return 0
 
     # if the option is a stored binary option, just return it...
-    if optname in STOREDSOCKETOPTIONS:
-      if filedescriptortable[fd]['options'] & optname:
+    if len(optname) == 1 and optname[0] in STOREDSOCKETOPTIONS:
+      if filedescriptortable[fd]['options'].extend(optname):
         return 1
       else:
         return 0
 
     # Okay, let's handle the (ignored) buffer settings...
-    if optname == SO_SNDBUF:
+    if 'SO_SNDBUF' in optname:
       return filedescriptortable[fd]['sndbuf']
 
-    if optname == SO_RCVBUF:
+    if 'SO_RCVBUF' in optname:
       return filedescriptortable[fd]['rcvbuf']
 
     # similarly, let's handle the SNDLOWAT and RCVLOWAT, etc.
     # BUG?: On Mac, this seems to be stored much like the buffer settings
-    if optname == SO_SNDLOWAT or optname == SO_RCVLOWAT:
+    if 'SO_SNDLOWAT' in optname or 'SO_RCVLOWAT' in optname:
       return 1
 
 
     # return the type if asked...
-    if optname == SO_TYPE:
+    if 'SO_TYPE' in optname:
       return filedescriptortable[fd]['type']
 
     # I guess this is always true!?!?   I certainly don't handle it.
-    if optname == SO_OOBINLINE:
+    if 'SO_OOBINLINE' in optname:
       return 1
 
     raise UnimplementedError("Unknown option in getsockopt()")
@@ -1042,6 +1080,9 @@ def setsockopt_syscall(fd, level, optname, optval):
   """ 
     http://linux.die.net/man/2/setsockopt
   """
+  level = flag2list(level)
+  optname = flag2list(optname)
+  optval = flag2list(optval)
 
   if fd not in filedescriptortable:
     raise SyscallError("setsockopt_syscall","EBADF","The file descriptor is invalid.")
@@ -1050,57 +1091,57 @@ def setsockopt_syscall(fd, level, optname, optval):
     raise SyscallError("setsockopt_syscall","ENOTSOCK","The descriptor is not a socket.")
 
   # This should really be SOL_SOCKET, however, we'll also handle a few others
-  if level == SOL_UDP:
+  if 'SOL_UDP' in level:
     raise UnimplementedError("UDP is not supported for setsockopt")
 
   # TCP...  Ignore most things...
-  elif level == SOL_TCP:
+  elif 'SOL_TCP' in level:
     # do nothing
-    if optname == TCP_NODELAY:
+    if 'TCP_NODELAY' in optname:
       return 0
  
     # otherwise return an error
     raise UnimplementedError("TCP options not remembered by setsockopt")
 
 
-  elif level == SOL_SOCKET:
+  elif 'SOL_SOCKET' in level:
     # this is where the work happens!!!
 
-    if optname == SO_ACCEPTCONN or optname == SO_TYPE or optname == SO_SNDLOWAT or optname == SO_RCVLOWAT:
+    if 'SO_ACCEPTCONN' in optname or 'SO_TYPE' in optname or 'SO_SNDLOWAT' in optname or 'SO_RCVLOWAT' in optname:
       raise SyscallError("setsockopt_syscall","ENOPROTOOPT","Cannot set option using setsockopt.")
 
     # if the option is a stored binary option, just return it...
-    if optname in STOREDSOCKETOPTIONS:
+    if len(optname) == 1 and optname[0] in STOREDSOCKETOPTIONS:
       newoptions = filedescriptortable[fd]['options']
 
       # if the value is set, unset it...
-      if newoptions & optname:
-        newoptions = newoptions - optname
+      if len(optname) == 1 and optname[0] in newoptions:
+        newoptions.remove(optname)
         return 1
 
       # now let's set this if we were told to
-      if optval:
+      if optval != []:
         # this value should be 1!!!   Nothing else is allowed
-        assert(optval == 1)
-        newoptions = newoptions + optname
+        assert(optval[0] == 1)
+        newoptions.append(optname[0])
 
       filedescriptortable[fd]['options'] = newoptions
       return 0
       
 
     # Okay, let's handle the (ignored) buffer settings...
-    if optname == SO_SNDBUF:
-      filedescriptortable[fd]['sndbuf'] = optval
+    if 'SO_SNDBUF' in optname:
+      filedescriptortable[fd]['sndbuf'] = optval[0]
       return 0
 
-    if optname == SO_RCVBUF:
-      filedescriptortable[fd]['rcvbuf'] = optval
+    if 'SO_RCVBUF' in optname:
+      filedescriptortable[fd]['rcvbuf'] = optval[0]
       return 0
 
     # I guess this is always true!?!?   I certainly don't handle it.
-    if optname == SO_OOBINLINE:
+    if 'SO_OOBINLINE' in optname:
       # I can only handle this being true...
-      assert(optval == 1)
+      assert(optval[0] == 1)
       return 0
 
     raise UnimplementedError("Unknown option in setsockopt()")
@@ -1119,9 +1160,9 @@ def close_network_fd(fd):
   if 'socketobjectid' in filedescriptortable[fd]:
     thesocket = socketobjecttable[filedescriptortable[fd]['socketobjectid']]
 
-    if filedescriptortable[fd]['protocol'] == IPPROTO_UDP:
+    if 'IPPROTO_UDP' in filedescriptortable[fd]['protocol']:
       model_udpserver_close('MainThread', thesocket)
-    elif filedescriptortable[fd]['protocol'] == IPPROTO_TCP:
+    elif 'IPPROTO_TCP' in filedescriptortable[fd]['protocol']:
       if filedescriptortable[fd]['state'] == LISTEN:
         model_tcpserver_close('MainThread', thesocket)
       else:
@@ -1144,6 +1185,7 @@ def setshutdown_syscall(fd, how):
   """ 
     http://linux.die.net/man/2/shutdown
   """
+  how = flag2list(how)
 
   if fd not in filedescriptortable:
     raise SyscallError("shutdown_syscall","EBADF","The file descriptor is invalid.")
@@ -1152,13 +1194,13 @@ def setshutdown_syscall(fd, how):
     raise SyscallError("shutdown_syscall","ENOTSOCK","The descriptor is not a socket.")
 
 
-  if how == SHUT_RD or how == SHUT_WR:
+  if 'SHUT_RD' in how or 'SHUT_WR' in how:
 
     raise UnimplementedError("Partial shutdown not implemented.")
 
   
   # let's shut this down...
-  elif how == SHUT_RDWR:
+  elif 'SHUT_RDWR' in how:
     # BUG: need to check for duplicate entries (ala dup / dup2)
     #if 'socketobjectid' in filedescriptortable[fd]:
     #  thesocket = socketobjecttable[filedescriptortable[fd]['socketobjectid']]

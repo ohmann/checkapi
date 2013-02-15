@@ -1,0 +1,67 @@
+19316 execve("./syscalls", ["./syscalls", "shutdown"], [/* 38 vars */]) = 0
+19316 brk(0)                            = 0x84fa000
+19316 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+19316 mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7715000
+19316 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory)
+19316 open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+19316 fstat64(3, {st_mode=S_IFREG|0644, st_size=98710, ...}) = 0
+19316 mmap2(NULL, 98710, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb76fc000
+19316 close(3)                          = 0
+19316 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+19316 open("/lib/i386-linux-gnu/libpthread.so.0", O_RDONLY|O_CLOEXEC) = 3
+19316 read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0p[\0\0004\0\0\0"..., 512) = 512
+19316 fstat64(3, {st_mode=S_IFREG|0755, st_size=124663, ...}) = 0
+19316 mmap2(NULL, 107008, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb76e1000
+19316 mmap2(0xb76f8000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x16) = 0xb76f8000
+19316 mmap2(0xb76fa000, 4608, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb76fa000
+19316 close(3)                          = 0
+19316 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+19316 open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+19316 read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0000\226\1\0004\0\0\0"..., 512) = 512
+19316 fstat64(3, {st_mode=S_IFREG|0755, st_size=1730024, ...}) = 0
+19316 mmap2(NULL, 1743580, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7537000
+19316 mprotect(0xb76da000, 4096, PROT_NONE) = 0
+19316 mmap2(0xb76db000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1a3) = 0xb76db000
+19316 mmap2(0xb76de000, 10972, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb76de000
+19316 close(3)                          = 0
+19316 mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7536000
+19316 mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7535000
+19316 set_thread_area({entry_number:-1 -> 6, base_addr:0xb75356c0, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+19316 mprotect(0xb76db000, 8192, PROT_READ) = 0
+19316 mprotect(0xb76f8000, 4096, PROT_READ) = 0
+19316 mprotect(0x8052000, 4096, PROT_READ) = 0
+19316 mprotect(0xb7738000, 4096, PROT_READ) = 0
+19316 munmap(0xb76fc000, 98710)         = 0
+19316 set_tid_address(0xb7535728)       = 19316
+19316 set_robust_list(0xb7535730, 0xc)  = 0
+19316 futex(0xbfa2c1c4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 1, NULL, b75356c0) = -1 EAGAIN (Resource temporarily unavailable)
+19316 rt_sigaction(SIGRTMIN, {0xb76e6570, [], SA_SIGINFO}, NULL, 8) = 0
+19316 rt_sigaction(SIGRT_1, {0xb76e65f0, [], SA_RESTART|SA_SIGINFO}, NULL, 8) = 0
+19316 rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+19316 getrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM_INFINITY}) = 0
+19316 uname({sys="Linux", node="savvas-notebook", ...}) = 0
+19316 mmap2(NULL, 8392704, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0xb6d34000
+19316 brk(0)                            = 0x84fa000
+19316 brk(0x851b000)                    = 0x851b000
+19316 mprotect(0xb6d34000, 4096, PROT_NONE) = 0
+19316 clone(child_stack=0xb7534464, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, parent_tidptr=0xb7534ba8, {entry_number:6, base_addr:0xb7534b40, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}, child_tidptr=0xb7534ba8) = 19317
+19317 set_robust_list(0xb7534bb0, 0xc <unfinished ...>
+19316 nanosleep({0, 2000000},  <unfinished ...>
+19317 <... set_robust_list resumed> )   = 0
+19317 socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
+19317 bind(3, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+19317 listen(3, 5)                      = 0
+19317 accept(3,  <unfinished ...>
+19316 <... nanosleep resumed> NULL)     = 0
+19316 socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 5
+19316 connect(5, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+19317 <... accept resumed> {sa_family=AF_INET, sin_port=htons(42626), sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+19316 shutdown(5, 0 /* receive */ <unfinished ...>
+19317 madvise(0xb6d34000, 8372224, MADV_DONTNEED <unfinished ...>
+19316 <... shutdown resumed> )          = 0
+19317 <... madvise resumed> )           = 0
+19316 shutdown(5, 1 /* send */ <unfinished ...>
+19317 _exit(0)                          = ?
+19316 <... shutdown resumed> )          = 0
+19316 shutdown(5, 2 /* send and receive */) = 0
+19316 exit_group(0)                     = ?

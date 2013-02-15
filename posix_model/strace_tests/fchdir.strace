@@ -1,0 +1,45 @@
+19237 execve("./syscalls", ["./syscalls", "fchdir"], [/* 38 vars */]) = 0
+19237 brk(0)                            = 0x8e8b000
+19237 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+19237 mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb774c000
+19237 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory)
+19237 open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+19237 fstat64(3, {st_mode=S_IFREG|0644, st_size=98710, ...}) = 0
+19237 mmap2(NULL, 98710, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb7733000
+19237 close(3)                          = 0
+19237 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+19237 open("/lib/i386-linux-gnu/libpthread.so.0", O_RDONLY|O_CLOEXEC) = 3
+19237 read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0p[\0\0004\0\0\0"..., 512) = 512
+19237 fstat64(3, {st_mode=S_IFREG|0755, st_size=124663, ...}) = 0
+19237 mmap2(NULL, 107008, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7718000
+19237 mmap2(0xb772f000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x16) = 0xb772f000
+19237 mmap2(0xb7731000, 4608, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb7731000
+19237 close(3)                          = 0
+19237 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+19237 open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+19237 read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0000\226\1\0004\0\0\0"..., 512) = 512
+19237 fstat64(3, {st_mode=S_IFREG|0755, st_size=1730024, ...}) = 0
+19237 mmap2(NULL, 1743580, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb756e000
+19237 mprotect(0xb7711000, 4096, PROT_NONE) = 0
+19237 mmap2(0xb7712000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1a3) = 0xb7712000
+19237 mmap2(0xb7715000, 10972, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb7715000
+19237 close(3)                          = 0
+19237 mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb756d000
+19237 mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb756c000
+19237 set_thread_area({entry_number:-1 -> 6, base_addr:0xb756c6c0, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+19237 mprotect(0xb7712000, 8192, PROT_READ) = 0
+19237 mprotect(0xb772f000, 4096, PROT_READ) = 0
+19237 mprotect(0x8052000, 4096, PROT_READ) = 0
+19237 mprotect(0xb776f000, 4096, PROT_READ) = 0
+19237 munmap(0xb7733000, 98710)         = 0
+19237 set_tid_address(0xb756c728)       = 19237
+19237 set_robust_list(0xb756c730, 0xc)  = 0
+19237 futex(0xbff23344, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 1, NULL, b756c6c0) = -1 EAGAIN (Resource temporarily unavailable)
+19237 rt_sigaction(SIGRTMIN, {0xb771d570, [], SA_SIGINFO}, NULL, 8) = 0
+19237 rt_sigaction(SIGRT_1, {0xb771d5f0, [], SA_RESTART|SA_SIGINFO}, NULL, 8) = 0
+19237 rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+19237 getrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM_INFINITY}) = 0
+19237 uname({sys="Linux", node="savvas-notebook", ...}) = 0
+19237 open(".", O_RDONLY)               = 3
+19237 fchdir(3)                         = 0
+19237 exit_group(0)                     = ?

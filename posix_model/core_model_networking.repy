@@ -286,7 +286,7 @@ def model_listenformessage(threadname, localip, localport):
     raise RepyArgumentError("Provided localip is not valid! IP: '"+localip+"'")
 
   if not _is_valid_network_port(localport):
-    raise RepyArgumentError("Provided localport is not valid! Port: "+str(localport))
+    raise RepyArgumentError("Provided localport is not valid! Check the restriction file. Port: "+str(localport))
 
   # Check the input arguments (permission)
   if not _is_allowed_localport("UDP", localport):
@@ -887,7 +887,7 @@ def model_listenforconnection(threadname, localip, localport):
   #  raise ResourceForbiddenError("Provided localip is not allowed! IP: '"+localip+"'")
 
   if not _is_allowed_localport("TCP", localport):
-    raise ResourceForbiddenError("Provided localport is not allowed! Port: "+str(localport))
+    raise ResourceForbiddenError("Provided localport is not allowed! Port: "+str(localport) + ". Check your restriction file.")
 
   # Check if tuple is already in use.
   identity = ("TCP", localip, localport, None, None)

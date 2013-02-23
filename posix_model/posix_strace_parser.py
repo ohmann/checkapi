@@ -62,7 +62,7 @@
   -s1024 tells strace to allow string arguments in system calls up to
   1024 characters. If this command is skipped, strace will truncate
   strings that exceed 32 characters.
-  
+
 """
 dy_import_module_symbols("posix_intermediate_representation")
 
@@ -287,6 +287,11 @@ def _process_trace(syscall_name, args, result):
 # Helper Functions. #
 #####################
 def _saveUnfinishedSyscall(line, unfinished_syscalls):
+  """
+  Save unfinished system calls in unfinished_syscalls list until they
+  are resumed.
+  Each entry is defined by the pid and the system call name.
+  """
   try:
     # parses format: [pid 12345] syscall_name(...
     pid = int(line[line.find(" ")+1:line.find("]")])
@@ -306,6 +311,12 @@ def _saveUnfinishedSyscall(line, unfinished_syscalls):
     
 
 def _resumeUnfinishedSyscall(line, unfinished_syscalls):
+  """
+  Resume a previously unfinished system call. Search for the  system
+  call in unfinished_syscalls based on the pid and the system call 
+  name, and if found merge current line (second half of system call)
+  with the first half previously saved.
+  """
   try:
     # parses format: [pid 12345] syscall_name(...
     pid = int(line[line.find(" ")+1:line.find("]")])
@@ -341,10 +352,7 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
     return line
 
 
-
-
-
-#'''
+'''
 # For testing purposes...
 def main():
     fh = open(callargs[0], "r")
@@ -354,4 +362,4 @@ def main():
         log("Action: ", action, "\n")
 
 main()
-#'''
+'''

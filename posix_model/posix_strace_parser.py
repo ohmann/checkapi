@@ -20,7 +20,7 @@
 
     import posix_strace_parser
     fh = open(TRACE_FILE_NAME, "r")
-    traces = getTraces(fh)
+    traces = get_traces(fh)
 
   The above code will return a list and store it in traces. Each
   entry of this list represents a system call in its intermediate
@@ -107,7 +107,7 @@ SKIPPED_SYSCALLS = {}
 ###################################
 # Public function of this module. #
 ###################################
-def gettraces(fh):
+def get_traces(fh):
   traces = []
   unfinished_syscalls = []
   
@@ -293,19 +293,14 @@ def _saveUnfinishedSyscall(line, unfinished_syscalls):
   Each entry is defined by the pid and the system call name.
   """
   try:
-    # parses format: [pid 12345] syscall_name(...
+    # get pid and syscall name from format: [pid 12345] syscall_name(...
     pid = int(line[line.find(" ")+1:line.find("]")])
-  except ValueError:
-    try:
-      # parses format: 12345 syscall_name(...
-      pid = int(line[:line.find(" ")])
-    except ValueError:
-      raise Exception("Failed to parse pid. Unexpected format.")
-    else:
-      syscall_name = line[line.find(" ")+1:line.find("(")].strip()
-  else:
     syscall_name = line[line.find("]")+1:line.find("(")].strip()
-  
+  except ValueError:
+     # get pid and syscall name from format: 12345 syscall_name(...
+    pid = int(line[:line.find(" ")])
+    syscall_name = line[line.find(" ")+1:line.find("(")].strip()
+
   if syscall_name in HANDLED_SYSCALLS_INFO:
     unfinished_syscalls.append(UnfinishedSyscall(pid, syscall_name, line[:line.find("<unfinished ...>")].strip()))
     
@@ -352,14 +347,14 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
     return line
 
 
-'''
+#'''
 # For testing purposes...
 def main():
     fh = open(callargs[0], "r")
-    trace = gettraces(fh)
+    trace = get_traces(fh)
     log("\n")
     for action in trace:
         log("Action: ", action, "\n")
 
 main()
-'''
+#'''

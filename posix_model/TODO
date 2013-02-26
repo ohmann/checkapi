@@ -1,0 +1,71 @@
+TODO:
+
+- for now I can only create an empty fs state to the posix model, 
+while the repy model's state is loaded normally.
+If I don't add the files to the repy model, then the posix creates 
+empty files instead when needed: it seems that doesn't search to 
+load their content from the real fs
+
+- also, I currently use the original filenames, while the original posix model 
+implementation generated automatically other names in this format: linddata.x
+
+
+Overall Problems - TODO:
+
+1. In some execution traces bind returns EADDRINUSE, while the rest of the system calls (eg listen) succeed. 
+It's not a CheckAPI error but I can't understand the reason why this happens
+	Traces: bind, getsockname, send, listen
+2. Parser does not parse (correctly) some system calls
+	Traces: fchdir, lstat, fstat, fstat64, symlink, recvmsg, sendmsg
+3. The model does not handle some system calls
+	Traces: dup3, fchdir, lstat, fstat64, symlink
+4. The model does not handle some options/flags
+	Traces: setsockopt - SO_REUSEADDR, shutdown -  what happens if arg[1] not SHUT_RDWR?
+5. How do we handle tabs and new lines?? Model returns +1 #chars that have been written because 
+parser returned '\\n' for '\n'.
+	Traces: read, write
+6. Verifier: for some syscalls there is not way to verify the results because model uses semi-random
+values in some cases. We can only say if they success or fail.
+	Traces: fstatfs, getdents, stat, statfs
+7. unlink returned: 
+('unlink_syscall', ('syscalls.symlink',), (0, None)). Model returned  ENOENT -1  which do not match with the implementation.
+why?
+8. recvfrom returned:
+Exception (with class 'exception_hierarchy.RepyArgumentError'): Provided localip is not valid! IP: '0.0.0.0'
+My guess is that model doesn't handle 0.0.0.0, but need to investigate further.
+9. Model doesn't handle any flags is sendto: MSG_NOSIGNAL: bind.strace_result
+10. Model does nothing when a recvfrom is called with UDP.
+
+
+
+****************************************************************************
+
+Detailed results of the unit tests in strace_tests dir:
+
+- access.strace: the model doesn't see the files
+- bind.strace: why implementation returns EADDRINUSE?
+- dup3 not handled in the model
+- fchdir, lstat: not handled anywhere
+- fstat: fstat64 is not correctly parsed, and the model doesn't handle it at all
+- fstatfs: there is no way to verify the results, only its success/failure, because model assigns 'random' values
+- getdents:        >>
+- getsockname: why implementation returns EADDRINUSE to bind?
+- listen: >>
+- mkdir, rmdir: TODO: We need to know how we can load the fs initial state:
+eg ('mkdir_syscall', ('syscalls_dir', 775), (-1, 'EEXIST')) 
+IGNORING: ('mkdir_syscall', ('syscalls_dir', 775), (-1, 'EEXIST')). Model returned  None 0  which do not match with the implementation. 
+- read: how do we handle tabs and new lines?? model returns +1 #chars that have been written. parser returned '\\n' for '\n'
+- recv: calls recvfrom which takes more arguments
+- recvfrom: Exception (with class 'exception_hierarchy.RepyArgumentError'): Provided localip is not valid! IP: '0.0.0.0' ???
+- send: why implementation returns EADDRINUSE to bind? Model doesn't handle nondeterministic errors, so implementation returns EPIPE and model ENOTCONN. Essentially the result is the same - send fails - but checkapi outputs it as an error
+- recvmsg, sendmsg: are not handled by the current parser
+- sendto_syscall calls sendmessage function, instead of model_sendmessage.. is there a reason for doing that? after changing that and all it needed, now it runs ok 
+- setsockopt: model doesn't handle SO_REUSEADDR
+- shutdown: what happens if arg[1] not SHUT_RDWR? e.g.: ('setshutdown_syscall', (5, ['0 /* receive */']), (0, None)) , ('setshutdown_syscall', (5, ['1 /* send */']), ('setshutdown_syscall', (5, ['2 /* send and receive */'])
+- stat, statfs: like fstatfs:there is no way to verify the results, only its success/failure. because model assigns 'random' values
+- symlink: is not handled anywhere
+- unlink: problem: ('unlink_syscall', ('syscalls.symlink',), (0, None)). Model returned  ENOENT -1  which do not match with the implementation. 
+- write: how do we handle tabs and new lines?? model returns +1 #chars that have been written. parser returned '\\n' for '\n'
+
+ok: accept, chdir, close, connect, creat, dup, dup2, getpeername, getsockname (but needs to be completed), link, lseek, open, sendto, socket
+  

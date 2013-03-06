@@ -54,16 +54,18 @@
   Traces for this module (Strace):
   Before gathering traces for this module consider going through the
   man pages of strace. strace provides many options that can affect
-  the output format. The suggesteed options for gathering traces that
-  can be used in this module is as follows:
-  strace -f -s1024 -o output_filename command
+  the output format. The suggested options for gathering traces for
+  this module are the following:
+  strace -v -f -s1024 -o output_filename command
 
-  -f option tells strace to trace child processes
+  -v print structire values unabbreviated.
+  -f trace child processes
   -s1024 tells strace to allow string arguments in system calls up to
   1024 characters. If this command is skipped, strace will truncate
   strings that exceed 32 characters.
 
 """
+
 dy_import_module_symbols("posix_intermediate_representation")
 
 #############
@@ -73,7 +75,7 @@ dy_import_module_symbols("posix_intermediate_representation")
 # trace file is not handled by the parser.
 UNIMPLEMENTED_ERROR = -1
 # turn message printing on or off.
-DEBUG = True
+DEBUG = False
 
 
 ###########
@@ -100,7 +102,7 @@ class UnfinishedSyscall(object):
     return line
 
 # This dictionary is used to keep track of which syscalls are skipped
-# while parsing and how may times each syscall was skipped.
+# while parsing, and how may times each syscall was skipped.
 SKIPPED_SYSCALLS = {}
 
 
@@ -108,7 +110,9 @@ SKIPPED_SYSCALLS = {}
 # Public function of this module. #
 ###################################
 def get_traces(fh):
+  # this list will hold all the parsed syscalls
   traces = []
+  # this list will hold all pending (i.e unfinished) syscalls
   unfinished_syscalls = []
   
   # process each line
@@ -125,10 +129,10 @@ def get_traces(fh):
     if line[:3] in ['+++', '---']:
       continue
 
-    # Did the syscall get interrupted?
+    # Is the syscall unfinished?
     if line.find("<unfinished ...>") != -1:
       # Save the unfinished syscall and ignore lines that hold no
-      # other information.s
+      # other information.
       if line != "<unfinished ...>":
         _saveUnfinishedSyscall(line, unfinished_syscalls)
       continue
@@ -136,7 +140,8 @@ def get_traces(fh):
     # Is the syscall resuming?
     if line.find("<... ") != -1 and line.find(" resumed>") != -1:
       line = _resumeUnfinishedSyscall(line, unfinished_syscalls)
-      if line == -1: # unfinished syscall not found
+      if line == -1: 
+        # unfinished syscall not found in unfinished_syscalls list
         continue
 
     # Ignore lines starting with Process:
@@ -147,35 +152,49 @@ def get_traces(fh):
     if line.find('(') == -1 or line.find(')') == -1 or line.find('=') == -1:
       continue
     
-    # Get the syscall name.
+    # Parser the syscall name.
     if line[0] == '[':
+      # format: [pid 12345] syscall_name(...
       syscall_name = line[line.find(']')+2:line.find('(')]
     elif len(line[:line.find('(')].split(" ")) > 1:
+      # format: 12345 syscall_name(...
       syscall_name = line[:line.find('(')].split(" ")[-1]
     else:
+      # format: syscall_name(...
       syscall_name = line[:line.find('(')]
-    
-    # Get the function parameters.
+
+    # Get the parameters.
     parameterChunk = line[line.find('(')+1:line.rfind('=')].strip()
     # Remove right bracket and split.
     parameters = parameterChunk[:-1].split(", ")
-    
-    # Get the strace return part.
+    # if the syscall is getdents, keep only the first and last 
+    # parameters.
+    if syscall_name.startswith("getdents"):
+      parameters = [parameters[0], parameters[-1]]
+    # Fix errors from split on messages
+    _mergeQuoteParameters(parameters)
+
+    # Get the return part.
     straceReturn = line[line.rfind('=')+1:].strip()
     if straceReturn.find("(flags ") != -1:
       # handle fcntl return part. I.e use the set of flags instead
       # of their hex representation.
+      # example:
+      # fcntl64(4, F_GETFL) = 0x402 (flags O_RDWR|O_APPEND)
+      # parse the part between '(flags' and ')'
       straceReturn = straceReturn[straceReturn.find("(flags ") +
                      len("(flags "):straceReturn.rfind(")")]
       straceReturn = (straceReturn, None)
     else:
       spaced_results = straceReturn.split(" ")
       if len(spaced_results) > 1:
+        # keep only the first part.
         straceReturn = straceReturn[:straceReturn.find(" ")]
       try: 
         straceReturn = int(straceReturn) # result can also be a '?'
       except ValueError:
         pass
+      # in case of an error include the error name as well.
       if straceReturn == -1 and len(spaced_results) > 1:
         straceReturn = (straceReturn, spaced_results[1])
       else:
@@ -188,21 +207,25 @@ def get_traces(fh):
       traces.append(trace)
   
   # display all skipped syscall_names.
-  log("\n\nSkipped System Calls\n")
-  for skipped in SKIPPED_SYSCALLS:
-    log(skipped + ": " + str(SKIPPED_SYSCALLS[skipped]) + "\n")
-  log("\n")
+  if(DEBUG):
+    log("\n\nSkipped System Calls\n")
+    for skipped in SKIPPED_SYSCALLS:
+      log(skipped + ": " + str(SKIPPED_SYSCALLS[skipped]) + "\n")
+    log("\n")
 
   return traces
 
 
-# parses each argument according to what's expected for that syscall
-# and translates to the intermediate representation.
+# parses each argument according to what is the expected type of that
+# argument, and translates to the intermediate representation.
 def _process_trace(syscall_name, args, result):
   # handle any 'syscall64' the exact same way as 'syscall'
   # eg fstat64 will be treated as if it was fstat
   if syscall_name.endswith('64'):
     syscall_name = syscall_name[:syscall_name.rfind('64')]
+  # same for syscall4
+  if syscall_name.endswith('4'):
+    syscall_name = syscall_name[:syscall_name.rfind('4')]
 
   if syscall_name not in HANDLED_SYSCALLS_INFO:
     # Keep track of how many times each syscall was skipped.
@@ -216,68 +239,107 @@ def _process_trace(syscall_name, args, result):
       SKIPPED_SYSCALLS[syscall_name] = 1;
     return UNIMPLEMENTED_ERROR
 
-  expected_args = HANDLED_SYSCALLS_INFO[syscall_name]['args']
-  args_tuple = ()
-  expected_return = HANDLED_SYSCALLS_INFO[syscall_name]['return']
-  return_tuple = ()
-  
+  #######################
+  # Initialization step #
+  #######################
+  # get the expected arguments from the intermediate representation.
+  expected_args = list(HANDLED_SYSCALLS_INFO[syscall_name]['args'])
+  # get the expected return values from the intermediate
+  # representation.
+  expected_return = list(HANDLED_SYSCALLS_INFO[syscall_name]['return'])
+  # Initialize all arguments to Unknown()
+  args_list = []
+  for arg_index in range(len(expected_args)):
+    args_list.append(Unknown())
+  # Initialize all return values to Unknown()
+  return_list = []
+  for return_index in range(len(expected_return)):
+    return_list.append(Unknown())
+
+  ################
+  # Parsing step #
+  ################
   # Parse the individual arguments of the syscall.
-  # Length of args can change. If the syscall contains a string and
-  # the string contains ", " the parser will wrongly split the
-  # string.
+  # Length of args can change. If the syscall contains a string
+  # argument and the string contained ", " the parser would have
+  # wrongly split the string.
   index = 0
   while index < len(args):
     # Do we have more than the expected arguments?
     if index >= len(expected_args):
-      raise Exception("Unexpected argument.")
+      raise Exception("Too many arguments found while parsing.")
     
+    # get the expected type for the current argument.
     expected_arg_type = expected_args[index]
     
     # Skip all remaining arguments?
     if isinstance(expected_arg_type, SkipRemaining):
       break
-    # Skip this argument?
-    if isinstance(expected_arg_type, Skip):
-      index += 1
-      continue
 
-    # Did the string contain ", "?
-    if isinstance(expected_arg_type, Str):
-      # if the length of arguments is bigger than the length of the
-      # expected arguments then we either intentionally skip some
-      # arguments or the string was wrongly split.
-      last_arg_type = expected_args[-1]
-      if (len(args) > len(expected_args) and not 
-             isinstance(last_arg_type, SkipRemaining)):
-        end = len(args) - len(expected_args) + index
-        for i in range(index, end):
-          args[index] += ", " + args[index+1]
-          args.pop(index+1)
+    # Did the argument contain ", "? a few types can have ", "up to
+    # one time.
+    if(isinstance(expected_arg_type, FFsid) or
+       isinstance(expected_arg_type, StDev) or
+       isinstance(expected_arg_type, StSizeOrRdev)):
+      if len(args) > len(expected_args):
+        args[index] += ", " + args[index+1]
+        args.pop(index+1)
 
-    argument = expected_arg_type.parse(args[index])
+    args_list[index] = expected_arg_type.parse(args[index])
     
     # Did the syscall return an error?
-    # in this case the value of structures will not e returned so we
-    # stop parsing values.
-    if (isinstance(expected_arg_type, StMode) or
-        isinstance(expected_arg_type, FType)):
-      if argument == MISSING_ARGUMENT:
-        break
-    
-    # Is the argument a return value rather than an argument?
-    if expected_arg_type.output:
-      return_tuple = return_tuple + (argument,)
-    else:
-      args_tuple = args_tuple + (argument,)
+    # If the syscall returned an error the value of structure
+    # variables will not be returned. Instead, where we expect the
+    # first value of the structure we get the address of the
+    # structure and the remaining values are simply not listed. We
+    # can detect this by checking if the returned "parsed" value is
+    # of type Unknown and stop parsing values. Consequently, the 
+    # value of the remaining arguments will be the one given to them
+    # in the initialization step above.
+    if args_list[index] == Unknown():
+      break
+
+    # if the sockfamily is AF_NETLINK, adjust the expected types.
+    # default types after a SockFamily are SockPort and SockIP
+    if(isinstance(expected_arg_type, SockFamily) and 
+       "AF_NETLINK" in args_list[index]):
+      expected_args[index+1] = Pid(output=True)
+      expected_args[index+2] = Groups(output=True)
 
     index += 1
-  
+
+
   # parse the return values of the syscall
   for index in range(len(result)):
+    # Do we have more than the expected return values?
+    if index >= len(expected_return):
+      raise Exception("Too many return values found while parsing.")
     expected_return_type = expected_return[index]
-    return_argument = expected_return_type.parse(result[index])
-    return_tuple = return_tuple + (return_argument,)
+    return_list[index] = expected_return_type.parse(result[index])
+    
   
+  ####################
+  # Rearranging step #
+  ####################
+  # Some arguments are used to return a value rather than to pass
+  # a value to the syscall. These arguments are moved to the return
+  # part of the syscall. How do we know if a given argument should be
+  # moved to the return part? Each argument type has a variable
+  # called output, which if true, indicates just that.
+  args_tuple = ()
+  return_tuple = ()
+  for arg_index in range(len(expected_args)):
+    if expected_args[arg_index].output:
+      return_tuple = return_tuple + (args_list[arg_index],)
+    else:
+      args_tuple = args_tuple + (args_list[arg_index],)
+
+  for return_index in range(len(expected_return)):
+    return_tuple = return_tuple + (return_list[return_index],)
+  
+  ################
+  # Form IR step #
+  ################
   # form the intermediate representation.
   trace = (syscall_name+'_syscall', args_tuple, return_tuple)
   return trace
@@ -347,14 +409,42 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
     return line
 
 
-#'''
+def _mergeQuoteParameters(parameters):
+  _removeEmptyParameters(parameters)
+  if len(parameters) <= 1:
+    return
+  index = 0
+  while index < len(parameters):
+    if  parameters[index][0] == "\"" and (len(parameters[index]) == 1 or parameters[index].strip(".")[-1] != "\"" or parameters[index].endswith("\\\"")):
+      # The only quote is the first quote which means the whole sentence got split and should be put back together.
+      while index+1 < len(parameters):
+        if parameters[index+1].strip(".")[-1] != "\"" or parameters[index+1].strip(".").endswith("\\\""):
+          parameters[index] += ", " + parameters[index+1]
+          parameters.pop(index+1)
+        else:
+          parameters[index] += ", " + parameters[index+1]
+          parameters.pop(index+1)
+          break
+    index += 1
+
+
+def _removeEmptyParameters(parameters):
+  index = 0
+  while index < len(parameters):
+    if len(parameters[index]) == 0:
+      parameters.pop(index)
+    else:
+      index += 1
+    
+
+'''
 # For testing purposes...
 def main():
     fh = open(callargs[0], "r")
     trace = get_traces(fh)
     log("\n")
     for action in trace:
-        log("Action: ", action, "\n")
+      log("Action: ", action, "\n")
 
 main()
-#'''
+'''

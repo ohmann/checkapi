@@ -680,7 +680,10 @@ HANDLED_SYSCALLS_INFO = {
   # int fstatfs(int fd, struct statfs *buf);
   # 
   # Example strace output:
-  # 19243 fstatfs(3, {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, f_blocks=4553183, f_bfree=1457902, f_bavail=1226606, f_files=1158720, f_ffree=658673, f_fsid={-1853641883, -1823071587}, f_namelen=255, f_frsize=4096}) = 0
+  # 19243 fstatfs(3, {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, 
+  #    f_blocks=4553183, f_bfree=1457902, f_bavail=1226606, 
+  #    f_files=1158720, f_ffree=658673, f_fsid={-1853641883, 
+  #    -1823071587}, f_namelen=255, f_frsize=4096}) = 0
   "fstatfs": {
     'args': (Int(), FType(), FInt(label="f_bsize", output=True), 
              FInt(label="f_blocks", output=True), 
@@ -695,7 +698,11 @@ HANDLED_SYSCALLS_INFO = {
   # int statfs(const char *path, struct statfs *buf);
   # 
   # Example strace output:
-  # 19323 statfs("syscalls.txt", {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, f_blocks=4553183, f_bfree=1458896, f_bavail=1227600, f_files=1158720, f_ffree=658713, f_fsid={-1853641883, -1823071587}, f_namelen=255, f_frsize=4096}) = 0
+  # 19323 statfs("syscalls.txt", {f_type="EXT2_SUPER_MAGIC", 
+  #     f_bsize=4096, f_blocks=4553183, f_bfree=1458896, 
+  #     f_bavail=1227600, f_files=1158720, f_ffree=658713, 
+  #     f_fsid={-1853641883, -1823071587}, f_namelen=255, 
+  #     f_frsize=4096}) = 0
   "statfs": {
     'args': (Str(), FType(), FInt(label="f_bsize", output=True), 
              FInt(label="f_blocks", output=True), 
@@ -771,7 +778,11 @@ HANDLED_SYSCALLS_INFO = {
   # int stat(const char *path, struct stat *buf);
   # 
   # Example strace output:
-  # 10538 stat64("syscalls.txt", {st_dev=makedev(8, 6), st_ino=697814, st_mode=S_IFREG|0664, st_nlink=1, st_uid=1000, st_gid=1000, st_blksize=4096, st_blocks=0, st_size=0, st_atime=2013/03/06-00:17:54, st_mtime=2013/03/06-00:17:54, st_ctime=2013/03/06-00:17:54}) = 0
+  # 10538 stat64("syscalls.txt", {st_dev=makedev(8, 6), st_ino=697814,
+  #    st_mode=S_IFREG|0664, st_nlink=1, st_uid=1000, st_gid=1000, 
+  #    st_blksize=4096, st_blocks=0, st_size=0, 
+  #    st_atime=2013/03/06-00:17:54, st_mtime=2013/03/06-00:17:54, 
+  #    st_ctime=2013/03/06-00:17:54}) = 0
   # 19321 stat64("hopefully_no_such_filename_exists.txt", 0xbf8c7d50) = -1 ENOENT (No such file or directory)
   "stat": {
     'args': (Str(), StDev(output=True), 

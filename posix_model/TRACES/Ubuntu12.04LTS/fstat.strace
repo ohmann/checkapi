@@ -1,0 +1,47 @@
+11439 execve("./syscalls", ["./syscalls", "fstat"], ["SSH_AGENT_PID=1971", "GPG_AGENT_INFO=/tmp/keyring-jDekb5/gpg:0:1", "TERM=xterm", "SHELL=/bin/bash", "XDG_SESSION_COOKIE=f7e455fdc491574bce46d78d0000000a-1362068028.822818-467022295", "WINDOWID=83892123", "GNOME_KEYRING_CONTROL=/tmp/keyring-jDekb5", "USER=savvas", "LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*"..., "XDG_SESSION_PATH=/org/freedesktop/DisplayManager/Session0", "XDG_SEAT_PATH=/org/freedesktop/DisplayManager/Seat0", "SSH_AUTH_SOCK=/tmp/keyring-jDekb5/ssh", "SESSION_MANAGER=local/savvas-notebook:@/tmp/.ICE-unix/1936,unix/savvas-notebook:/tmp/.ICE-unix/1936", "DEFAULTS_PATH=/usr/share/gconf/ubuntu.default.path", "XDG_CONFIG_DIRS=/etc/xdg/xdg-ubuntu:/etc/xdg", "PATH=/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games", "DESKTOP_SESSION=ubuntu", "PWD=/home/savvas/Desktop/SYSCALLS", "GNOME_KEYRING_PID=1925", "LANG=en_US.UTF-8", "MANDATORY_PATH=/usr/share/gconf/ubuntu.mandatory.path", "UBUNTU_MENUPROXY=libappmenu.so", "COMPIZ_CONFIG_PROFILE=ubuntu", "GDMSESSION=ubuntu", "SHLVL=1", "HOME=/home/savvas", "GNOME_DESKTOP_SESSION_ID=this-is-deprecated", "LOGNAME=savvas", "XDG_DATA_DIRS=/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/", "DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-x1TEgfsYr9,guid=f13a5e2e8246357a418afaf00000002a", "LESSOPEN=| /usr/bin/lesspipe %s", "DISPLAY=:0", "XDG_CURRENT_DESKTOP=Unity", "LESSCLOSE=/usr/bin/lesspipe %s %s", "COLORTERM=gnome-terminal", "XAUTHORITY=/home/savvas/.Xauthority", "OLDPWD=/home/savvas", "_=/usr/bin/strace"]) = 0
+11439 brk(0)                            = 0x83aa000
+11439 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+11439 mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb77c7000
+11439 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory)
+11439 open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+11439 fstat64(3, {st_dev=makedev(8, 6), st_ino=404836, st_mode=S_IFREG|0644, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=200, st_size=98710, st_atime=2013/03/05-16:39:01, st_mtime=2013/01/26-13:23:33, st_ctime=2013/01/26-13:23:33}) = 0
+11439 mmap2(NULL, 98710, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb77ae000
+11439 close(3)                          = 0
+11439 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+11439 open("/lib/i386-linux-gnu/libpthread.so.0", O_RDONLY|O_CLOEXEC) = 3
+11439 read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0p[\0\0004\0\0\0\244r\1\0\0\0\0\0004\0 \0\t\0(\0#\0 \0\6\0\0\0004\0\0\0004\0\0\0004\0\0\0 \1\0\0 \1\0\0\5\0\0\0\4\0\0\0\3\0\0\0`\32\1\0`\32\1\0`\32\1\0\23\0\0\0\23\0\0\0\4\0\0\0\1\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Pk\1\0Pk\1\0\5\0\0\0\0\20\0\0\1\0\0\0\310m\1\0\310}\1\0\310}\1\0\200\3\0\0008$\0\0\6\0\0\0\0\20\0\0\2\0\0\0\270n\1\0\270~\1\0\270~\1\0\370\0\0\0\370\0\0\0\6\0\0\0\4\0\0\0\4\0\0\0T\1\0\0T\1\0\0T\1\0\0D\0\0\0D\0\0\0\4\0\0\0\4\0\0\0P\345tdt\32\1\0t\32\1\0t\32\1\0\274\n\0\0\274\n\0\0\4\0\0\0\4\0\0\0Q\345td\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0\4\0\0\0R\345td\310m\1\0\310}\1\0\310}\1\0008\2\0\0008\2\0\0\4\0\0\0\1\0\0\0\4\0\0\0\24\0\0\0\3\0\0\0GNU\0\226\346\37\352|\0\332g \322\3073\7\222M\332n\346z\260\4\0\0\0\20\0\0\0\1\0\0\0GNU\0\0\0\0\0\2\0\0\0\6\0\0\0\30\0\0\0\4\2\0\0Q\0\0\0@\0\0\0\v\0\0\0\31!\2\221\1\n\20\"@H \331\3\0I4\200\0\0@\0 \200\200\221Q`\300@\22\213\0020D\0\0\20\1\0\n\0\1\r\0\204\n\360\1X\260\r\240\200\10 $\204\20B\242)m\10G\234V\20\0\224 \204$H\0X(\1\222\34\301B\240\220\22\10\f \2", 512) = 512
+11439 fstat64(3, {st_dev=makedev(8, 6), st_ino=425329, st_mode=S_IFREG|0755, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=248, st_size=124663, st_atime=2013/03/05-16:39:01, st_mtime=2012/10/05-16:40:10, st_ctime=2012/11/09-15:32:29}) = 0
+11439 mmap2(NULL, 107008, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7793000
+11439 mmap2(0xb77aa000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x16) = 0xb77aa000
+11439 mmap2(0xb77ac000, 4608, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb77ac000
+11439 close(3)                          = 0
+11439 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+11439 open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+11439 read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0000\226\1\0004\0\0\0p`\32\0\0\0\0\0004\0 \0\n\0(\0#\0\"\0\6\0\0\0004\0\0\0004\0\0\0004\0\0\0@\1\0\0@\1\0\0\5\0\0\0\4\0\0\0\3\0\0\0\310\262\26\0\310\262\26\0\310\262\26\0\23\0\0\0\23\0\0\0\4\0\0\0\1\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0$,\32\0$,\32\0\5\0\0\0\0\20\0\0\1\0\0\0\2641\32\0\264A\32\0\264A\32\0(-\0\0(Y\0\0\6\0\0\0\0\20\0\0\2\0\0\0|M\32\0|]\32\0|]\32\0\360\0\0\0\360\0\0\0\6\0\0\0\4\0\0\0\4\0\0\0t\1\0\0t\1\0\0t\1\0\0D\0\0\0D\0\0\0\4\0\0\0\4\0\0\0\7\0\0\0\2641\32\0\264A\32\0\264A\32\0\10\0\0\0@\0\0\0\4\0\0\0\4\0\0\0P\345td\334\262\26\0\334\262\26\0\334\262\26\0\314v\0\0\314v\0\0\4\0\0\0\4\0\0\0Q\345td\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0\4\0\0\0R\345td\2641\32\0\264A\32\0\264A\32\0L\36\0\0L\36\0\0\4\0\0\0\1\0\0\0\4\0\0\0\24\0\0\0\3\0\0\0GNU\0\274\231\273\207E\23\0174\243\21\6\225\34\354\317\331\3342\225\264\4\0\0\0\20\0\0\0\1\0\0\0GNU\0\0\0\0\0\2\0\0\0\6\0\0\0\30\0\0\0\363\3\0\0\t\0\0\0\0\2\0\0\16\0\0\0\2400\20D\200 \2\1\214\3\346\220AE\210\0\204\0\10\0E\200\0`\300\200\0\f\212\f\0\0010\0\10@2\10\256\4\210H6l\240\0260\0&\204\200\216\4\10B$", 512) = 512
+11439 fstat64(3, {st_dev=makedev(8, 6), st_ino=407750, st_mode=S_IFREG|0755, st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=3384, st_size=1730024, st_atime=2013/03/05-16:39:01, st_mtime=2012/10/05-16:40:10, st_ctime=2012/11/09-15:32:29}) = 0
+11439 mmap2(NULL, 1743580, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb75e9000
+11439 mprotect(0xb778c000, 4096, PROT_NONE) = 0
+11439 mmap2(0xb778d000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1a3) = 0xb778d000
+11439 mmap2(0xb7790000, 10972, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb7790000
+11439 close(3)                          = 0
+11439 mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb75e8000
+11439 mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb75e7000
+11439 set_thread_area({entry_number:-1 -> 6, base_addr:0xb75e76c0, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+11439 mprotect(0xb778d000, 8192, PROT_READ) = 0
+11439 mprotect(0xb77aa000, 4096, PROT_READ) = 0
+11439 mprotect(0x8052000, 4096, PROT_READ) = 0
+11439 mprotect(0xb77ea000, 4096, PROT_READ) = 0
+11439 munmap(0xb77ae000, 98710)         = 0
+11439 set_tid_address(0xb75e7728)       = 11439
+11439 set_robust_list(0xb75e7730, 0xc)  = 0
+11439 futex(0xbf8ec764, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 1, NULL, b75e76c0) = -1 EAGAIN (Resource temporarily unavailable)
+11439 rt_sigaction(SIGRTMIN, {0xb7798570, [], SA_SIGINFO}, NULL, 8) = 0
+11439 rt_sigaction(SIGRT_1, {0xb77985f0, [], SA_RESTART|SA_SIGINFO}, NULL, 8) = 0
+11439 rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+11439 getrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM_INFINITY}) = 0
+11439 uname({sysname="Linux", nodename="savvas-notebook", release="3.2.0-34-generic-pae", version="#53-Ubuntu SMP Thu Nov 15 11:11:12 UTC 2012", machine="i686"}) = 0
+11439 open("syscalls.txt", O_RDONLY|O_CREAT, 0664) = 3
+11439 fstat64(3, {st_dev=makedev(8, 6), st_ino=700117, st_mode=S_IFREG|0664, st_nlink=1, st_uid=1000, st_gid=1000, st_blksize=4096, st_blocks=0, st_size=0, st_atime=2013/03/06-04:16:17, st_mtime=2013/03/06-04:16:17, st_ctime=2013/03/06-04:16:17}) = 0
+11439 close(3)                          = 0
+11439 fstat64(3, 0xbf8ec670)            = -1 EBADF (Bad file descriptor)
+11439 exit_group(0)                     = ?

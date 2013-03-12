@@ -35,6 +35,9 @@
 # Example (fstat on success and on error):
 # 19243 fstat64(3, {st_mode=S_IFREG|0644, st_size=98710, ...}) = 0
 # 19243 fstatfs(3, 0xbff476cc) = -1 EBADF (Bad file descriptor)
+# Hence the equality and inequality operators are overriden
+# 
+# 
 class Unknown():
   # override equality
   def __eq__(self, other):
@@ -42,6 +45,12 @@ class Unknown():
   # override inequality 
   def __ne__(self, other):
     return not self.__eq__(other)
+  # override less than 
+  def __lt__(self, other):
+    raise Exception("Comparing object of type " + type(other) + " with Unknown object.")
+  # greater than behaves exactly like less than.
+  def __gt__(self, other):
+    return self.__lt__(other)
 
 
 ####################################################

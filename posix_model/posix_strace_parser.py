@@ -290,6 +290,11 @@ def _parse_trace(syscall_name, args, result):
     expected_arg_type = expected_args[index]
     
     # Skip all remaining arguments?
+    # this type is used to indicate that the remaining arguments
+    # should be skipped. This is useful in cases where a system call
+    # is partly supported.
+    # Consequently, the value of the remaining arguments will be the
+    # one given to them in the initialization step.
     if isinstance(expected_arg_type, SkipRemaining):
       break
 
@@ -343,23 +348,34 @@ def _parse_trace(syscall_name, args, result):
   # part of the syscall. How do we know if a given argument should be
   # moved to the return part? Each expected argument type has a
   # variable called output, which if true, indicates just that.
-  args_tuple = ()
   return_tuple = ()
   # add the expected return values to the return tuple.
   for return_index in range(len(expected_return)):
     return_tuple = return_tuple + (return_list[return_index],)
+  
+  args_tuple = ()
+  args_return_tuple = () # arguments to move in return tuple.
   # if the expected argument is an "output" argument, append it to
   # the return tuple, else append it in the arguments tuple.
   for arg_index in range(len(expected_args)):
     if expected_args[arg_index].output:
-      # if the return_tuple is of format (value1, None) and more
-      # values should be added, remove the None from the tuple.
-      if len(return_tuple) == 2 and return_tuple[1] == None:
-        return_tuple = (return_tuple[0],)
-      return_tuple = return_tuple + (args_list[arg_index],)
+      args_return_tuple = args_return_tuple + (args_list[arg_index],)
     else:
       args_tuple = args_tuple + (args_list[arg_index],)
   
+  # if the system call returned an error, indicatd by a -1, then
+  # disregard the args_return_tuple
+  if return_tuple[0] != -1 and len(args_return_tuple) != 0:
+    # if the return_tuple is of format (value1, None) then replace
+    # None with the args_return_tuple. Otherwise if the second
+    # argument of the return value is not None, raise an Exception.
+    if len(return_tuple) == 2 and return_tuple[1] == None:
+      return_tuple = (return_tuple[0], args_return_tuple)
+    else:
+      raise Exception("Trying to add more return values in a " + 
+                      "system call which already has two return " + 
+                      "values. " + return_tuple)
+
   
   ###################
   # 4. Form IR step #

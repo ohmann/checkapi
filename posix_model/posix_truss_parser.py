@@ -53,10 +53,15 @@ def get_traces(fh):
 
     # Get the function parameters.
     parameterChunk = line[line.find('(')+1:line.rfind(')')].strip()
-    # Remove right bracket and split.
     parameters = parameterChunk.split(", ")
+    # if the syscall is getdents, keep only the first and last 
+    # parameters.
+    if syscall_name.startswith("getdents"):
+      parameters = [parameters[0], parameters[-1]]
+    # Fix errors from split on messages
+    _mergeQuoteParameters(parameters)
     
-    # Get the truss return part.
+    # Get the return part.
     trussResult = line[line.rfind(')')+1:]
     if trussResult.find("=") != -1:
       trussResult = line[line.rfind('=')+2:].strip()
@@ -76,13 +81,15 @@ def get_traces(fh):
       else:
         raise Exception("Unexpected return format " +
                          trussResult)
-
+    # in case of an error include the error name as well.
     if trussResult == -1 and len(spaced_results) > 1:
       trussResult = (trussResult, spaced_results[1])
     else:
+      # if no error, use None as the second return value
       trussResult = (trussResult, None)
 
-    syscall_name = _validate_truss_parameters(fh, syscall_name, 
+    # translate arguments to the format expected by the IR
+    syscall_name = _translate_truss_parameters(fh, syscall_name, 
                        parameters, trussResult)
 
     trace = _process_trace(syscall_name, parameters, trussResult)
@@ -91,52 +98,60 @@ def get_traces(fh):
       traces.append(trace)
   
   # display all skipped syscall_names.
-  log("\n\nSkipped System Calls\n")
-  for skipped in SKIPPED_SYSCALLS:
-    log(skipped + ": " + str(SKIPPED_SYSCALLS[skipped]) + "\n")
-  log("\n")
+  if(DEBUG):
+    log("\n\nSkipped System Calls\n")
+    for skipped in SKIPPED_SYSCALLS:
+      log(skipped + ": " + str(SKIPPED_SYSCALLS[skipped]) + "\n")
+    log("\n")
 
   return traces
 
-
-def _validate_truss_parameters(fh, syscall_name, args, result):
+"""
+posix_intermediate_representation expects a slightly different
+argument format than the format used in truss. This IR format was
+heavily based on the format used in strace. Hence a translation step
+must be performed before the IR can parse these argument.
+"""
+def _translate_truss_parameters(fh, syscall_name, args, result):
   # handle any 'syscall64' the exact same way as 'syscall'
   # eg fstat64 will be treated as if it was fstat
   if syscall_name.endswith('64'):
     syscall_name = syscall_name[:syscall_name.rfind('64')]
+  # same for syscall4
+  if syscall_name.endswith('4'):
+    syscall_name = syscall_name[:syscall_name.rfind('4')]
 
   if syscall_name == "so_socket":
     # so_socket(PF_INET, SOCK_STREAM, IPPROTO_IP, "", SOV_DEFAULT) = 3
-    
     # keep only the first three arguments.
-    if len(args) > 3:
-      for arg_index in range(len(args)-1, 2, -1):
-        args.pop(arg_index)
-      return "socket"
+    args = args[0, 3]
+    # rename to socket
+    return "socket"
   
   elif (syscall_name == "bind" or syscall_name == "connect" or 
-        syscall_name == "accept"):
+        syscall_name == "accept" or syscall_name == "getsockname" or 
+        syscall_name == "getpeername" or syscall_name == "setpeername"):
     # 1648: bind(3, 0x080474F0, 16, SOV_SOCKBSD)    = 0
     # 1648:   AF_INET  name = 0.0.0.0  port = 25588
     # 1815/1:   connect(5, 0x080474F0, 16, SOV_DEFAULT)   = 0
     # 1815/1:     AF_INET  name = 0.0.0.0  port = 25588
     # 1698/1:   connect(5, 0x080474F0, 16, SOV_DEFAULT)   Err#146 ECONNREFUSED
     # 1698/1:     AF_INET  name = 0.0.0.0  port = 25588
-    
+    # 3222/1:   getpeername(5, 0x080474C0, 0x080474D8, SOV_DEFAULT) = 0
+    # 3222/1:     AF_INET  name = 127.0.0.1  port = 25588
+    # 3217: getsockname(3, 0x080474C0, 0x080474DC, SOV_DEFAULT) = 0
+    # 3217:     AF_INET  name = 127.0.0.1  port = 25588
     # keep only the first three arguments.
-    if len(args) > 3:
-      for arg_index in range(len(args)-1, 2, -1):
-        args.pop(arg_index)
-    
+    # keep only the first three arguments.
+    args = args[0, 3]
+    # read family ip and port from the next line.
     (afamily, ip, port) = get_sockaddr(fh)
-    args[1] = afamily # replace structure address
+    # replace argument 1 with afamily. Before this replacement,
+    # argument 1 holds the address of the sockaddr structure.
+    args[1] = afamily
+    # include port and ip in the arguments.
     args.insert(2, port)
     args.insert(3, ip)
-
-    try:
-      int(args[4])
-    except ValueError:
-      args[4] = 16
 
   elif syscall_name == "sendto" or syscall_name == "recvfrom":
     # 3323: sendto(3, 0x08059C1D, 20, 0, 0x080474F0, 16)  = 20
@@ -146,12 +161,17 @@ def _validate_truss_parameters(fh, syscall_name, args, result):
     # 3012: \b\019 -\f j\0\0909D14 Q 7 w\v\0\b\t\n\v\f\r0E0F1011121314151617
     # 3012: 18191A1B1C1D1E1F   ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7
     # 3012: AF_INET  to = 173.194.73.105  port = 0
-    
     if args[1].startswith("0x"):
+      # if argument 1 starts with 0x it means that the address of the
+      # string is given rather than the string itself. The latter is
+      # hence provided in the next line.
       args[1] = get_message(fh, result[0]) # replace string address
-    
+    # read family ip and port from the next line.
     (afamily, ip, port) = get_sockaddr(fh)
-    args[4] = afamily # replace structure address
+    # replace argument 4 with afamily. Before this replacement,
+    # argument 4 holds the address of the sockaddr structure.
+    args[4] = afamily
+    # include port and ip in the arguments.
     args.insert(5, port)
     args.insert(6, ip)
 
@@ -159,29 +179,15 @@ def _validate_truss_parameters(fh, syscall_name, args, result):
     # 3340/1:   send(5, "\0\0 cF4", 4, 0)     = 4
     # 3340/1:   send(5, 0x08059BF1, 23, 1)      = 23
     # 3340/1:      N o n e   s h a l l   b e   r e v e a l e d\0
-    
     if args[1].startswith("0x"):
+      # if argument 1 starts with 0x it means that the address of the
+      # string is given rather than the string itself. The latter is
+      # hence provided in the next line.
       args[1] = get_message(fh, result[0]) # replace string address
 
-  elif (syscall_name == "getsockname" or syscall_name == "getpeername" or
-        syscall_name == "setpeername"):
-    # 3222/1:   getpeername(5, 0x080474C0, 0x080474D8, SOV_DEFAULT) = 0
-    # 3222/1:     AF_INET  name = 127.0.0.1  port = 25588
-    # 3217: getsockname(3, 0x080474C0, 0x080474DC, SOV_DEFAULT) = 0
-    # 3217:     AF_INET  name = 127.0.0.1  port = 25588
+  elif ():
+
     
-    # keep only the first three arguments.
-    if len(args) > 3:
-      for arg_index in range(len(args)-1, 2, -1):
-        args.pop(arg_index)
-
-    (afamily, ip, port) = get_sockaddr(fh)
-    args[1] = afamily # replace structure address
-    args.insert(2, port)
-    args.insert(3, ip)
-
-    # truss does not dereference int*
-    args[4] = '16'
 
   elif syscall_name == "listen" or syscall_name == "shutdown":
     # 1698/2:   listen(3, 5, SOV_DEFAULT)     = 0
@@ -328,27 +334,55 @@ def _process_trace(syscall_name, args, result):
 #####################
 # Helper Functions. #
 #####################
+def _mergeQuoteParameters(parameters):
+  _removeEmptyParameters(parameters)
+  if len(parameters) <= 1:
+    return
+  index = 0
+  while index < len(parameters):
+    if  parameters[index][0] == "\"" and (len(parameters[index]) == 1 or parameters[index].strip(".")[-1] != "\"" or parameters[index].endswith("\\\"")):
+      # The only quote is the first quote which means the whole sentence got split and should be put back together.
+      while index+1 < len(parameters):
+        if parameters[index+1].strip(".")[-1] != "\"" or parameters[index+1].strip(".").endswith("\\\""):
+          parameters[index] += ", " + parameters[index+1]
+          parameters.pop(index+1)
+        else:
+          parameters[index] += ", " + parameters[index+1]
+          parameters.pop(index+1)
+          break
+    index += 1
+
+
+def _removeEmptyParameters(parameters):
+  index = 0
+  while index < len(parameters):
+    if len(parameters[index]) == 0:
+      parameters.pop(index)
+    else:
+      index += 1
+
+
 def get_sockaddr(fh):
   """
   Returns a tuple (family, ip, port)
 
   The sockaddr structure is given in the line following the current
-  line.
-  If the line contains the information needed, that line is read
-  and the information returned in a tuple.
-  If the line is not of the expected format then the file position
-  is returned to its original position.
+  line. If the line is of the expected format, the line is read and
+  the information returned in a tuple. Otherwise an exception is
+  raised.
   """
   
-  family = UNIMPLEMENTED_ERROR
-  ip = UNIMPLEMENTED_ERROR
-  port = UNIMPLEMENTED_ERROR
+  family = ""
+  ip = ""
+  port = ""
 
-  fpos = fh.tell()
   line = fh.readline()
 
-  # ip can be labeled as "name =" or "to ="
-  if (line.find("name =") != -1 or line.find("to =") != -1) and line.find("port =") != -1:
+  # the expected format must contain the label "port =" and either
+  # "name =" or "to ="
+  if ((line.find("name =") != -1 or line.find("to =") != -1) and 
+       line.find("port =") != -1):
+    # ip can be labeled as "name =" or "to ="
     if line.find("name =") != -1:
       family = line[line.find(":")+1:line.find("name =")].strip()
       ip = line[line.find("name =")+6:line.find("port =")].strip()
@@ -357,8 +391,10 @@ def get_sockaddr(fh):
       ip  = line[line.find("to =")+4:line.find("port =")].strip()
     port = line[line.find("port =")+6:].strip()
   else:
-    fh.seek(fpos)
+    raise Exception("Unexpected format when translating sockaddr: " +
+                     line)
   
+  # translate to the format expected by the IR.
   family = "sa_family=" + family
   ip = 'sin_addr=inet_addr("' + ip + '")'
   port = "sin_port=htons(" + port + ")"
@@ -369,29 +405,34 @@ def get_sockaddr(fh):
 def get_message(fh, msglen):
   """Returns the message
 
-  The message is given in the line (or maybe multiple lines) following
-  the current line.
-  If the line contains the message, that line is read and returned.
-  If the line is not of the expected format then the file position
-  is returned to its original position.
+  The message is given in the line (or maybe multiple lines)
+  following the current line. If the length of the line(s) read match
+  the length of the expected message the message is wrapped in double
+  quotes and returned. Otherwise an exception is raised.
   """
   
-  fpos = fh.tell()
   message = ""
   while len(message) < msglen:
     line = fh.readline()
     # remove pid from message
     line = line[line.find(":")+1:]
+    
+    # Remove the whitespace from the line.
     #BUG: what if the message starts with space?
     line = line.strip()
     
     # each character in the message is stupidly space padded.
-    random_string = "#*"
-    while line.find(random_string) != -1:
+    replace_string = "#*"
+    while line.find(replace_string) != -1:
       random_string += "*"
-    line = line.replace("   ", random_string)
+    # replace actual spaces with replace_string. An actual space is
+    # wrapped with a space before and after hence a set of three
+    # spaces in a row represents an actual space.
+    line = line.replace("   ", replace_string)
+    # remove spaces inserted due to padding.
     line = line.replace(" ", "")
-    line = line.replace(random_string, " ")
+    # restore actual spaces.
+    line = line.replace(replace_string, " ")
 
     # translate special characters
     line = line.replace("\\n", "\n")
@@ -399,11 +440,11 @@ def get_message(fh, msglen):
     line = line.replace("\\t", "\t")
     line = line.replace("\\0", "\0")
 
-    message = line
+    message += line
 
   if len(message) != msglen:
-    message = UNIMPLEMENTED_ERROR
-    fh.seek(fpos)
+    raise Exception("Unexpected format when reading message: " +
+                     message)
 
   return '"' + message + '"'
 

@@ -201,7 +201,7 @@ def get_traces(fh):
         # if no error, use None as the second return value
         straceReturn = (straceReturn, None)
 
-    trace = _process_trace(syscall_name, parameters, straceReturn)
+    trace = _parse_trace(syscall_name, parameters, straceReturn)
     
     if trace != UNIMPLEMENTED_ERROR:
       traces.append(trace)
@@ -216,9 +216,26 @@ def get_traces(fh):
   return traces
 
 
-# parses each argument according to what is the expected type of that
-# argument, and translates to the intermediate representation.
-def _process_trace(syscall_name, args, result):
+"""
+Parses a single trace given the syscall name, the arguments and the
+return value of that trace.
+
+Parsing proceeds in 4 steps.
+  1. Initialization: Get the expected type of arguments and return
+     values, according to the name of the syscall. Initialize a list
+     for the arguments and a list for the return values and set all
+     values to the Unknown object.
+  2. Parsing: For each expected argument and each expected return
+     value, check if the given value is of the expected format and
+     parse it. In case of an unexpected format, raise an exception.
+  3. Rearranging: Move some items from the arguments list to the
+     return value list. This happens because some arguments are used
+     to return values rather than to pass values to the system call.
+  4. Form IR: Combines the system call name, the argument list and
+     the return value list to construct the Intermediate
+     Representation.
+"""
+def _parse_trace(syscall_name, args, result):
   # handle any 'syscall64' the exact same way as 'syscall'
   # eg fstat64 will be treated as if it was fstat
   if syscall_name.endswith('64'):
@@ -239,9 +256,9 @@ def _process_trace(syscall_name, args, result):
       SKIPPED_SYSCALLS[syscall_name] = 1;
     return UNIMPLEMENTED_ERROR
 
-  #######################
-  # Initialization step #
-  #######################
+  ##########################
+  # 1. Initialization step #
+  ##########################
   # get the expected arguments from the intermediate representation.
   expected_args = list(HANDLED_SYSCALLS_INFO[syscall_name]['args'])
   # get the expected return values from the intermediate
@@ -256,9 +273,9 @@ def _process_trace(syscall_name, args, result):
   for return_index in range(len(expected_return)):
     return_list.append(Unknown())
 
-  ################
-  # Parsing step #
-  ################
+  ###################
+  # 2. Parsing step #
+  ###################
   # Parse the individual arguments of the syscall.
   # Length of args can change. If the syscall contains a string
   # argument and the string contained ", " the parser would have
@@ -276,8 +293,9 @@ def _process_trace(syscall_name, args, result):
     if isinstance(expected_arg_type, SkipRemaining):
       break
 
-    # Did the argument contain ", "? a few types can have ", "up to
-    # one time.
+    # Did the argument contain ", "? A few types can contain a ", "
+    # string, in which case the parser would have wrongly split these
+    # in two arguments.
     if(isinstance(expected_arg_type, FFsid) or
        isinstance(expected_arg_type, StDev) or
        isinstance(expected_arg_type, StSizeOrRdev)):
@@ -308,7 +326,6 @@ def _process_trace(syscall_name, args, result):
 
     index += 1
 
-
   # parse the return values of the syscall
   for index in range(len(result)):
     # Do we have more than the expected return values?
@@ -318,28 +335,35 @@ def _process_trace(syscall_name, args, result):
     return_list[index] = expected_return_type.parse(result[index])
     
   
-  ####################
-  # Rearranging step #
-  ####################
+  #######################
+  # 3. Rearranging step #
+  #######################
   # Some arguments are used to return a value rather than to pass
   # a value to the syscall. These arguments are moved to the return
   # part of the syscall. How do we know if a given argument should be
-  # moved to the return part? Each argument type has a variable
-  # called output, which if true, indicates just that.
+  # moved to the return part? Each expected argument type has a
+  # variable called output, which if true, indicates just that.
   args_tuple = ()
   return_tuple = ()
+  # add the expected return values to the return tuple.
+  for return_index in range(len(expected_return)):
+    return_tuple = return_tuple + (return_list[return_index],)
+  # if the expected argument is an "output" argument, append it to
+  # the return tuple, else append it in the arguments tuple.
   for arg_index in range(len(expected_args)):
     if expected_args[arg_index].output:
+      # if the return_tuple is of format (value1, None) and more
+      # values should be added, remove the None from the tuple.
+      if len(return_tuple) == 2 and return_tuple[1] == None:
+        return_tuple = (return_tuple[0],)
       return_tuple = return_tuple + (args_list[arg_index],)
     else:
       args_tuple = args_tuple + (args_list[arg_index],)
-
-  for return_index in range(len(expected_return)):
-    return_tuple = return_tuple + (return_list[return_index],)
   
-  ################
-  # Form IR step #
-  ################
+  
+  ###################
+  # 4. Form IR step #
+  ###################
   # form the intermediate representation.
   trace = (syscall_name+'_syscall', args_tuple, return_tuple)
   return trace

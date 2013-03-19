@@ -20,7 +20,8 @@ O_RDWR = 02
 
 # we will use this to get the flags
 #O_RDWRFLAGS = O_RDONLY | O_WRONLY | O_RDWR
-O_RDWRFLAGS = ['O_RDONLY', 'O_WRONLY', 'O_RDWR']
+# EG: added O_APPEND becasue I noticed that it's being returned in fcntl calls
+O_RDWRFLAGS = ['O_RDONLY', 'O_WRONLY', 'O_RDWR', 'O_APPEND']
 
 O_CREAT = 0100
 O_EXCL = 0200
@@ -159,48 +160,29 @@ DEFAULT_METADATA_FILENAME = "lind.metadata"
 
 # some MACRO helpers...
 def IS_DIR(mode):
-  #if mode & S_FILETYPEFLAGS == S_IFDIR:
-  if 'S_IFDIR' in mode:
-    return True
-  else:
-    return False
+  return 'S_IFDIR' in mode
+
 
 def IS_REG(mode):
-  #if mode & S_FILETYPEFLAGS == S_IFREG:
-  if 'S_IFREG' in mode:
-    return True
-  else:
-    return False
+  return 'S_IFREG' in mode
+
+
+def IS_CHR(mode):
+  return 'S_IFCHR' in mode
 
 
 def IS_SOCK(mode):
-  #if mode & S_FILETYPEFLAGS == S_IFSOCK:
-  if 'S_IFSOCK' in mode:
-    return True
-  else:
-    return False
+  return 'S_IFSOCK' in mode
 
 
 def IS_RDONLY(flags):
-  #if flags & O_RDWRFLAGS == O_RDONLY:
-  if 'O_RDONLY' in flags:
-    return True
-  else:
-    return False
+  return 'O_RDONLY' in flags
 
 
 def IS_WRONLY(flags):
-  #if flags & O_RDWRFLAGS == O_WRONLY:
-  if 'O_WRONLY' in flags:
-    return True
-  else:
-    return False
+  return 'O_WRONLY' in flags
 
 
 def IS_RDWR(flags):
-  #if flags & O_RDWRFLAGS == O_RDWR:
-  if 'O_RDWR' in flags:
-    return True
-  else:
-    return False
+  return 'O_RDWR' in flags
 

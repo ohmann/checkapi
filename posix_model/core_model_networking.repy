@@ -280,9 +280,11 @@ def model_listenformessage(threadname, localip, localport):
   if type(localport) is not int:
     raise RepyArgumentError("Provided localport must be a int!")
 
-
   # Check the input arguments (sanity)
-  if not _is_valid_ip_address(localip):
+  # EG: check for ip == 0.0.0.0 first, because _is_valid_ip_address doesn't handle this
+  if localip == '0.0.0.0':
+    pass
+  elif not _is_valid_ip_address(localip):
     raise RepyArgumentError("Provided localip is not valid! IP: '"+localip+"'")
 
   if not _is_valid_network_port(localport):
@@ -363,6 +365,7 @@ def model_sendmessage(threadname, destip, destport, message, localip, localport)
    <Returns>
       The number of bytes sent on success
   """
+
   # Check to ensure thread is ok to run.
   assert_thread_ok(threadname)
 
@@ -379,7 +382,6 @@ def model_sendmessage(threadname, destip, destport, message, localip, localport)
 
   if type(message) is not str:
     raise RepyArgumentError("Provided message must be a string!")
-
 
   # Check the input arguments (sanity)
   if not _is_valid_ip_address(destip):

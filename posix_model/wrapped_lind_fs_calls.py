@@ -36,19 +36,12 @@ nanny._resources_consumed_dict = {'messport':set(), 'connport':set(), 'cpu':0,
       'events':set(), 'filesopened':set(), 'insockets':set(), 'outsockets':set()
       }
 '''
+
 # EG:
 dy_import_module_symbols("lind_fs_constants")
 dy_import_module_symbols("fs_net_handler")
-
-#dy_import_module_symbols("wrapped_lind_net_calls")
-#from lind_fs_constants import *
-
-
-
-
-
-
-
+dy_import_module_symbols("serialize")
+dy_import_module_symbols("posix_intermediate_representation")
 
 """
   Author: Justin Cappos
@@ -189,6 +182,9 @@ fs_calls_context = {}
 # Where we currently are at...
 fs_calls_context['currentworkingdirectory'] = '/'
 
+# we want to ignore all the calls for these fds
+ignore_fd = [0,1,2] #standard in/out/error
+
 
 # This is raised to return an error...
 class SyscallError(Exception):
@@ -198,6 +194,12 @@ class SyscallError(Exception):
 # This is raised if part of a call is not implemented
 class UnimplementedError(Exception):
   """A call was called with arguments that are not fully implemented"""
+
+
+# This is raised if the call's argument contain a fd that is ignored
+class IgnoredFileDescriptorWarning(Warning):
+  """A call was called with a file descriptors that is ignored"""
+
 
 
 def load_fs(name=METADATAFILENAME):
@@ -272,9 +274,10 @@ def persist_metadata(metadatafilename):
 
 
 def restore_metadata(metadatafilename):
+
   # should only be called with a fresh system...
   assert(filesystemmetadata == {})
-
+  
   # open the file and write out the information...
   metadatafo = openfile(metadatafilename,True)
   metadatastring = metadatafo.readat(None, 0)
@@ -419,7 +422,9 @@ def _get_absolute_parent_path(path):
 def _istatfs_helper(inode):
   """
   """
-
+ 
+  impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+  
   # I need to compute the amount of disk available / used
   limits, usage, stoptimes = getresources()
 
@@ -458,10 +463,13 @@ def _istatfs_helper(inode):
   return myfsdata
 
 
-def fstatfs_syscall(fd):
+# buf is not used
+def fstatfs_syscall(fd, buf):
   """ 
     http://linux.die.net/man/2/fstatfs
   """
+  if fd in ignore_fd:
+    raise IgnoredFileDescriptorWarning("fstatfs_syscall", "The file descriptor is ignored.") 
 
   # is the file descriptor valid?
   if fd not in filedescriptortable:
@@ -600,6 +608,14 @@ def mkdir_syscall(path, mode):
   """
   mode = flag2list(mode)
 
+  # EG: same as mode in open, manually set mode as list
+  # TODO remove these after parser takes care of it
+  if isinstance(mode, int):
+    if mode == 775:
+      mode = ['S_IRUSR', 'S_IWUSR', 'S_IXUSR', 'S_IRGRP', 'S_IWGRP', 'S_IXGRP', 'S_IROTH', 'S_IXOTH']
+    else: 
+      raise UnimplementedError('open with mode: ' + str(mode) + ' is not yet implemented.') 
+
   # lock to prevent things from changing while we look this up...
   filesystemmetadatalock.acquire(True)
 
@@ -637,7 +653,7 @@ def mkdir_syscall(path, mode):
     filesystemmetadata['nextinode'] += 1
 
     newinodeentry = {'size':0, 'uid':1000, 'gid':1000, 
-            'mode':mode.append('S_IFDIR'),  # DIR+rwxr-xr-x
+            'mode':mode + ['S_IFDIR'],  # DIR+rwxr-xr-x
             # BUG: I'm listing some arbitrary time values.  I could keep a time
             # counter too.
             'atime':1323630836, 'ctime':1323630836, 'mtime':1323630836,
@@ -897,7 +913,9 @@ def stat_syscall(path):
       raise SyscallError("stat_syscall","ENOENT","The path does not exist.")
 
     thisinode = fastinodelookuptable[truepath]
-      
+     
+    #EG: TODO: what about character files? /dev/null, /dev/random, etc. CheckAPI doesn't care, right?
+
     return _istat_helper(thisinode)
 
   finally:
@@ -923,6 +941,8 @@ def fstat_syscall(fd):
   # TODO: I don't handle socket objects.   I should return something like: 
   # st_mode=49590, st_ino=0, st_dev=0L, st_nlink=0, st_uid=501, st_gid=20, 
   # st_size=0, st_atime=0, st_mtime=0, st_ctime=0
+  if fd in ignore_fd:
+    raise IgnoredFileDescriptorWarning("fstat_syscall", "The file descriptor is ignored.") 
 
   # is the file descriptor valid?
   if fd not in filedescriptortable:
@@ -977,19 +997,28 @@ def get_next_fd():
   raise SyscallError("open_syscall","EMFILE","The maximum number of files are open.")
   
 
+
 def open_syscall(path, flags, mode):
   """ 
     http://linux.die.net/man/2/open
   """
+
+  if isinstance(mode, Unknown):
+    mode = []
+
   flags = flag2list(flags)
   mode = flag2list(mode)
-
+      
   # in an abundance of caution, lock...   I think this should only be needed
   # with O_CREAT flags...
   filesystemmetadatalock.acquire(True)
 
   # ... but always release it...
   try:
+
+    if path == '':
+      raise SyscallError("open_syscall","ENOENT","The file does not exist.")
+
     truepath = _get_absolute_path(path)
 
     # is the file missing?
@@ -1002,15 +1031,13 @@ def open_syscall(path, flags, mode):
       # okay, it doesn't exist (great!).   Does it's parent exist and is it a 
       # dir?
       trueparentpath = _get_absolute_parent_path(path)
-
+ 
       if trueparentpath not in fastinodelookuptable:
         raise SyscallError("open_syscall","ENOENT","Path does not exist.")
 
       parentinode = fastinodelookuptable[trueparentpath]
       if not IS_DIR(filesystemmetadata['inodetable'][parentinode]['mode']):
         raise SyscallError("open_syscall","ENOTDIR","Path's parent is not a directory.")
-
-
 
       # okay, great!!!   We're ready to go!   Let's make the new file...
       filename = truepath.split('/')[-1]
@@ -1024,15 +1051,14 @@ def open_syscall(path, flags, mode):
       assert('S_IRWXA' not in mode)
 
       newinodeentry = {'size':0, 'uid':1000, 'gid':1000, 
-            'mode': mode.append('S_IFREG'),  # FILE + their entries
+            'mode': mode + ['S_IFREG'], # FILE + their entries
             # BUG: I'm listing some arbitrary time values.  I could keep a time
             # counter too.
             'atime':1323630836, 'ctime':1323630836, 'mtime':1323630836,
             'linkcount':1}
-    
+
       # ... and put it in the table..
       filesystemmetadata['inodetable'][newinode] = newinodeentry
-
 
       # let's make the parent point to it...
       filesystemmetadata['inodetable'][parentinode]['filename_to_inode_dict'][filename] = newinode
@@ -1045,6 +1071,7 @@ def open_syscall(path, flags, mode):
       # this file must not exist or it's an internal error!!!
       fd = model_openfile('MainThread', FILEDATAPREFIX+str(newinode),True)
       model_file_close('MainThread', fd)
+
 
     # if the file did exist, were we told to create with exclusion?
     else:
@@ -1081,7 +1108,7 @@ def open_syscall(path, flags, mode):
     # get the next fd so we can use it...
     thisfd = get_next_fd()
   
-
+    
     # Note, directories can be opened (to do getdents, etc.).   We shouldn't
     # actually open something in this case...
     # Is it a regular file?
@@ -1104,7 +1131,8 @@ def open_syscall(path, flags, mode):
 
     # Add the entry to the table!
 
-    filedescriptortable[thisfd] = {'position':position, 'inode':inode, 'lock':createlock(), 'flags':flags.extend(O_RDWRFLAGS)}
+    filedescriptortable[thisfd] = {'position':position, 'inode':inode, 'lock':createlock(), 'flags':[element for element in flags if element in O_RDWRFLAGS]}
+
 
     # Done!   Let's return the file descriptor.
     return thisfd
@@ -1149,8 +1177,12 @@ def lseek_syscall(fd, offset, whence):
   """ 
     http://linux.die.net/man/2/lseek
   """
-  offset = flag2list(offset)
+  # TODO: offset should be an integer!!!!
+  #offset = flag2list(offset)
   whence = flag2list(whence)
+
+  if fd in ignore_fd:
+    raise IgnoredFileDescriptorWarning("lseek_syscall", "The file descriptor is ignored.") 
 
   # check the fd
   if fd not in filedescriptortable:
@@ -1163,7 +1195,11 @@ def lseek_syscall(fd, offset, whence):
   # ... but always release it...
   try:
     # we will need the file size in a moment, but also need to check the type
-    inode = filedescriptortable[fd]['inode']
+    try:
+      inode = filedescriptortable[fd]['inode']
+    except KeyError:
+      raise SyscallError("lseek_syscall","ESPIPE","This is a socket, not a file.")
+
 
     # Let's figure out if this has a length / pointer...
     if IS_REG(filesystemmetadata['inodetable'][inode]['mode']):
@@ -1180,12 +1216,13 @@ def lseek_syscall(fd, offset, whence):
       
 
     # Figure out where we will seek to and check it...
+ 
     if 'SEEK_SET' in whence:
-      eventualpos = int(offset[0])
+      eventualpos = offset
     elif 'SEEK_CUR' in whence:
-      eventualpos = filedescriptortable[fd]['position']+int(offset[0])
+      eventualpos = filedescriptortable[fd]['position'] + offset
     elif 'SEEK_END' in whence:
-      eventualpos = filesize+int(offset[0])
+      eventualpos = filesize + offset
     else:
       raise SyscallError("lseek_syscall","EINVAL","Invalid whence.")
 
@@ -1222,7 +1259,10 @@ def read_syscall(fd, count):
   # BUG: I probably need a filedescriptortable lock to prevent an untimely
   # close call or similar from messing everything up...
 
-  # check the fd
+  if fd in ignore_fd:
+    raise IgnoredFileDescriptorWarning("read_syscall", "The file descriptor is ignored.") 
+
+  # check the fd 
   if fd not in filedescriptortable:
     raise SyscallError("read_syscall","EBADF","Invalid file descriptor.")
 
@@ -1243,17 +1283,21 @@ def read_syscall(fd, count):
     if not IS_REG(filesystemmetadata['inodetable'][inode]['mode']):
       raise SyscallError("read_syscall","EINVAL","File descriptor does not refer to a regular file.")
       
-
     # let's do a readat!
     position = filedescriptortable[fd]['position']
 
+    print count, position
+
     #data = fileobjecttable[inode].readat(count,position)
     data = model_file_readat('MainThread', fileobjecttable[inode], count, position)
+    print data
+
 
     # and update the position
     filedescriptortable[fd]['position'] += len(data)
 
-    return data
+    # EG: TODO - we need to agree with the parser
+    return len(data)
 
   finally:
     # ... release the lock
@@ -1270,14 +1314,17 @@ def read_syscall(fd, count):
 ##### WRITE  #####
 
 
-
-def write_syscall(fd, data):
+# count is not used
+def write_syscall(fd, data, count):
   """ 
     http://linux.die.net/man/2/write
   """
 
   # BUG: I probably need a filedescriptortable lock to prevent an untimely
   # close call or similar from messing everything up...
+
+  if fd in ignore_fd:
+    raise IgnoredFileDescriptorWarning("write_syscall", "The file descriptor is ignored.") 
 
   # check the fd
   if fd not in filedescriptortable:
@@ -1418,6 +1465,11 @@ def close_syscall(fd):
 
   # BUG: I probably need a filedescriptortable lock to prevent race conditions
 
+  # if fd is closing, remove the corresponding entry from the ignore_fd
+  if fd in ignore_fd:
+    ignore_fd.pop(ignore_fd.index(fd))
+    raise IgnoredFileDescriptorWarning("close_syscall", "The file descriptor is ignored.") 
+
   # check the fd
   if fd not in filedescriptortable:
     raise SyscallError("close_syscall","EBADF","Invalid file descriptor.")
@@ -1482,6 +1534,15 @@ def dup2_syscall(oldfd,newfd):
     http://linux.die.net/man/2/dup2
   """
 
+  if oldfd in ignore_fd:
+    impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+
+    # if dup was suceessful add the newfd to ignore_fd list as well
+    if impl_ret != -1:
+      ignore_fd.append(impl_ret) 
+
+    raise IgnoredFileDescriptorWarning("dup2_syscall", "The file descriptor is ignored.") 
+
   # check the fd
   if oldfd not in filedescriptortable:
     raise SyscallError("dup2_syscall","EBADF","Invalid old file descriptor.")
@@ -1507,6 +1568,15 @@ def dup_syscall(fd):
   """ 
     http://linux.die.net/man/2/dup
   """
+
+  if fd in ignore_fd:
+    impl_ret, impl_errno = mycontext['posix_oracle'].pop()
+
+    # if dup was suceessful add the newfd to ignore_fd list as well
+    if impl_ret != -1:
+      ignore_fd.append(impl_ret) 
+
+    raise IgnoredFileDescriptorWarning("dup_syscall", "The file descriptor is ignored.") 
 
 
   # check the fd
@@ -1551,8 +1621,12 @@ def fcntl_syscall(fd, cmd, *args):
   # this call is totally crazy!   I'll just implement the basics and add more
   # as is needed.
 
+  if isinstance(args[0], Unknown):
+    args = []
+
   cmd = flag2list(cmd)
   args = flag2list(args)
+
 
   # BUG: I probably need a filedescriptortable lock to prevent race conditions
 
@@ -1574,13 +1648,18 @@ def fcntl_syscall(fd, cmd, *args):
     # if we're getting the flags, return them... (but this is just CLO_EXEC, 
     # so ignore)
     if 'F_GETFD' in cmd:
-      assert(len(args) == 0)
-      return 0
+
+      if len(args) > 0:
+        raise SyscallError("fcntl_syscall", "EINVAL", "Argument is more than\
+	          maximun allowable value.")
+
+      return int('FD_CLOEXEC' in filedescriptortable[fd]['flags'])
+
 
     # set the flags... (but this is just CLO_EXEC, so ignore...)
     elif 'F_SETFD' in cmd:
       assert(len(args) == 1)
-      assert(type(args[0]) == int or type(args[0]) == long or type(args[0]) == str)
+      filedescriptortable[fd]['flags'].append(args[0])
       return 0
 
     # if we're getting the flags, return them...
@@ -1630,8 +1709,8 @@ def fcntl_syscall(fd, cmd, *args):
 
 
 ##### GETDENTS  #####
-
-
+# EG: TOSEE there is a discrpancy between what real execution and model return
+# for now any errors in this syscall are justified
 
 def getdents_syscall(fd,quantity):
   """ 
@@ -1642,9 +1721,20 @@ def getdents_syscall(fd,quantity):
 
   # BUG BUG BUG: Do I really understand this spec!?!?!?!
 
+  if fd in ignore_fd:
+    raise IgnoredFileDescriptorWarning("getdents_syscall", "The file descriptor is ignored.") 
+
   # check the fd
   if fd not in filedescriptortable:
     raise SyscallError("getdents_syscall","EBADF","Invalid file descriptor.")
+
+  # Sanitizing the Input, there are people who would send other types too.
+  if not isinstance(quantity, (int, long)):
+    raise SyscallError("getdents_syscall","EINVAL","Invalid type for buffer size.")
+
+  # This is the minimum number of bytes, that should be provided.
+  if quantity < 24:
+    raise SyscallError("getdents_syscall","EINVAL","Buffer size is too small.")
 
   # Acquire the fd lock...
   filedescriptortable[fd]['lock'].acquire(True)
@@ -1657,24 +1747,32 @@ def getdents_syscall(fd,quantity):
 
     # Is it a directory?
     if not IS_DIR(filesystemmetadata['inodetable'][inode]['mode']):
-      print filesystemmetadata['inodetable'][inode]['mode'], inode
       raise SyscallError("getdents_syscall","EINVAL","File descriptor does not refer to a directory.")
       
     returninodefntuplelist = []
-    currentquantity = 0
+    bufferedquantity = 0
 
     # let's move the position forward...
     startposition = filedescriptortable[fd]['position']
 
     # return tuple with inode, name, type tuples...
     for entryname,entryinode in list(filesystemmetadata['inodetable'][inode]['filename_to_inode_dict'].iteritems())[startposition:]:
-      if currentquantity >= quantity:
-        break
 
       # getdents returns the mode also (at least on Linux)...
       entrytype = get_direnttype_from_mode(filesystemmetadata['inodetable'][entryinode]['mode'])
+
+      # Get the size of each entry, the size should be a multiple of 8.
+      # The size of each entry is determined by sizeof(struct linux_dirent) which is 20 bytes plus the length of name of the file.
+      # So, size of each entry becomes : 21 => 24, 26 => 32, 32 => 32.
+      currentquantity = (((20 + len(entryname)) + 7) / 8) * 8
+
+      # This is the overall size of entries parsed till now, if size exceeds given size, then stop parsing and return
+      bufferedquantity += currentquantity
+      if bufferedquantity > quantity:
+        break
+
       returninodefntuplelist.append((entryinode,entryname,entrytype))
-      currentquantity=currentquantity + 1
+
 
     # and move the position along.   Go no further than the end...
     filedescriptortable[fd]['position'] = min(startposition+quantity, len(filesystemmetadata['inodetable'][inode]['filename_to_inode_dict']))

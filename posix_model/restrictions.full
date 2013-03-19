@@ -21,3 +21,5 @@ resource messport 52989
 resource connport 52989
 resource messport 53929
 resource connport 53929
+resource messport 25588
+resource connport 25588

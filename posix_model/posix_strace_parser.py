@@ -26,7 +26,7 @@
   entry of this list represents a system call in its intermediate
   representation. The format of the intermediate representation is 
   given below:
-  ('syscallName_syscall', (arg1, arg2, ...), (return1, return2, ...))
+  ('syscallName_syscall', (arg1, arg2, ...), (return1, return2))
 
   The above format, represents a single entry of the list returned.
   It is a tuple that contains three elements. The first elemetns is a
@@ -58,22 +58,18 @@
   this module are the following:
   strace -v -f -s1024 -o output_filename command
 
-  -v print structire values unabbreviated.
-  -f trace child processes
+  -v print structure values unabbreviated.
+  -f traces child processes
   -s1024 tells strace to allow string arguments in system calls up to
   1024 characters. If this command is skipped, strace will truncate
-  strings that exceed 32 characters.
+  strings exceeding 32 characters.
 
 """
 
-dy_import_module_symbols("posix_intermediate_representation")
+from posix_intermediate_representation import *
+import sys
+import posix_generate_fs
 
-#############
-# CONSTANTS #
-#############
-# this error is used to indicate that a system call found in the
-# trace file is not handled by the parser.
-UNIMPLEMENTED_ERROR = -1
 # turn message printing on or off.
 DEBUG = False
 
@@ -96,15 +92,9 @@ class UnfinishedSyscall(object):
     self.pid = pid
     self.syscall_name = syscall_name
     self.firstHalf = firstHalf
-
   def __str__(self):
     line = str([self.pid, self.syscall_name, self.firstHalf])
     return line
-
-# This dictionary is used to keep track of which syscalls are skipped
-# while parsing, and how may times each syscall was skipped.
-SKIPPED_SYSCALLS = {}
-
 
 ###################################
 # Public function of this module. #
@@ -120,7 +110,7 @@ def get_traces(fh):
     line = line.strip()
     
     if DEBUG:
-      log(line, "\n")
+      print line
         
     # Ignore lines that indicate signals. These lines start with
     # either "+++" or "---". Eg:
@@ -201,188 +191,21 @@ def get_traces(fh):
         # if no error, use None as the second return value
         straceReturn = (straceReturn, None)
 
-    trace = _parse_trace(syscall_name, parameters, straceReturn)
+    trace = parse_trace(syscall_name, parameters, straceReturn)
     
     if trace != UNIMPLEMENTED_ERROR:
       traces.append(trace)
   
   # display all skipped syscall_names.
   if(DEBUG):
-    log("\n\nSkipped System Calls\n")
+    print "\nSkipped System Calls"
     for skipped in SKIPPED_SYSCALLS:
-      log(skipped + ": " + str(SKIPPED_SYSCALLS[skipped]) + "\n")
-    log("\n")
+      print skipped + ": " + str(SKIPPED_SYSCALLS[skipped])
+  
+  # generate the initial file system needed by the model.
+  posix_generate_fs.generate_fs(traces, "posix_fs")
 
   return traces
-
-
-"""
-Parses a single trace given the syscall name, the arguments and the
-return value of that trace.
-
-Parsing proceeds in 4 steps.
-  1. Initialization: Get the expected type of arguments and return
-     values, according to the name of the syscall. Initialize a list
-     for the arguments and a list for the return values and set all
-     values to the Unknown object.
-  2. Parsing: For each expected argument and each expected return
-     value, check if the given value is of the expected format and
-     parse it. In case of an unexpected format, raise an exception.
-  3. Rearranging: Move some items from the arguments list to the
-     return value list. This happens because some arguments are used
-     to return values rather than to pass values to the system call.
-  4. Form IR: Combines the system call name, the argument list and
-     the return value list to construct the Intermediate
-     Representation.
-"""
-def _parse_trace(syscall_name, args, result):
-  # handle any 'syscall64' the exact same way as 'syscall'
-  # eg fstat64 will be treated as if it was fstat
-  if syscall_name.endswith('64'):
-    syscall_name = syscall_name[:syscall_name.rfind('64')]
-  # same for syscall4
-  if syscall_name.endswith('4'):
-    syscall_name = syscall_name[:syscall_name.rfind('4')]
-
-  if syscall_name not in HANDLED_SYSCALLS_INFO:
-    # Keep track of how many times each syscall was skipped.
-    # These information can be printed every time the parser is used
-    # to help identify which are the most important and most
-    # frequently used syscalls. Subsequently, the parser can be
-    # extended to handle these.
-    if(syscall_name in SKIPPED_SYSCALLS):
-      SKIPPED_SYSCALLS[syscall_name] = SKIPPED_SYSCALLS[syscall_name] + 1;
-    else:
-      SKIPPED_SYSCALLS[syscall_name] = 1;
-    return UNIMPLEMENTED_ERROR
-
-  ##########################
-  # 1. Initialization step #
-  ##########################
-  # get the expected arguments from the intermediate representation.
-  expected_args = list(HANDLED_SYSCALLS_INFO[syscall_name]['args'])
-  # get the expected return values from the intermediate
-  # representation.
-  expected_return = list(HANDLED_SYSCALLS_INFO[syscall_name]['return'])
-  # Initialize all arguments to Unknown()
-  args_list = []
-  for arg_index in range(len(expected_args)):
-    args_list.append(Unknown())
-  # Initialize all return values to Unknown()
-  return_list = []
-  for return_index in range(len(expected_return)):
-    return_list.append(Unknown())
-
-  ###################
-  # 2. Parsing step #
-  ###################
-  # Parse the individual arguments of the syscall.
-  # Length of args can change. If the syscall contains a string
-  # argument and the string contained ", " the parser would have
-  # wrongly split the string.
-  index = 0
-  while index < len(args):
-    # Do we have more than the expected arguments?
-    if index >= len(expected_args):
-      raise Exception("Too many arguments found while parsing.")
-    
-    # get the expected type for the current argument.
-    expected_arg_type = expected_args[index]
-    
-    # Skip all remaining arguments?
-    # this type is used to indicate that the remaining arguments
-    # should be skipped. This is useful in cases where a system call
-    # is partly supported.
-    # Consequently, the value of the remaining arguments will be the
-    # one given to them in the initialization step.
-    if isinstance(expected_arg_type, SkipRemaining):
-      break
-
-    # Did the argument contain ", "? A few types can contain a ", "
-    # string, in which case the parser would have wrongly split these
-    # in two arguments.
-    if(isinstance(expected_arg_type, FFsid) or
-       isinstance(expected_arg_type, StDev) or
-       isinstance(expected_arg_type, StSizeOrRdev)):
-      if len(args) > len(expected_args):
-        args[index] += ", " + args[index+1]
-        args.pop(index+1)
-
-    args_list[index] = expected_arg_type.parse(args[index])
-    
-    # Did the syscall return an error?
-    # If the syscall returned an error the value of structure
-    # variables will not be returned. Instead, where we expect the
-    # first value of the structure we get the address of the
-    # structure and the remaining values are simply not listed. We
-    # can detect this by checking if the returned "parsed" value is
-    # of type Unknown and stop parsing values. Consequently, the 
-    # value of the remaining arguments will be the one given to them
-    # in the initialization step above.
-    if args_list[index] == Unknown():
-      break
-
-    # if the sockfamily is AF_NETLINK, adjust the expected types.
-    # default types after a SockFamily are SockPort and SockIP
-    if(isinstance(expected_arg_type, SockFamily) and 
-       "AF_NETLINK" in args_list[index]):
-      expected_args[index+1] = Pid(output=True)
-      expected_args[index+2] = Groups(output=True)
-
-    index += 1
-
-  # parse the return values of the syscall
-  for index in range(len(result)):
-    # Do we have more than the expected return values?
-    if index >= len(expected_return):
-      raise Exception("Too many return values found while parsing.")
-    expected_return_type = expected_return[index]
-    return_list[index] = expected_return_type.parse(result[index])
-    
-  
-  #######################
-  # 3. Rearranging step #
-  #######################
-  # Some arguments are used to return a value rather than to pass
-  # a value to the syscall. These arguments are moved to the return
-  # part of the syscall. How do we know if a given argument should be
-  # moved to the return part? Each expected argument type has a
-  # variable called output, which if true, indicates just that.
-  return_tuple = ()
-  # add the expected return values to the return tuple.
-  for return_index in range(len(expected_return)):
-    return_tuple = return_tuple + (return_list[return_index],)
-  
-  args_tuple = ()
-  args_return_tuple = () # arguments to move in return tuple.
-  # if the expected argument is an "output" argument, append it to
-  # the return tuple, else append it in the arguments tuple.
-  for arg_index in range(len(expected_args)):
-    if expected_args[arg_index].output:
-      args_return_tuple = args_return_tuple + (args_list[arg_index],)
-    else:
-      args_tuple = args_tuple + (args_list[arg_index],)
-  
-  # if the system call returned an error, indicatd by a -1, then
-  # disregard the args_return_tuple
-  if return_tuple[0] != -1 and len(args_return_tuple) != 0:
-    # if the return_tuple is of format (value1, None) then replace
-    # None with the args_return_tuple. Otherwise if the second
-    # argument of the return value is not None, raise an Exception.
-    if len(return_tuple) == 2 and return_tuple[1] == None:
-      return_tuple = (return_tuple[0], args_return_tuple)
-    else:
-      raise Exception("Trying to add more return values in a " + 
-                      "system call which already has two return " + 
-                      "values. " + return_tuple)
-
-  
-  ###################
-  # 4. Form IR step #
-  ###################
-  # form the intermediate representation.
-  trace = (syscall_name+'_syscall', args_tuple, return_tuple)
-  return trace
 
 
 #####################
@@ -435,7 +258,7 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
 
   if unfinished_syscalls_index == None:
     if DEBUG:
-      log("Pending syscall not found.\n\n")
+      print "Pending syscall not found.\n"
     return -1
   else:
     second_half = line[line.find("resumed>")+8:].strip()
@@ -450,41 +273,43 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
 
 
 def _mergeQuoteParameters(parameters):
-  _removeEmptyParameters(parameters)
   if len(parameters) <= 1:
     return
   index = 0
   while index < len(parameters):
-    if  parameters[index][0] == "\"" and (len(parameters[index]) == 1 or parameters[index].strip(".")[-1] != "\"" or parameters[index].endswith("\\\"")):
-      # The only quote is the first quote which means the whole sentence got split and should be put back together.
+    if parameters[index].startswith("\""):
+      # The only quote is the first quote which means the 
+      # sentence got split and should be put back together.
       while index+1 < len(parameters):
-        if parameters[index+1].strip(".")[-1] != "\"" or parameters[index+1].strip(".").endswith("\\\""):
-          parameters[index] += ", " + parameters[index+1]
-          parameters.pop(index+1)
-        else:
-          parameters[index] += ", " + parameters[index+1]
-          parameters.pop(index+1)
+        if _endsInUnescapedQuote(parameters[index].strip(".")):
           break
+        parameters[index] += ", " + parameters[index+1]
+        parameters.pop(index+1)
     index += 1
 
 
-def _removeEmptyParameters(parameters):
-  index = 0
-  while index < len(parameters):
-    if len(parameters[index]) == 0:
-      parameters.pop(index)
-    else:
-      index += 1
-    
+def _endsInUnescapedQuote(string):
+  if not string or string[-1] != '"':
+    return False
+  for index in range(-2, -len(string)-1, -1):
+    if string[index] != '\\':
+      return index % 2 == 0
+  return False
 
-'''
+
+#'''
 # For testing purposes...
 def main():
-    fh = open(callargs[0], "r")
-    trace = get_traces(fh)
-    log("\n")
-    for action in trace:
-      log("Action: ", action, "\n")
+    if len(sys.argv) < 2:
+      raise Exception("Too few command line arguments")
 
+    fh = open(sys.argv[1], "r")
+    trace = get_traces(fh)
+    for action in trace:
+      if len(sys.argv) > 2:
+        if sys.argv[2]+"_syscall" == action[0]:
+          print "Action: ", action
+      else:
+        print "Action: ", action
 main()
-'''
+#'''

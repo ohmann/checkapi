@@ -300,16 +300,16 @@ def _endsInUnescapedQuote(string):
 #'''
 # For testing purposes...
 def main():
-    if len(sys.argv) < 2:
-      raise Exception("Too few command line arguments")
+  if len(sys.argv) < 2:
+    raise Exception("Too few command line arguments")
 
-    fh = open(sys.argv[1], "r")
-    trace = get_traces(fh)
-    for action in trace:
-      if len(sys.argv) > 2:
-        if sys.argv[2]+"_syscall" == action[0]:
-          print "Action: ", action
-      else:
+  fh = open(sys.argv[1], "r")
+  trace = get_traces(fh)
+  for action in trace:
+    if len(sys.argv) > 2:
+      if sys.argv[2]+"_syscall" == action[0]:
         print "Action: ", action
+    else:
+      print "Action: ", action
 main()
 #'''

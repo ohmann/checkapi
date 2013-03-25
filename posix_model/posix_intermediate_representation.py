@@ -69,10 +69,8 @@ class Unknown():
     return self.__lt__(other)
   # override representation and string
   def __repr__(self):
-    if self.given_value == None:
-      self.given_value = repr(self.given_value)
-    return ("<Unknown, expected_type=" + self.expected_type + 
-            ", given_value=" + self.given_value + ">")
+    return "<Unknown, expected_type=" + repr(self.expected_type) + \
+            ", given_value=" + repr(self.given_value) + ">"
   def __str__(self):
     return self.__repr__()
 
@@ -105,15 +103,18 @@ class Int():
     self.label_left = label_left
     self.label_right = label_right
     self.output = output
-  
+
   def parse(self, val=None):
-    if val == None:
+    if val == None or val == "":
       return Unknown('Int', val)
     # if the value starts with 0x it was not dereferenced.
-    if self.label_left != None and val.startswith('0x'):
+    if val.startswith('0x'):
       return Unknown('Int', val)
     # remove lables
+    
     val = _remove_labels(val, self.label_left, self.label_right)
+    if val == "":
+      return Unknown('Int', val)
 
     # dereferenced numbers are wrapped in []
     if val.startswith('[') and val.endswith(']'):
@@ -169,7 +170,7 @@ class Mode():
     self.output = output
   
   def parse(self, val=None):
-    if val == None:
+    if val == None or val == "":
       return Unknown('Mode', val)
     try:
       val = int(val)
@@ -186,22 +187,23 @@ class ZeroOrListOfFlags():
     self.output = output
 
   def parse(self, val=None):
-    if val == None:
+    if val == None or val == "":
       return Unknown('ZeroOrListOfFlags', val)
     # if the value starts with 0x it was not dereferenced.
     if self.label_left != None and val.startswith('0x'):
       return Unknown('ZeroOrListOfFlags', val)
     # remove lables
     val = _remove_labels(val, self.label_left, self.label_right)
-
-    try:
-      # is val a number?
+    if val == "":
+      return Unknown('ZeroOrListOfFlags', val)
+    
+    if val.isdigit():
       val = int(val)
-    except ValueError:
-      pass
-    if val == 0:
-      return val
-    # if not a number or not a zero then it must be a list of flags.
+      if val == 0:
+        return val
+      else:
+        return Unknown('ZeroOrListOfFlags', val)
+    # if not a number then it must be a list of flags.
     return _stringToListOfFlags(val)
 
 
@@ -250,7 +252,7 @@ class StSizeOrRdev():
     self.output = output
 
   def parse(self, val=None):
-    if val == None or val.startswith('0x'):
+    if val == None or val == "" or val.startswith('0x'):
       return Unknown('StSizeOrRdev', val)
     # if the label is not found in the value parsing, raise an
     # exception.
@@ -276,7 +278,7 @@ class StDev():
     self.output = output
 
   def parse(self, val=None):
-    if val == None or val.startswith('0x'):
+    if val == None or val == "" or val.startswith('0x'):
       return Unknown('StDev', val)
     # if the label is not found in the value parsing, raise an
     # exception.
@@ -291,7 +293,7 @@ class FFsid():
     self.output = output
 
   def parse(self, val=None):
-    if val == None or val.startswith('0x'):
+    if val == None or val == "" or val.startswith('0x'):
       return Unknown('FFsid', val)
     if val.find("f_fsid={") == -1 or val.find("}") == -1:
       raise Exception("Unexpected format when parsing FFsid", val)
@@ -511,15 +513,16 @@ HANDLED_SYSCALLS_INFO = {
   # int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
   # 
   # Example strace output:
-  # 19176 accept(3, {sa_family=AF_INET, sin_port=htons(42572), s
-  #              in_addr=inet_addr("127.0.0.1")}, [16]) = 4
+  # 19176 accept(3, {sa_family=AF_INET, sin_port=htons(42572),
+  #              sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
   "accept": {
     'args': (Int(), 
              ZeroOrListOfFlags(label_left="sa_family=", output=True), 
              Int(label_left="sin_port=htons(", label_right=")", 
                  output=True),
              Str(label_left="sin_addr=inet_addr(", label_right=")", 
-                 output=True), Int(output=True)),
+                 output=True), 
+             Int(output=True)),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
   # int getsockopt(int sockfd, int level, int optname, void *optval, 
@@ -968,7 +971,7 @@ def parse_trace(syscall_name, args, result):
   return_list = []
   for return_index in range(len(expected_return)):
     return_list.append(expected_return[return_index].parse())
-
+  
   ###################
   # 2. Parsing step #
   ###################
@@ -1012,9 +1015,8 @@ def parse_trace(syscall_name, args, result):
       if len(args) > len(expected_args):
         args[index] += ", " + args[index+1]
         args.pop(index+1)
-
-    args_list[index] = expected_arg_type.parse(args[index])
     
+    args_list[index+offset] = expected_arg_type.parse(args[index])
     # Did the syscall return an error?
     # Deal with the fact that some structure values may not be
     # provided. We can detect when this happens by checking if the
@@ -1032,37 +1034,39 @@ def parse_trace(syscall_name, args, result):
     # type with no arguments which will return an Unknown object
     # with its expected_type and its given_value variables set
     # appropriately.
-    if args_list[index] == Unknown():
-      # offset should be 0 here. This will fail if a syscall is
-      # missing two of these structures.
-      assert offset == 0, "offset in not zero: " + str(offset)
+    if args_list[index+offset] == Unknown():
       # set the offset value according to what the current type is.
       if(isinstance(expected_arg_type, ZeroOrListOfFlags) and 
          expected_arg_type.label_left == "sa_family="):
-        # two additional structure values follow SockFamily. Hence
-        # two values are missing and the offset should be set to two.
-        offset = 2
+        if syscall_name == "recvmsg" or syscall_name == "sendmsg":
+          # six additional structure values follow SockFamily in
+          # recvmsg and in sendmsg. Hence six values are missing and
+          # the offset should be set to six.
+          offset = 6
+        else:
+          # two additional structure values follow SockFamily. Hence
+          # two values are missing and the offset should be set to two.
+          offset = 2
       elif(isinstance(expected_arg_type, Str) and 
          expected_arg_type.label_left == "f_type="):
         offset = 9
       elif isinstance(expected_arg_type, StDev):
         offset = 11
-      elif isinstance(expected_arg_type, MsgFamily):
-        offset = 6
       # For each missing argument, set its value to Unknown.
       for missing_index in range(1, offset+1):
         missing_arg_type = expected_args[index + missing_index]
         args_list[index + missing_index] = missing_arg_type.parse()
-
+    
     # if the family is AF_NETLINK, adjust the expected types.
     # The default types after a SockFamily are SockPort and SockIP
     if(isinstance(expected_arg_type, ZeroOrListOfFlags) and 
-       expected_arg_type.label_left == "sa_family=" and 
+       expected_arg_type.label_left == "sa_family=" and not
+       isinstance(args_list[index], Unknown) and 
        "AF_NETLINK" in args_list[index]):
       expected_args[index+1] = Int(label_left="pid=", output=True)
       expected_args[index+2] = Int(label_left="groups=", 
                                    label_right="}", output=True)
-
+    
     index += 1
 
   # parse the return values of the syscall

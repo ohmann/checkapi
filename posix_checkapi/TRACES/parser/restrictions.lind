@@ -1,0 +1,104 @@
+resource cpu 1.0
+resource memory 25000000   # 15 Million bytes
+resource diskused 1000000000 # 1000 MB
+resource events 10
+resource filewrite 10000000
+resource fileread 10000000
+resource filesopened 5000
+resource insockets 1000
+resource outsockets 1000
+resource netsend 10000
+resource netrecv 10000
+resource loopsend 1000000
+resource looprecv 1000000
+resource lograte 100000000
+resource random 100000000
+
+resource messport 9995
+resource messport 9996
+resource messport 9997
+resource messport 9998
+resource messport 9999
+resource messport 10000
+resource messport 10001
+resource messport 10002
+resource messport 10003
+resource messport 10004
+resource messport 10005
+resource messport 10006
+resource messport 10007
+resource messport 10008
+resource messport 10009
+resource messport 10010
+
+
+resource connport 9995
+resource connport 9996
+resource connport 9997
+resource connport 9998
+resource connport 9999
+resource connport 10000
+resource connport 10001
+resource connport 10002
+resource connport 10003
+resource connport 10004
+resource connport 10005
+resource connport 10006
+resource connport 10007
+resource connport 10008
+resource connport 10009
+resource connport 10010
+resource connport 10011
+resource connport 10012
+resource connport 10013
+resource connport 10014
+resource connport 10015
+resource connport 10016
+resource connport 10017
+resource connport 10018
+resource connport 10019
+resource connport 10020
+resource connport 10021
+resource connport 10022
+resource connport 10023
+resource connport 10024
+
+
+call gethostbyname_ex allow
+call sendmess allow
+call stopcomm allow 			# it doesn't make sense to restrict
+call recvmess allow
+call openconn allow
+call waitforconn allow
+call socket.close allow 		# let's not restrict
+call socket.send allow 			# let's not restrict
+call socket.recv allow 			# let's not restrict
+# open and file.__init__ both have built in restrictions...
+call open arg 0 is junk_test.out allow 	# can write to junk_test.out
+call open arg 1 is rb allow 		# allow an explicit read
+call open noargs is 1 allow 		# allow an implicit read 
+call file.__init__ arg 0 is junk_test.out allow # can write to junk_test.out
+call file.__init__ arg 1 is rb allow 	# allow an explicit read
+call file.__init__ noargs is 1 allow 	# allow an implicit read 
+call file.close allow 			# shouldn't restrict
+call file.flush allow 			# they are free to use
+call file.next allow 			# free to use as well...
+call file.read allow 			# allow read
+call file.readline allow 		# shouldn't restrict
+call file.readlines allow 		# shouldn't restrict
+call file.seek allow 			# seek doesn't restrict
+call file.write allow 			# shouldn't restrict (open restricts)
+call file.writelines allow 		# shouldn't restrict (open restricts)
+call sleep allow			# harmless
+call settimer allow			# we can't really do anything smart
+call canceltimer allow			# should be okay
+call exitall allow			# should be harmless 
+
+call log.write allow
+call log.writelines allow
+call getmyip allow			# They can get the external IP address
+call listdir allow			# They can list the files they created
+call removefile allow			# They can remove the files they create
+call randomfloat allow			# can get random numbers
+call getruntime allow			# can get the elapsed time
+call getlock allow			# can get a mutex

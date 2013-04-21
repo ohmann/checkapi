@@ -1,0 +1,146 @@
+NOOP_CALL_NUM=1
+
+# MODE="safe"
+MODE="fast"
+
+def setup_dispatcher(comp_num):
+  # map a systemcall number to a particular function
+  if MODE == "safe":
+    comp(comp_num)[SYSCALL] = {
+    1:lind_debug_noop,
+    2:lind_safe_fs_access,
+    3:lind_debug_trace,
+    4:lind_safe_fs_unlink,
+    5:lind_safe_fs_link,
+    6:lind_safe_fs_chdir,
+    7:lind_safe_fs_mkdir,
+    8:lind_safe_fs_rmdir,                      
+    9:lind_safe_fs_xstat,                      
+    10:lind_safe_fs_open,
+    11:lind_safe_fs_close,
+    12:lind_safe_fs_read,
+    13:lind_safe_fs_write,
+    14:lind_safe_fs_lseek,
+    15:lind_fs_ioctl,
+    17:lind_safe_fs_fxstat,
+    19:lind_safe_fs_fstatfs,
+    23:lind_safe_fs_getdents,
+    24:lind_safe_fs_dup,
+    25:lind_safe_fs_dup2,
+    26:lind_safe_fs_statfs,
+    28:lind_safe_fs_fcntl,
+
+    31:lind_sys_getpid,
+      
+    32:lind_safe_net_socket,
+    33:lind_safe_net_bind,
+    34:lind_safe_net_send,
+    35:lind_safe_net_sendto,
+    36:lind_safe_net_recv,
+    37:lind_safe_net_recvfrom,
+    38:lind_safe_net_connect,
+    39:lind_safe_net_listen,
+    40:lind_safe_net_accept,
+    41:lind_safe_net_getpeername,
+    42:lind_safe_net_getsockname,
+    43:lind_safe_net_getsockopt,
+    44:lind_safe_net_setsockopt,
+    45:lind_safe_net_shutdown,
+    46:lind_safe_net_select,
+    47:lind_safe_net_getifaddrs,
+    48:lind_safe_net_poll,
+    49:lind_safe_net_socketpair,
+    50:lind_safe_sys_getuid,
+    51:lind_safe_sys_geteuid,
+    52:lind_safe_sys_getgid,
+    53:lind_safe_sys_getegid,
+    54:lind_safe_fs_flock,
+    55:lind_safe_fs_rename,
+
+    105:lind_comp_cia,
+    106:lind_comp_call,
+    107:lind_comp_accept,
+    108:lind_comp_recv
+    }
+    
+  elif MODE == "fast":
+    comp(comp_num)[SYSCALL] = {
+    1:lind_debug_noop,
+    2:lind_fs_access,
+    3:lind_debug_trace,
+    4:lind_fs_unlink,
+    5:lind_fs_link,
+    6:lind_fs_chdir,
+    7:lind_fs_mkdir,
+    8:lind_fs_rmdir,                      
+    9:lind_fs_xstat,                      
+    10:lind_fs_open,
+    11:lind_fs_close,
+    12:lind_fs_read,
+    13:lind_fs_write,
+    14:lind_fs_lseek,
+    15:lind_fs_ioctl,
+    17:lind_fs_fxstat,
+    19:lind_fs_fstatfs,
+    23:lind_fs_getdents,
+    24:lind_fs_dup,
+    25:lind_fs_dup2,
+    26:lind_fs_statfs,
+    28:lind_fs_fcntl,
+
+    31:lind_sys_getpid,
+      
+    32:lind_net_socket,
+    33:lind_net_bind,
+    34:lind_net_send,
+    35:lind_net_sendto,
+    36:lind_net_recv,
+    37:lind_net_recvfrom,
+    38:lind_net_connect,
+    39:lind_net_listen,
+    40:lind_net_accept,
+    41:lind_net_getpeername,
+    42:lind_net_getsockname,
+    43:lind_net_getsockopt,
+    44:lind_net_setsockopt,
+    45:lind_net_shutdown,
+    46:lind_net_select,
+    47:lind_net_getifaddrs,
+    48:lind_net_poll,
+    49:lind_net_socketpair,
+    50:lind_sys_getuid,
+    51:lind_sys_geteuid,
+    52:lind_sys_getgid,
+    53:lind_sys_getegid,
+    54:lind_fs_flock,
+
+    105:lind_comp_cia,
+    106:lind_comp_call,
+    107:lind_comp_accept,
+    108:lind_comp_recv
+
+    }
+  else:
+    assert False, "Invalid mode setting"
+
+  
+def dispatch_syscall(call, args):
+  """ Given a call number and some arguments in a list call the system call with that call number
+  with the provided arguments.
+  """
+
+  try:
+    call_fun = curr_comp()[SYSCALL][call]
+
+  except KeyError,e:
+    log("[ERROR][dispatch] Failed to look up " + str(call) +" with error "+ str(e) + "\n")
+    syscall_response =  ErrorResponseBuilder("dispatcher", "ENOSYS", "The system call is not in the system call table. Call="+str(call))
+
+  else:
+    syscall_response = call_fun(args)
+
+  assert isinstance(syscall_response, Response), "Returning something that is not a response. Check system calls: " + str(type(syscall_response)) + " form " + str(call)
+  
+  return syscall_response
+
+

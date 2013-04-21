@@ -1,6 +1,14 @@
-Gathering traces in Linux
-=========================
+Contents
+========
+A.Gathering traces in Linux
+B.Gathering simple test traces
+C.Parsing traces
+D.Combined trace gathering and parsing
 
+
+
+A.Gathering traces in Linux
+===========================
 Traces in Linux can be gathered using strace. The suggested way of 
 using strace is:
 
@@ -14,10 +22,22 @@ strace -v -f -s1024 -o output_filename command
 
 
 
-Gathering simple test traces
-============================
-
+B.Gathering simple test traces
+==============================
 A C program is provided under the syscalls directory which can be used
 to explicitly run certain system calls. This program can be used in
 combination with strace to gather simple traces of specific system
 calls.
+
+
+
+C.Parsing traces
+================
+A parser is provided
+python posix_strace_parser.py <trace_file>
+
+
+D.Combined trace gathering and parsing
+======================================
+A very simple script is given 
+strace_and_parse.sh <trace_output_name> <program name> [program arguments]

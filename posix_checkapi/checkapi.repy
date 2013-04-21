@@ -1,0 +1,145 @@
+"""
+<Program Name>
+  checkapi.repy
+
+<Started>
+  This version was started on Apr 11, 2011, however it has been an ongoing 
+  project since Autumn 2010.
+
+<Author>
+  jeffra45@.cs.washington.edu
+  Jeff Rasley
+
+<Purpose>
+  More information about this program, it's limitations and how to use it can 
+  be found at: https://seattle.cs.washington.edu/wiki/CheckAPI
+
+<Usage>
+  python repy.py <restrictions file> encasementlib.repy dylink.repy \ 
+    check_api.repy <program under test>
+
+"""
+
+"""SS:
+# Display debugging information during execution.
+DEBUG = False
+"""
+
+# Systolic verification constant, keep only N levels of state at any given time.
+SYSTOLIC_LEVELS = 32
+
+"""SS:
+# Write out the entire trace to a file instead of discarding it.
+WRITE_OUT_TRACE = True
+OUTPUT_TRACE_FILE = "checkapi_trace.output"
+MAX_STRING_LENGTH = 200
+if WRITE_OUT_TRACE:
+    dy_import_module_symbols("checkapi_output_file.repy")
+"""
+
+# Are you using CheckAPI for shims or not? 
+# *Not fully supported in this version yet*
+CHECKAPI_FOR_SHIMS = False
+
+# Should we use resource restrictions? This was added so that we could use
+# Repy portability since it does not support restrictions.
+ENABLE_RESTRICTIONS = True
+
+# Should we verify thread order? This cannot be done with shims.
+ENABLE_THREAD_VERIF = True
+
+# For certain applications verification can be sped up by turning off lock verification.
+ENABLE_LOCK_VERIF = True
+
+# The filename of a list of associated files that should be imported into the 
+# model's filesystem upon start-up.
+FILES_TO_IMPORT_TO_FS = "checkapi_initial_filestate.input"
+
+# EG:
+dy_import_module_symbols("checkapi_rstructures.repy")
+
+# SS
+dy_import_module_symbols("wrapped_lind_net_calls.py")
+dy_import_module_symbols("wrapped_lind_fs_calls.py")
+
+# Various global state/methods used throughout CheckAPI.
+dy_import_module_symbols("checkapi_globals.repy")
+
+# Various exceptions that are used throughout CheckAPI.
+dy_import_module_symbols("checkapi_exceptions.repy")
+
+# Setter/Getter mechanism for CheckAPI.
+dy_import_module_symbols("checkapi_oracle_setter_getter.repy")
+
+# Include helper modules.
+#dy_import_module_symbols("deep_copy.repy")
+dy_import_module_symbols("math.repy")
+dy_import_module_symbols("librepyrandom.repy")
+dy_import_module_symbols("random.repy")
+
+# Include the core model itself.
+# EG: Now it makes use of the revertible structures
+dy_import_module_symbols("core_model_state.repy")
+dy_import_module_symbols("core_model_resource.repy")
+dy_import_module_symbols("core_model_thread.repy")
+dy_import_module_symbols("core_model_file_system.repy")
+dy_import_module_symbols("core_model_networking.repy")
+dy_import_module_symbols("core_model_misc.repy")
+
+# Import an initial file state here, reads in a file that lists files that 
+# should be imported. This, by default, includes the first call arg to checkapi.
+dy_import_module_symbols("checkapi_bootstrap_state.repy")
+# bootstrap_import_filestate(callargs[0:1])
+
+# Initialize restrictions if we need to.
+if ENABLE_RESTRICTIONS:
+    initialize_restrictions()
+
+# Include systolic verification mechanism.
+dy_import_module_symbols("systolic_verification.repy")
+
+# Include the interposition modules, if needed.
+if not CHECKAPI_FOR_SHIMS:
+  dy_import_module_symbols("runtime_verification_fileio.repy")
+  dy_import_module_symbols("runtime_verification_network.repy")
+  dy_import_module_symbols("runtime_verification_threading.repy")
+  dy_import_module_symbols("runtime_verification_misc.repy")
+
+dy_import_module_symbols("runtime_verification_core.repy")
+
+
+"""SS:
+def active_threads():
+  lim, usage, stops = getresources()
+  return usage["events"]
+
+
+def wait_until_finished(finished_count):
+  active = active_threads()
+  while active != finished_count:
+    sleep(.1)
+    active = active_threads()
+  
+
+# Runtime section 
+if callfunc == "initialize":
+  print "here"
+  exitall()
+  runtime_verification_wrap_calls()
+  starting_threads = active_threads()
+
+  # Dispatch next layer.
+  dy_dispatch_module()
+
+  # We must wait until all of the child threads have finished before doing one
+  # final verification.
+  wait_until_finished(starting_threads)
+  
+  # Verify!
+  assert mycontext['action_lock'].acquire(False), \
+      "A child thread left the action lock in a locked state. Oops!"
+  try:
+      check_and_possibly_verify(force=True)
+  finally:
+      mycontext['action_lock'].release()
+"""

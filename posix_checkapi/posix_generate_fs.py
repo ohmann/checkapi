@@ -1,30 +1,25 @@
 import os
-import errno
-import shutil
+import sys
+
+import lind_test_server
+from lind_fs_constants import *
+
 
 debug = False
 
 """
-This is the only public function of this module. It takes as arguments 
-a tuple of traces and a directory location. Then it builds a
-filesystem in the given directory location, based to the information 
-it gathers from the traces.
+This is the only public function of this module. It takes as argument
+a tuple of traces and and generates a lind fs based on the information
+it can gather from the traces and the posix fs.
 """
-def generate_fs(traces, fs_location):
-  # get the absolute path for the location where all the files will
-  # be copied.
-  fs_location = os.path.abspath(fs_location)
-
-  # clear any previous contents.
-  if os.path.exists(fs_location):
-    shutil.rmtree(fs_location)
+def generate_fs(traces):
   
-  # deal with each trace.
   for trace in traces:
     # the general form of a trace is as follows:
     # (syscall_name, (arguments tuple), (return tuple))
     syscall_name = trace[0]
 
+    # each syscall name should end with _syscall
     if not syscall_name.endswith("_syscall"):
       raise Exception("Unexpected name of system call when reading " +
                      "trace." + syscall_name)
@@ -32,8 +27,8 @@ def generate_fs(traces, fs_location):
     # remove the _syscall part from the syscall name
     syscall_name = syscall_name[:syscall_name.find("_syscall")]
     
-    # this is a list of some of the system calls that include a 
-    # filepath as one of their arguments.
+    # this is a list of some system calls that include a filepath as 
+    # in their arguments.
     syscalls_with_path = ['open', 'creat', 'statfs', 'access', 'stat', 
                           'link', 'unlink']
     
@@ -53,7 +48,7 @@ def generate_fs(traces, fs_location):
       
       # if the syscall was successful, copy the file.
       if result != (-1, 'ENOENT'):
-        _cp_file(path, fs_location)
+        _cp_file(path)
 
     elif syscall_name == "mkdir":
       # ('mkdir_syscall', ('syscalls_dir', ['S_IRWXU', 'S_IRWXG', 
@@ -77,139 +72,166 @@ def generate_fs(traces, fs_location):
         _cp_dir(path, fs_location)
 
 
-def _cp_file(filepath, fs_location):
-  # skip directory paths. This can occur in eg open right before 
-  # running a getdents syscall
-  if os.path.isdir(filepath):
-    return
+def _mirror_stat_data(posixfn, lindfn):
+  # internal function to take a lind filename (or dirname, etc.) and change
+  # it to have similar metadata to a posixfn.   This includes perms, uid, gid
 
-  filepath = os.path.normpath(filepath)
-  filedir = os.path.dirname(filepath)
+  statdata = os.stat(posixfn)
   
-  # is the filepath an absolute path or a relative one?
-  # construct the new filepath accordingly.
-  if filepath.startswith("/"):
-    newfilepath = fs_location + filepath
-  else:
-    newfilepath = fs_location + "/" + filepath
+  # I only want the file perms, not things like 'IS_DIR'.  
+  # BUG (?): I think this ignores SETUID, SETGID, sticky bit, etc.
+  lind_test_server.chmod_syscall(lindfn, S_IRWXA & statdata[0])
+
+  # Note: chown / chgrp aren't implemented!!!   We would call them here.
+  #lind_test_server.chown_syscall(lindfn, statdata[4])
+  #lind_test_server.chgrp_syscall(lindfn, statdata[5])
+
+
+def _cp_file_into_lind(fullfilename, rootpath='.', createmissingdirs=True):
+  """
+   <Purpose>
+      Copies a file from POSIX into the Lind FS.   It takes the abs path to 
+      the file ('/etc/passwd') and looks for it in the POSIX FS off of the 
+      root path.   For example, rootpath = '/foo' -> '/foo/etc/passwd'.
+      If the file exists, it is overwritten...
+
+   <Arguments>
+      fullfilename: The location the file should live in the Lind FS.  
+          This must be an absolute path (from the root).
+
+      rootpath: The directory in the POSIX fs to start looking for that file.
+          Note: it must be in the directory structure specified by fullfilename
+   
+      createmissingdirs:  Should missing dirs in the path be created?
+
+   <Exceptions>
+      IOError: If the file does not exist, the directory can't be created
+          (for example, if there is a file of the same name), or 
+          createmissingdirs is False, but the path is invalid.
+
+   <Side Effects>
+      The obvious file IO operations
+
+   <Returns>
+      None
+  """
   
-  # if the new file is already there do nothing.
-  if os.path.exists(newfilepath):
-    return
+  # check for the file.
+  posixfn = os.path.join(rootpath, fullfilename)
 
-  if os.path.exists(filepath):
-    # go through all directories and create the ones missing
-    currentdir = ''
-    for thisdir in filedir.split('/'):
-      currentdir += thisdir + '/'
-      newdir = fs_location + currentdir
+  if not os.path.exists(posixfn):
+    raise IOError("Cannot locate file on POSIX FS: '" + posixfn + "'")
 
-      # if the directory does not exist, create it.
-      if not os.path.isdir(newdir):
-        if os.path.isfile(newdir):
-          raise IOError("path exists and isn't a dir: " + currentdir)
-        os.makedirs(newdir)
+  if not os.path.isfile(posixfn):
+    raise IOError("POSIX FS path is not a file: '" + posixfn + "'")
+  
 
-      # copy directory stats
-      # If I do this it prevents some files from being copied.
-      # shutil.copystat(currentdir, newdir) 
+  # now, we should check / make intermediate dirs if needed...
+  # we will walk through the components of the dir and look for them...
 
-    # now copy the file
-    shutil.copy2(filepath, newfilepath)
+  # this removes '.', '///', and similar.   
+  # BUG: On Windows, this converts '/' -> '\'.   I don't think lind FS handles
+  # '\'...
 
-  else:
-    # if the file does not exist create a dummy version of it.
-    if debug:
-      print "File not found, creating empty file."
+  normalizedlindfn = os.path.normpath(fullfilename)
+  normalizedlinddirname = os.path.dirname(normalizedlindfn)
 
-    # create the missing directories.
-    newfiledir = os.path.dirname(newfilepath)
+  # go through the directories and check if they are there, possibly creating
+  # needed ones...
+  currentdir = ''
+  
+  # NOT os.path.split!   I want each dir!!!
+  for thisdir in normalizedlinddirname.split('/'):
+    currentdir += thisdir + '/'
+
     try:
-      os.makedirs(newfiledir)
-    except OSError as exc:
-      if exc.errno == errno.EEXIST and os.path.isdir(newfiledir):
-        pass
-      else:
+      # check if this is a directory that exists
+      if IS_DIR(lind_test_server.stat_syscall(currentdir)[2]):
+        # all is well
+        continue
+      # otherwise, it exists, but isn't a dir...   
+      raise IOError("LIND FS path exists and isn't a dir: '" + currentdir + "'")
+
+    except lind_test_server.SyscallError, e:
+      # must be missing dir or else let the caller see this!
+      if e[1] != "ENOENT":   
         raise
 
-    # create an empty file.
-    open(newfilepath, 'a').close()
+      # okay, do I create it?
+      if not createmissingdirs:
+        raise IOError("LIND FS path does not exist but should not be created: '" + currentdir + "'")
+
+      # otherwise, make it ...  
+      lind_test_server.mkdir_syscall(currentdir,S_IRWXA)
+      # and copy over the perms, etc.
+      _mirror_stat_data(os.path.join(rootpath, currentdir), currentdir)
 
 
+  # Okay, I have made the path now.   Only one thing remains, adding the file
+  posixfo = open(posixfn)
+  filecontents = posixfo.read()
+  posixfo.close()
 
-def _rm_file(filepath, fs_location):
-  print "filepath", filepath
+  # make the new file, truncating any existing contents...
+  lindfd = lind_test_server.open_syscall(normalizedlindfn, 
+                O_CREAT|O_EXCL|O_TRUNC|O_WRONLY, S_IRWXA)
+
+  # should write all at once...
+  datalen = lind_test_server.write_syscall(lindfd, filecontents)
+  assert(datalen == len(filecontents))
+
+  lind_test_server.close_syscall(lindfd)
+
+   # fix stat, etc.
+  _mirror_stat_data(posixfn, normalizedlindfn)
+
+
+def _cp_dir_into_lind(fullfilename, rootpath='.', createmissingdirs=True):
   
-  # skip directory paths.
-  if os.path.isdir(filepath):
-    return
+  # check for the file.
+  posixfn = os.path.join(rootpath, fullfilename)
 
-  filepath = os.path.normpath(filepath)
+  if not os.path.exists(posixfn):
+    raise IOError("Cannot locate file on POSIX FS: '" + posixfn + "'")
+
+  if not os.path.isfile(posixfn):
+    raise IOError("POSIX FS path is not a file: '" + posixfn + "'")
   
-  if filepath.startswith("/"):
-    newfilepath = fs_location + filepath
-  else:
-    newfilepath = fs_location + "/" + filepath
+  # now, we should check / make intermediate dirs if needed...
+  # we will walk through the components of the dir and look for them...
+
+  # this removes '.', '///', and similar.   
+  # BUG: On Windows, this converts '/' -> '\'.   I don't think lind FS handles
+  # '\'...
+
+  normalizedlindfn = os.path.normpath(fullfilename)
+
+  # go through the directories and check if they are there, possibly creating
+  # needed ones...
+  currentdir = ''
   
-  if os.path.exists(newfilepath):
-    os.unlink(newfilepath)
+  # NOT os.path.split!   I want each dir!!!
+  for thisdir in normalizedlinddirname.split('/'):
+    currentdir += thisdir + '/'
 
-
-def _cp_dir(dirpath, fs_location):
-  if not dirpath.endswith("/"):
-    dirpath += "/"
-  
-  dirpath = os.path.normpath(dirpath)
-  
-  if dirpath.startswith("/"):
-    newdirpath = fs_location + dirpath
-  else:
-    newdirpath = fs_location + "/" + dirpath
-
-  # if the new dir is already there do nothing.
-  if os.path.exists(newdirpath):
-    return
-
-  if os.path.exists(dirpath):
-    # go through all directories and create the ones missing
-    currentdir = ''
-    for thisdir in dirpath.split('/'):
-      currentdir += thisdir + '/'
-      newdir = fs_location + currentdir
-
-      # if the directory does not exist, create it.
-      if not os.path.isdir(newdir):
-        if os.path.isfile(newdir):
-          raise IOError("path exists and isn't a dir: " + currentdir)
-        os.makedirs(newdir)
-      
-      # copy directory stats
-      # shutil.copystat(currentdir, newdir)
-  else:
-    # if the file does not exist create a dummy version of it.
-    if debug:
-      print "Directory not found, creating new."
-    
-    # create the missing directories.
     try:
-      os.makedirs(newdirpath)
-    except OSError as exc:
-      if exc.errno == errno.EEXIST and os.path.isdir(newdirpath):
-        pass
-      else:
+      # check if this is a directory that exists
+      if IS_DIR(lind_test_server.stat_syscall(currentdir)[2]):
+        # all is well
+        continue
+      # otherwise, it exists, but isn't a dir...   
+      raise IOError("LIND FS path exists and isn't a dir: '" + currentdir + "'")
+
+    except lind_test_server.SyscallError, e:
+      # must be missing dir or else let the caller see this!
+      if e[1] != "ENOENT":   
         raise
 
+      # okay, do I create it?
+      if not createmissingdirs:
+        raise IOError("LIND FS path does not exist but should not be created: '" + currentdir + "'")
 
-def _rm_dir(dirpath, fs_location):
-  if not dirpath.endswith("/"):
-    dirpath += "/"
-
-  dirpath = os.path.normpath(dirpath)
-  
-  if dirpath.startswith("/"):
-    newdirpath = fs_location + dirpath
-  else:
-    newdirpath = fs_location + "/" + dirpath
-  
-  if os.path.exists(newdirpath):
-    shutil.rmtree(newdirpath)
+      # otherwise, make it ...  
+      lind_test_server.mkdir_syscall(currentdir,S_IRWXA)
+      # and copy over the perms, etc.
+      _mirror_stat_data(os.path.join(rootpath, currentdir), currentdir)

@@ -30,7 +30,7 @@ with strace to gather simple traces of specific system calls.
 C.Parsing traces
 ================
 A parser is provided
-python posix_strace_parser.py <trace_file>
+python parser.py <trace_file>
 
 
 D.Combined trace gathering and parsing

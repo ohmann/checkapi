@@ -6,7 +6,7 @@ A.Gathering traces in Solaris
 
 A.Gathering traces in Solaris
 =============================
-Traces in Linux can be gathered using strace. The expected way of using strace 
+Traces in Solaris can be gathered using truss. The expected way of using truss 
 to gather traces that can be parsed by our parser is:
 
 truss -f -rall -wall -vall -o output_filename command

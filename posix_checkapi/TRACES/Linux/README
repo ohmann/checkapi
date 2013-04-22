@@ -9,26 +9,22 @@ D.Combined trace gathering and parsing
 
 A.Gathering traces in Linux
 ===========================
-Traces in Linux can be gathered using strace. The suggested way of 
-using strace is:
+Traces in Linux can be gathered using strace. The expected way of using strace 
+to gather traces that can be parsed by our parser is:
 
 strace -v -f -s1024 -o output_filename command
 
 -v print structure values unabbreviated.
 -f trace child processes
--s1024 allow string arguments in system calls up to 1024 characters. 
-       If this option is skipped, strace will truncate strings 
-       exceeding 32 characters.
-
+-s1024 allow string arguments in system calls up to 1024 characters. If this 
+       option is skipped, strace will truncate strings exceeding 32 characters.
 
 
 B.Gathering simple test traces
 ==============================
-A C program is provided under the syscalls directory which can be used
-to explicitly run certain system calls. This program can be used in
-combination with strace to gather simple traces of specific system
-calls.
-
+A C program is provided under the syscalls directory which can be used to 
+explicitly run certain system calls. This program can be used in combination 
+with strace to gather simple traces of specific system calls.
 
 
 C.Parsing traces

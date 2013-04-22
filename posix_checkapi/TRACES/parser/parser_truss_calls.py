@@ -12,9 +12,7 @@
   
 
 """
-from posix_intermediate_representation import *
 import sys
-import posix_generate_fs
 
 DEBUG = True
 

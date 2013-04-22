@@ -1,0 +1,17 @@
+Contents
+========
+A.Gathering traces in Solaris
+
+
+
+A.Gathering traces in Solaris
+=============================
+Traces in Linux can be gathered using strace. The expected way of using strace 
+to gather traces that can be parsed by our parser is:
+
+truss -f -rall -wall -vall -o output_filename command
+
+-f trace child processes
+-rall shows full contents of I/O buffer for the read syscall
+-wall shows full contents of I/O buffer for the write syscall
+-vall display contents of structures (instead of there address)

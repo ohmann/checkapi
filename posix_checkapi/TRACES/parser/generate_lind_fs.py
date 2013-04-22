@@ -9,20 +9,19 @@
   Savvas Savvides
 
 <Purpose>
-  This module is responsible for generating a lind file system based
-  on the information gathered from a trace. It provides a single 
-  public function which takes as argument a tuple with all the parsed
-  system call traces and creates a set of files that make up the lind
-  file system. The function returns nothing.
-
+  This module is responsible for generating a lind file system based on the 
+  information gathered from a trace. It provides a single public function which 
+  takes as argument a tuple with all the parsed system call actions and creates 
+  a set of files that make up the lind file system. The function returns nothing
+  
   Example of using this module:
 
     import generate_lind_fs
-    import posix_strace_parser
+    import parser_strace_calls
     
     fh = open(TRACE_FILE_NAME, "r")
-    traces = posix_strace_parser.get_traces(fh)
-    generate_lind_fs.generate_fs(traces)
+    actions = parser_strace_calls.parse_trace(fh)
+    generate_lind_fs.generate_fs(actions)
 
 <Remarks>
   generate_fs calls lind_test_server._blank_fs_init() which removes
@@ -38,11 +37,11 @@ from lind_fs_constants import *
 DEBUG = False
 
 """
-This is the only public function of this module. It takes as argument
-a tuple of traces and generates a lind fs based on the information
-it can gather from the traces and the posix fs.
+This is the only public function of this module. It takes as argument a tuple of
+trace actions and generates a lind fs based on the information it can gather 
+from these actions and the posix fs.
 """
-def generate_fs(traces):
+def generate_fs(actions):
   # load an initial lind file system.
   lind_test_server._blank_fs_init()
 
@@ -58,25 +57,25 @@ def generate_fs(traces):
   syscalls_with_path = ['open', 'creat', 'statfs', 'access', 'stat', 
                         'link', 'unlink', 'chdir', 'rmdir', 'mkdir']
 
-  for trace in traces:
-    # the general format of a trace is as follows:
+  for action in actions:
+    # the general format of an action is the following:
     # (syscall_name, (arguments tuple), (return tuple))
     # 
-    # Example successful syscall trace:
+    # Example successful syscall action:
     # ('open_syscall', ('syscalls.txt', ['O_RDONLY', 'O_CREAT'], 
     #    ['S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IROTH']), 
     #            (3, None))
     #
-    # Example unsuccessful syscall trace:
+    # Example unsuccessful syscall action:
     # ('access_syscall', ('/etc/ld.so.nohwcap', ['F_OK']), 
     #                  (-1, 'ENOENT'))
     # ('mkdir_syscall', ('syscalls_dir', ['S_IRWXU', 'S_IRWXG', 
     #        'S_IXOTH', 'S_IROTH']), (-1, 'EEXIST'))
-    syscall_name = trace[0]
-    result = trace[2]
+    syscall_name = action[0]
+    result = action[2]
 
     if DEBUG:
-      print "Trace:", trace
+      print "Trace:", action
 
     # each syscall name should end with _syscall
     if not syscall_name.endswith("_syscall"):
@@ -88,8 +87,8 @@ def generate_fs(traces):
 
 
     if syscall_name in syscalls_with_path:
-      # get the file path from the trace
-      path = trace[1][0]
+      # get the file path from the action
+      path = action[1][0]
 
       # We want the initial file system state. So deal only with the
       # earliest syscall pertaining to a path.
@@ -118,7 +117,7 @@ def generate_fs(traces):
     # the syscall contains a second path.
     if syscall_name == 'link':
       # ('link_syscall', ('syscalls.txt', 'syscalls.link'), (0, None))
-      path2 = trace[1][1]
+      path2 = action[1][1]
 
       if path2 not in seen_paths:
         # if we got an exists error, the file must have been there
@@ -143,8 +142,7 @@ def generate_fs(traces):
   if DEBUG:
     print seen_paths
 
-  # all trace lines are now read. We should confirm the lind fs is as
-  # expected
+  # all trace lines are now read. We should confirm the lind fs is as expected
   all_lind_paths = list_all_lind_paths()
 
   for seen_path in seen_paths:
@@ -163,8 +161,7 @@ def generate_fs(traces):
     else:
       # file should not be in lind fs.
       if abs_seen_path in all_lind_paths:
-        raise Exception("Unexpected file '" + abs_seen_path + 
-                        "' in Lind fs")
+        raise Exception("Unexpected file '" + abs_seen_path + "' in Lind fs")
 
 
 

@@ -338,7 +338,7 @@ def _unbundle_trace(bundle_name):
   
   # there should be a file called "trace.pickle" containing the 
   # serialized traces tuple
-  pickle_name = "trace.pickle"
+  pickle_name = "actions.pickle"
   if pickle_name in tar_files:
     # extract the file
     bundle_tar.extract(pickle_name)
@@ -367,8 +367,8 @@ def _unbundle_trace(bundle_name):
       bundle_tar.extract(fname)
 
   return traces
-  
-  
+
+
 
 
 

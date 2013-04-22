@@ -18,9 +18,9 @@
 
   Example of using this module:
 
-    import posix_strace_parser
+    import parser_strace_calls
     fh = open(TRACE_FILE_NAME, "r")
-    traces = get_traces(fh)
+    actions = parser_strace_calls.parse_trace(fh)
 
   The above code will return a list and store it in traces. Each
   entry of this list represents a system call in its intermediate
@@ -66,17 +66,9 @@
 
 """
 
-import os
-import sys
-import shutil
-import tarfile
-import cPickle
-import generate_lind_fs
-from posix_intermediate_representation import *
+from parser_helper_calls import *
 
-# turn message printing on or off.
 DEBUG = False
-
 
 ###########
 # STRUCTS #
@@ -86,8 +78,10 @@ class UnfinishedSyscall(object):
   If a syscall is interapted or blocked, strace will split it in multiple lines.
   Example:
   19176 accept(3, <unfinished ...>
-  19175 connect(5, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
-  19176 <... accept resumed> {sa_family=AF_INET, sin_port=htons(42572), sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+  19175 connect(5, {sa_family=AF_INET, sin_port=htons(25588), 
+                    sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+  19176 <... accept resumed> {sa_family=AF_INET, sin_port=htons(42572), 
+                              sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
 
   This object is used to store the information from the first half of
   the system call until the remaining of the system call is found.
@@ -101,102 +95,13 @@ class UnfinishedSyscall(object):
     return line
 
 
-###################################
-# Public functions of the module. #
-###################################
-
-"""
-Given a path to an strace output file, this function performs the
-following operations:
-A. Parses the system calls from the strace output file.
-B. Generates the Lind File System.
-    a. Find all file paths involved in the system calls parsed in the
-       previous step.
-    b. Based on the system call outcome decide whether the files 
-       referenced by these file paths existend in the POSIX fs at the
-       time the strace output file was generated.
-    c. If it did, generate that file in the Lind fs, ignore otherwise.
-    d. Any previous Lind fs files are removed and overiden.
-C. Generates a trace bundle.
-    a. Serializes and stores the parsed traces.
-    b. Generates a tarfile containing the original trace file, the
-       serialized parsed trace file and the Lind fs data and metadata
-       files.
-    c. Removes original trace file, serialized file and Lind fs files.
-""" 
-def generate_trace_bundle(trace_path):
-
-  fh = open(trace_path, "r")
-  # parse traces from file
-  traces = get_traces(fh)
-  fh.close()
-
-  if DEBUG:
-    for action in traces:
-      print "Action: ", action
-
-  # generate the initial file system needed by the model.
-  generate_lind_fs.generate_fs(traces)
-  
-  # pickle the trace
-  pickle_name = "trace.pickle"
-  pickle_file = open(pickle_name, 'w')
-  cPickle.dump(traces, pickle_file)
-  pickle_file.close()
-
-  # Now we have everything we need, create the trace bundle which will
-  # include the trace pickle and the lind fs files.
-  
-  # first find a name for the bundle archive.
-  head, bundle_name = os.path.split(trace_path)
-  
-  # if the bundle_name already exists, append a number.
-  temp_count = ''
-  bundle_extension = ".trace_bundle"
-  while os.path.exists(bundle_name + temp_count + bundle_extension):
-    if temp_count == '':
-      temp_count = '1'
-    else:
-      temp_count = str(int(temp_count) + 1)
-  bundle_name += temp_count + bundle_extension
-  
-  # Create the bundle archive.
-  tar = tarfile.open(bundle_name, "w")
-  
-  # add the original trace file.
-  original_trace_name = "original_trace.strace"
-  # let's copy it locally and rename it first.
-  shutil.copyfile(trace_path, original_trace_name)
-  tar.add(original_trace_name)
-
-  # add the pickle file
-  tar.add(pickle_name)
-  
-  # add the lind fs metadata file
-  if not os.path.exists("lind.metadata"):
-    raise Exception("Lind fs metadata file not found.")
-  tar.add("lind.metadata")
-  
-  # add the lind fs data files
-  for fname in os.listdir(os.getcwd()):
-    if fname.startswith("linddata."):
-      tar.add(fname)
-  
-  tar.close()
-  
-  # Finally, clean up all intermediate files
-  os.remove(original_trace_name)
-  os.remove(pickle_name)
-  os.remove("lind.metadata")
-  for fname in os.listdir(os.getcwd()):
-    if fname.startswith("linddata."):
-      os.remove(fname)
 
 
 
-def get_traces(fh):
+
+def parse_trace(fh):
   # this list will hold all the parsed syscalls
-  traces = []
+  actions = []
   # this list will hold all pending (i.e unfinished) syscalls
   unfinished_syscalls = []
   
@@ -269,7 +174,7 @@ def get_traces(fh):
         parameters.pop(1)
 
     # Fix errors from split on messages
-    _mergeQuoteParameters(parameters)
+    mergeQuoteParameters(parameters)
 
     # Get the return part.
     straceReturn = line[line.rfind('=')+1:].strip()
@@ -298,10 +203,11 @@ def get_traces(fh):
         # if no error, use None as the second return value
         straceReturn = (straceReturn, None)
 
-    trace = parse_trace(syscall_name, parameters, straceReturn)
+    action = parse_syscall(syscall_name, parameters, 
+                                               straceReturn)
     
-    if trace != UNIMPLEMENTED_ERROR:
-      traces.append(trace)
+    if action != UNIMPLEMENTED_ERROR:
+      actions.append(action)
   
   # display all skipped syscall_names.
   if(DEBUG):
@@ -309,7 +215,7 @@ def get_traces(fh):
     for skipped in SKIPPED_SYSCALLS:
       print skipped + ": " + str(SKIPPED_SYSCALLS[skipped])
   
-  return traces
+  return actions
 
 
 #####################
@@ -376,37 +282,5 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
     return line
 
 
-def _mergeQuoteParameters(parameters):
-  if len(parameters) <= 1:
-    return
-  index = 0
-  while index < len(parameters):
-    if parameters[index].startswith("\""):
-      # The only quote is the first quote which means the 
-      # sentence got split and should be put back together.
-      while index+1 < len(parameters):
-        if _endsInUnescapedQuote(parameters[index].strip(".")):
-          break
-        parameters[index] += ", " + parameters[index+1]
-        parameters.pop(index+1)
-    index += 1
 
 
-def _endsInUnescapedQuote(string):
-  if not string or string[-1] != '"':
-    return False
-  for index in range(-2, -len(string)-1, -1):
-    if string[index] != '\\':
-      return index % 2 == 0
-  return False
-
-
-
-
-if __name__ == "__main__":
-  if len(sys.argv) < 2:
-    raise Exception("Too few command line arguments.\nUsage: python " + 
-                    sys.argv[0] + " traceFile")
-  
-  trace_path = sys.argv[1]
-  generate_trace_bundle(trace_path)

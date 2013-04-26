@@ -1,0 +1,953 @@
+#!/bin/sh
+
+### Default variables
+opt_pid=0; opt_name=0; pid=0; pname="."; opt_file=0 filename="out.dtrace"
+opt_follow=0; opt_command=0
+command=""; opt_buf=0; buf="10m"; opt_stack=0
+
+### Process options
+while getopts b:defhln:o:p:st:L name
+do
+        case $name in
+	b)	opt_buf=1; buf=$OPTARG ;;
+  p)  opt_pid=1; pid=$OPTARG ;;
+  n)  opt_name=1; pname=$OPTARG ;;
+	f)	opt_follow=1 ;;
+	o)	opt_file=1; filename=$OPTARG ;;
+	s)	opt_stack=-1 ;;
+        h|?)    cat <<-END >&2
+		USAGE: dtruss [-acdefholLs] [-t syscall] { -p PID | -n name | command }
+
+		          -p PID          # examine this PID
+		          -n name         # examine this process name
+		          -t syscall      # examine this syscall only
+		          -f              # follow children (-p or cmd only)
+		          -l              # force printing pid/lwpid
+		          -o              # print on cpu times
+		          -s              # print stack backtraces
+		          -L              # don't print pid/lwpid
+		          -b bufsize      # dynamic variable buf size
+		   eg,
+		       dtruss df -h       # run and examine "df -h"
+		       dtruss -p 1871     # examine PID 1871
+		       dtruss -n tar      # examine all processes called "tar"
+		       dtruss -f test.sh  # run test.sh and follow children
+		END
+		exit 1
+        esac
+done
+shift `expr $OPTIND - 1`
+
+### Option logic
+if [ $opt_pid -eq 0 -a $opt_name -eq 0 ]; then
+	opt_command=1
+	if [ "$*" = "" ]; then
+		$0 -h
+		exit
+	fi
+	command="$*"	# yes, I meant $*!
+fi
+if [ $opt_follow -eq 1 -a $opt_name -eq 1 ]; then
+	echo "ERROR: -f option cannot be used with -n (use -p or cmd instead)."
+	exit 1
+fi
+
+### Define D Script
+dtrace='
+#pragma D option quiet
+#pragma D option switchrate=10
+ 
+/*
+ * Command line arguments
+ */
+inline int OPT_command   = '$opt_command';
+inline int OPT_follow    = '$opt_follow';
+inline int OPT_file      = '$opt_file';
+inline int OPT_pid       = '$opt_pid';
+inline int OPT_name      = '$opt_name';
+inline int OPT_stack     = '$opt_stack';
+inline string NAME       = "'$pname'";
+
+
+dtrace:::BEGIN 
+{
+  err[0] = "";
+  err[EPERM] = "EPERM";
+  err[ENOENT] = "ENOENT";
+  err[ESRCH] = "ESRCH";
+  err[EINTR] = "EINTR";
+  err[EIO] = "EIO";
+  err[ENXIO] = "ENXIO";
+  err[E2BIG] = "E2BIG";
+  err[ENOEXEC] = "ENOEXEC";
+  err[EBADF] = "EBADF";
+  err[ECHILD] = "ECHILD";
+  err[EAGAIN] = "EAGAIN";
+  err[ENOMEM] = "ENOMEM";
+  err[EACCES] = "EACCES";
+  err[EFAULT] = "EFAULT";
+  err[ENOTBLK] = "ENOTBLK";
+  err[EBUSY] = "EBUSY";
+  err[EEXIST] = "EEXIST";
+  err[EXDEV] = "EXDEV";
+  err[ENODEV] = "ENODEV";
+  err[ENOTDIR] = "ENOTDIR";
+  err[EISDIR] = "EISDIR";
+  err[EINVAL] = "EINVAL";
+  err[ENFILE] = "ENFILE";
+  err[EMFILE] = "EMFILE";
+  err[ENOTTY] = "ENOTTY";
+  err[ETXTBSY] = "ETXTBSY";
+  err[EFBIG] = "EFBIG";
+  err[ENOSPC] = "ENOSPC";
+  err[ESPIPE] = "ESPIPE";
+  err[EROFS] = "EROFS";
+  err[EMLINK] = "EMLINK";
+  err[EPIPE] = "EPIPE";
+  err[EDOM] = "EDOM";
+  err[ERANGE] = "ERANGE";
+  err[ENOMSG] = "ENOMSG";
+  err[EIDRM] = "EIDRM";
+  err[ECHRNG] = "ECHRNG";
+  err[EL2NSYNC] = "EL2NSYNC";
+  err[EL3HLT] = "EL3HLT";
+  err[EL3RST] = "EL3RST";
+  err[ELNRNG] = "ELNRNG";
+  err[EUNATCH] = "EUNATCH";
+  err[ENOCSI] = "ENOCSI";
+  err[EL2HLT] = "EL2HLT";
+  err[EDEADLK] = "EDEADLK";
+  err[ENOLCK] = "ENOLCK";
+  err[ECANCELED] = "ECANCELED";
+  err[ENOTSUP] = "ENOTSUP";
+  err[EDQUOT] = "EDQUOT";
+  err[EBADE] = "EBADE";
+  err[EBADR] = "EBADR";
+  err[EXFULL] = "EXFULL";
+  err[ENOANO] = "ENOANO";
+  err[EBADRQC] = "EBADRQC";
+  err[EBADSLT] = "EBADSLT";
+  err[EDEADLOCK] = "EDEADLOCK";
+  err[EBFONT] = "EBFONT";
+  err[EOWNERDEAD] = "EOWNERDEAD";
+  err[ENOTRECOVERABLE] = "ENOTRECOVERABLE";
+  err[ENOSTR] = "ENOSTR";
+  err[ENODATA] = "ENODATA";
+  err[ETIME] = "ETIME";
+  err[ENOSR] = "ENOSR";
+  err[ENONET] = "ENONET";
+  err[ENOPKG] = "ENOPKG";
+  err[EREMOTE] = "EREMOTE";
+  err[ENOLINK] = "ENOLINK";
+  err[EADV] = "EADV";
+  err[ESRMNT] = "ESRMNT";
+  err[ECOMM] = "ECOMM";
+  err[EPROTO] = "EPROTO";
+  err[ELOCKUNMAPPED] = "ELOCKUNMAPPED";
+  err[ENOTACTIVE] = "ENOTACTIVE";
+  err[EMULTIHOP] = "EMULTIHOP";
+  err[EBADMSG] = "EBADMSG";
+  err[ENAMETOOLONG] = "ENAMETOOLONG";
+  err[EOVERFLOW] = "EOVERFLOW";
+  err[ENOTUNIQ] = "ENOTUNIQ";
+  err[EBADFD] = "EBADFD";
+  err[EREMCHG] = "EREMCHG";
+  err[ELIBACC] = "ELIBACC";
+  err[ELIBBAD] = "ELIBBAD";
+  err[ELIBSCN] = "ELIBSCN";
+  err[ELIBMAX] = "ELIBMAX";
+  err[ELIBEXEC] = "ELIBEXEC";
+  err[EILSEQ] = "EILSEQ";
+  err[ENOSYS] = "ENOSYS";
+  err[ELOOP] = "ELOOP";
+  err[ERESTART] = "ERESTART";
+  err[ESTRPIPE] = "ESTRPIPE";
+  err[ENOTEMPTY] = "ENOTEMPTY";
+  err[EUSERS] = "EUSERS";
+  err[ENOTSOCK] = "ENOTSOCK";
+  err[EDESTADDRREQ] = "EDESTADDRREQ";
+  err[EMSGSIZE] = "EMSGSIZE";
+  err[EPROTOTYPE] = "EPROTOTYPE";
+  err[ENOPROTOOPT] = "ENOPROTOOPT";
+  err[EPROTONOSUPPORT] = "EPROTONOSUPPORT";
+  err[ESOCKTNOSUPPORT] = "ESOCKTNOSUPPORT";
+  err[EOPNOTSUPP] = "EOPNOTSUPP";
+  err[EPFNOSUPPORT] = "EPFNOSUPPORT";
+  err[EAFNOSUPPORT] = "EAFNOSUPPORT";
+  err[EADDRINUSE] = "EADDRINUSE";
+  err[EADDRNOTAVAIL] = "EADDRNOTAVAIL";
+  err[ENETDOWN] = "ENETDOWN";
+  err[ENETUNREACH] = "ENETUNREACH";
+  err[ENETRESET] = "ENETRESET";
+  err[ECONNABORTED] = "ECONNABORTED";
+  err[ECONNRESET] = "ECONNRESET";
+  err[ENOBUFS] = "ENOBUFS";
+  err[EISCONN] = "EISCONN";
+  err[ENOTCONN] = "ENOTCONN";
+  err[ESHUTDOWN] = "ESHUTDOWN";
+  err[ETOOMANYREFS] = "ETOOMANYREFS";
+  err[ETIMEDOUT] = "ETIMEDOUT";
+  err[ECONNREFUSED] = "ECONNREFUSED";
+  err[EHOSTDOWN] = "EHOSTDOWN";
+  err[EHOSTUNREACH] = "EHOSTUNREACH";
+  err[EWOULDBLOCK] = "EWOULDBLOCK";
+  err[EALREADY] = "EALREADY";
+  err[EINPROGRESS] = "EINPROGRESS";
+  err[ESTALE] = "ESTALE";
+}
+
+
+/* ===SOCKET===
+ * int socket(int domain, int type, int protocol);
+ * 
+ */
+syscall::so_socket:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+}
+syscall::so_socket:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s", "socket");
+  printf("(%d, %d, %d)\t\t "
+         , self->arg0
+         , self->arg1
+         , self->arg2);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+
+/* ===BIND/CONNECT===
+ * int bind(int s, const struct sockaddr *name, int namelen);
+ * int connect(int s, const struct sockaddr *name, int namelen);
+ *
+ */
+syscall::bind:entry,
+syscall::connect:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  
+}
+syscall::bind:return,
+syscall::connect:return
+/self->start/
+{
+  this->sock = (struct sockaddr_in *) copyin(
+                 self->arg1, sizeof(struct sockaddr));
+  self->port = ntohs(this->sock->sin_port);
+  this->a = (uint8_t *)&this->sock->sin_addr;
+  this->addr1 = strjoin(lltostr(this->a[0] + 0ULL), strjoin(".",
+  strjoin(lltostr(this->a[1] + 0ULL), ".")));
+  this->addr2 = strjoin(lltostr(this->a[2] + 0ULL), strjoin(".",
+  lltostr(this->a[3] + 0ULL)));
+  self->ip = strjoin(this->addr1, this->addr2);
+  
+  
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, {sin_port=htons(%d), sin_addr=inet_addr(\"%s\")}, %d)\t\t "
+         , self->arg0
+         , self->port
+         , self->ip
+         , self->arg2);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+
+/* ===GETSOCKNAME/GETPEERNAME===
+ * int getsockname(int  s,  struct  sockaddr  *name,  socklen_t *namelen);
+ * int getpeername(int  s,  struct  sockaddr  *name,  socklen_t *namelen);
+ * int      accept(int  s,  struct  sockaddr  *addr,  socklen_t *addrlen);
+ */
+syscall::getsockname:entry,
+syscall::getpeername:entry,
+syscall::accept:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  
+}
+syscall::getsockname:return,
+syscall::getpeername:return,
+syscall::accept:return
+/self->start/
+{
+  this->sock = (struct sockaddr_in *) copyin(
+                 self->arg1, sizeof(struct sockaddr));
+  self->port = ntohs(this->sock->sin_port);
+  this->a = (uint8_t *)&this->sock->sin_addr;
+  this->addr1 = strjoin(lltostr(this->a[0] + 0ULL), strjoin(".",
+  strjoin(lltostr(this->a[1] + 0ULL), ".")));
+  this->addr2 = strjoin(lltostr(this->a[2] + 0ULL), strjoin(".",
+  lltostr(this->a[3] + 0ULL)));
+  self->ip = strjoin(this->addr1, this->addr2);
+  
+  self->len = *(socklen_t *) copyin(self->arg2, sizeof(socklen_t));
+            
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, {sin_port=htons(%d), sin_addr=inet_addr(\"%s\")}, %d)\t\t "
+         , self->arg0
+         , self->port
+         , self->ip
+         , self->len);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+
+/* ===SENDTO===
+ * ssize_t sendto(int s, const void *msg, size_t len, int flags, const struct sockaddr *to, int tolen);
+ *
+ */
+syscall::sendto:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  self->arg3 = arg3;
+  
+  this->sock = (struct sockaddr_in *) copyin(
+                 arg4, sizeof(struct sockaddr));
+  self->port = ntohs(this->sock->sin_port);
+  this->a = (uint8_t *)&this->sock->sin_addr;
+  this->addr1 = strjoin(lltostr(this->a[0] + 0ULL), strjoin(".",
+  strjoin(lltostr(this->a[1] + 0ULL), ".")));
+  this->addr2 = strjoin(lltostr(this->a[2] + 0ULL), strjoin(".",
+  lltostr(this->a[3] + 0ULL)));
+  self->ip = strjoin(this->addr1, this->addr2);
+  
+  self->arg5 = arg5;
+}
+syscall::sendto:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, \"%S\", %d, %d,  {sin_port=htons(%d), sin_addr=inet_addr(\"%s\")}, %d)\t\t "
+         , self->arg0
+         , stringof(copyin(self->arg1, self->arg2))
+         , self->arg2
+         , self->arg3
+         , self->port
+         , self->ip
+         , self->arg5);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->arg3 = 0;
+	self->arg4 = 0;
+	self->arg5 = 0;
+	self->start = 0;
+}
+
+/* ===RECVFROM===
+ * ssize_t recvfrom(int s, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen);
+ *
+ */
+syscall::recvfrom:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  self->arg3 = arg3;
+  self->arg4 = arg4;
+  self->arg5 = arg5;
+}
+syscall::recvfrom:return
+/self->start/
+{
+  this->sock = (struct sockaddr_in *) copyin(
+                 self->arg4, sizeof(struct sockaddr));
+  self->port = ntohs(this->sock->sin_port);
+  this->a = (uint8_t *)&this->sock->sin_addr;
+  this->addr1 = strjoin(lltostr(this->a[0] + 0ULL), strjoin(".",
+  strjoin(lltostr(this->a[1] + 0ULL), ".")));
+  this->addr2 = strjoin(lltostr(this->a[2] + 0ULL), strjoin(".",
+  lltostr(this->a[3] + 0ULL)));
+  self->ip = strjoin(this->addr1, this->addr2);
+  
+  
+  self->len = *(socklen_t *) copyin(self->arg5, sizeof(socklen_t));
+  
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, \"%S\", %d, %d,  {sin_port=htons(%d), sin_addr=inet_addr(\"%s\")}, %d)\t\t "
+         , self->arg0
+         , stringof(copyin(self->arg1, self->arg2))
+         , self->arg2
+         , self->arg3
+         , self->port
+         , self->ip
+         , self->len);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->arg3 = 0;
+	self->arg4 = 0;
+	self->arg5 = 0;
+	self->start = 0;
+}
+
+
+/* ===SEND/RECV===
+ * ssize_t send(int s, const void *msg, size_t len, int flags);
+ * ssize_t recv(int s, void *buf, size_t len, int flags);
+ *
+ */
+syscall::send:entry,
+syscall::recv:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  self->arg3 = arg3;
+}
+syscall::send:return,
+syscall::recv:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, \"%S\", %d, %d)\t\t "
+         , self->arg0
+         , stringof(copyin(self->arg1, self->arg2))
+         , self->arg2
+         , self->arg3);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->arg3 = 0;
+	self->start = 0;
+}
+
+
+/* ===GETSOCKOPT===
+ * int getsockopt(int s, int level, int optname, void *optval, int *optlen);
+ *
+ */
+syscall::getsockopt:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  self->arg3 = arg3;
+  self->arg4 = arg4;
+}
+syscall::getsockopt:return
+/self->start/
+{
+  self->len = *(socklen_t *) copyin(self->arg4, sizeof(socklen_t));
+  self->val = *(socklen_t *) copyin(self->arg3, self->len);
+  
+  
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, %d, %d, %d, %d)\t\t "
+         , self->arg0
+         , self->arg1
+         , self->arg2
+         , self->val
+         , self->len);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->arg3 = 0;
+	self->arg4 = 0;
+	self->arg5 = 0;
+	self->start = 0;
+}
+
+/* ===SETSOCKOPT===
+ * int setsockopt(int s, int level, int optname, const void *optval, int optlen);
+ * 
+ */
+syscall::setsockopt:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+  self->arg3 = arg3;
+  self->arg4 = arg4;
+}
+syscall::setsockopt:return
+/self->start/
+{
+  self->val = *(socklen_t *) copyin(self->arg3, self->arg4);
+  
+  
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, %d, %d, %d, %d)\t\t "
+         , self->arg0
+         , self->arg1
+         , self->arg2
+         , self->val
+         , self->arg4);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->arg3 = 0;
+	self->arg4 = 0;
+	self->arg5 = 0;
+	self->start = 0;
+}
+
+
+/* ===ACCESS===
+ * int access(const char *path, int amode);
+ * int  mkdir(const char *path, mode_t mode);
+ * int creat(const char *path, mode_t mode);
+ *
+ */
+syscall::access:entry,
+syscall::mkdir:entry,
+syscall::creat:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+}
+syscall::access:return,
+syscall::mkdir:return,
+syscall::creat:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(\"%S\", %d)\t\t "
+         , copyinstr(self->arg0)
+         , self->arg1);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->start = 0;
+}
+
+
+
+/* ===CHDIR/RMDIR/UNLINK===
+ * int chdir(const char *path);
+ * int rmdir(const char *path);
+ * int unlink(const char *path);
+ * 
+ * 
+ */
+syscall::chdir:entry,
+syscall::rmdir:entry,
+syscall::unlink:entry
+
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+}
+syscall::chdir:return,
+syscall::rmdir:return,
+syscall::unlink:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(\"%S\")\t\t "
+         , copyinstr(self->arg0));
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->start = 0;
+}
+
+
+/* ===LINK===
+ * int link(const char *existing, const char *new);
+ * 
+ */
+syscall::link:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+}
+syscall::link:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(\"%S\", \"%S\")\t\t "
+         , copyinstr(self->arg0)
+         , copyinstr(self->arg1));
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->start = 0;
+}
+
+
+/* ===LSEEK===
+ * off_t lseek(int fildes, off_t offset, int whence);
+ *
+ */
+syscall::lseek:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+}
+syscall::lseek:return
+/self->start/
+{
+  
+  
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d, %d, %d)\t\t "
+         , self->arg0
+         , self->arg1
+         , self->arg2);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+
+/* ===DUP===
+ * int dup(int fildes);
+ *
+ */
+syscall::dup:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+}
+syscall::dup:return
+/self->start/
+{
+  
+  
+  printf("%d ", pid);
+  printf("%s", probefunc);
+  printf("(%d)\t\t "
+         , self->arg0);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->start = 0;
+}
+
+
+/* ===FCNTL===
+ * int fcntl(int fildes, int cmd, / arg / ...);
+ *
+ */
+syscall::fcntl:entry
+{
+  self->start = timestamp;
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+}
+syscall::fcntl:return
+/self->start && self->arg1==9/
+{
+  printf("%d ", pid);
+  
+  /*== replace with DUP2 === */
+  printf("dup2(%d, %d)\t\t " , self->arg0, (int) self->arg2);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->start = 0;
+}
+syscall::fcntl:return
+/self->start/
+{
+  printf("%d ", pid);
+  printf("%s(%d, %d, %d)\t\t " , probefunc
+                       , self->arg0
+                       , self->arg1
+                       , self->arg2);
+  
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+  printf("= %d %s\n", (int) arg0, this->errstr);
+  
+	self->arg0 = 0;
+	self->start = 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* === OTHER SYSCALLS === */
+syscall:::entry
+/((OPT_command || OPT_pid) && pid == $target) || 
+ (OPT_name && execname == NAME) ||
+ (OPT_follow && progenyof($target))/
+{
+	/* set start details */
+	self->start = timestamp;
+	self->arg0 = arg0;
+	self->arg1 = arg1;
+	self->arg2 = arg2;
+	self->arg3 = arg3;
+	self->arg4 = arg4;
+	self->arg5 = arg5;
+}
+
+/*
+ * Follow children
+ */
+syscall::fork*:return
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s(%d, %d, %d)\t\t = %d %s\n", pid, probefunc,
+	    self->arg0, self->arg1, self->arg2, (int)arg0, this->errstr);
+}
+
+
+/*
+ * Print return data
+ */
+
+/* print 3 args */
+syscall::lwp_sigmask:return
+/self->start/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s(%d, %d, %d)\t\t = %d %s\n", pid, probefunc,
+	    (int)self->arg0, self->arg1, self->arg2, (int)arg0,
+	    this->errstr);
+	    
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+/* print 3 args, arg0 as a string */
+syscall::stat*:return, syscall::lstat*:return, 
+syscall::open*:return, syscall::resolvepath:return
+/self->start/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s(\"%S\", %d, %d)\t\t = %d %s\n"
+         , pid
+         , probefunc
+         , copyinstr(self->arg0)
+         , self->arg1
+         , self->arg2
+         , (int)arg0
+         , this->errstr);
+         
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+/* print 3 args, arg1 as a string */
+syscall::write:return,
+syscall::pwrite:return,
+syscall::*read*:return
+/self->start/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	/* print main data */
+	printf("%d %s(%d, \"%S\", %d)\t\t = %d %s\n", pid, probefunc, self->arg0,
+	    stringof(copyin(self->arg1, self->arg2)), self->arg2, (int)arg0,
+	    this->errstr);
+	    
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+/* print 0 arg output */
+syscall::gtime:return,
+syscall::*fork*:return
+/self->start/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s()\t\t = %d %s\n", pid, probefunc,
+	    (int)arg0, this->errstr);
+	    
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+/* print 1 arg output */
+syscall::brk:return,
+syscall::times:return,
+syscall::stime:return,
+syscall::close:return,
+syscall::fchdir:return
+/self->start/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s(%d)\t\t = %d %s\n", pid, probefunc, self->arg0,
+	    (int)arg0, this->errstr);
+	    
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+/* print 2 arg output */
+syscall::utime:return,
+syscall::munmap:return,
+syscall::listen:return,
+syscall::shutdown:return
+/self->start/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s(%d, %d)\t\t = %d %s\n", pid, probefunc, self->arg0,
+	    self->arg1, (int)arg0, this->errstr);
+	
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+/* print 3 arg output - default */
+syscall:::return
+/self->start
+&& probefunc != "bind"
+&& probefunc != "connect"
+&& probefunc != "sendto"
+&& probefunc != "send"
+&& probefunc != "recvfrom"
+&& probefunc != "recv"
+&& probefunc != "getsockname"
+&& probefunc != "getpeername"
+&& probefunc != "listen"
+&& probefunc != "accept"
+&& probefunc != "getsockopt"
+&& probefunc != "setsockopt"/
+{
+  this->errstr = err[errno] != NULL ? err[errno] : "";
+	printf("%d %s(%d, %d, %d)\t\t = %d %s\n"
+	      , pid
+	      , probefunc
+	      , self->arg0
+	      , self->arg1
+	      , self->arg2
+	      , (int)arg0
+	      , this->errstr);
+	
+	    
+	self->arg0 = 0;
+	self->arg1 = 0;
+	self->arg2 = 0;
+	self->start = 0;
+}
+
+
+/* program exited */
+proc:::exit
+/(OPT_command || OPT_pid) && pid == $target/
+{
+	exit(0);
+}
+
+
+dtrace:::END
+{
+}
+'
+
+### Run DTrace
+rm -f $filename
+if [ $opt_command -eq 1 ]; then
+	/usr/sbin/dtrace -x dynvarsize=$buf -x evaltime=exec -n "$dtrace" \
+	    -c "$command" -o $filename
+elif [ $opt_pid -eq 1 ]; then
+	/usr/sbin/dtrace -x dynvarsize=$buf -n "$dtrace" -p "$pid" -o $filename
+else
+	/usr/sbin/dtrace -x dynvarsize=$buf -n "$dtrace" -o $filename
+fi

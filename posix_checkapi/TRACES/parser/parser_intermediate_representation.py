@@ -104,8 +104,8 @@ class Int():
     # if the value starts with 0x it was not dereferenced.
     if val.startswith('0x'):
       return Unknown('Int', val)
-    # remove lables
     
+    # remove lables
     val = _remove_labels(val, self.label_left, self.label_right)
     if val == "":
       return Unknown('Int', val)
@@ -372,6 +372,14 @@ can optionally take an argument "output=True" which indicates that the
 current argument is used to return a value rather than to pass a
 value, and hence the argument should be moved in the return part of
 the intermediate representation.
+"""
+
+""" 
+TODO:
+
+Add support for:
+  - writev
+  - sendfile
 """
 HANDLED_SYSCALLS_INFO = {
   # int socket(int domain, int type, int protocol);
@@ -807,11 +815,13 @@ HANDLED_SYSCALLS_INFO = {
   },
   # int fcntl(int fd, int cmd, ... /* arg */ );
   # 
+  # TODO: add support for third parameter of fcntl
+  #
   # Example strace output:
   # 19239 fcntl64(3, F_GETFL) = 0 (flags O_RDONLY)
   # 19239 fcntl64(4, F_GETFL) = 0x402 (flags O_RDWR|O_APPEND)
   "fcntl": {
-    'args': (Int(), ZeroOrListOfFlags(), ZeroOrListOfFlags()),
+    'args': (Int(), ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
   # ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
@@ -903,7 +913,7 @@ HANDLED_SYSCALLS_INFO = {
   # poll([{fd=3, events=POLLOUT}], 1, 5000) = 1 ([{fd=3, 
   #           revents=POLLOUT}])
   "poll": {
-    'args': (Int(), FdSet(), FdSet(), FdSet(), TimeVal()),
+    'args': (Int(label_left="[{fd="), Str(label_left="events="), Int(), Int()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   }
 }
@@ -994,3 +1004,12 @@ def _modeToListOfFlags(mode):
       
       entity_position /= 10
   return list_of_flags
+
+
+if __name__ == "__main__":
+  print "Supported Syscalls"
+  print "------------------"
+  count = 1
+  for syscall in sorted(HANDLED_SYSCALLS_INFO.keys()):
+    print str(count) + ": " + syscall
+    count += 1

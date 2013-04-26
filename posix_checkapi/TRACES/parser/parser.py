@@ -1,3 +1,33 @@
+"""
+<Program>
+  parser.py
+
+<Started>
+  April 2013
+
+<Author>
+  Savvas Savvides <savvas@nyu.edu>
+
+<Purpose>
+  This is the posix parser used to parse traces and generate the initial file
+  system state. The parser supports traces gathered using strace and truss as
+  shown below:
+  
+    strace -v -f -s1024 -o output_filename command
+    truss -f -rall -wall -vall -o output_filename command
+
+  You can refer to parser_strace_calls.py and parser_truss_calls.py for more
+  information on how to gather traces for this parser. Additional information is
+  also provided in the README files for each OS.
+
+  The initial file system state is represented as a Lind FS. The latter is made 
+  up of a lind.metadata file and a set of linddata.# files. Once these files are
+  genereated, a trace bundle is constructed which consists of:
+    - the original trace file (strace or truss output file)
+    - a file containing the parsed trace (a list of all parsed actions pickled)
+    - the Lind FS files.
+"""
+
 import os
 import sys
 import shutil
@@ -128,7 +158,7 @@ if __name__ == "__main__":
     elif trace_path.endswith(".truss"):
       parser = "truss"
     else:
-      raise Exception("Could not infer parser from the file name")
+      raise Exception("Could not infer parser from the file extension")
 
   assert(parser in ["strace", "truss"])
   generate_trace_bundle(trace_path, parser)

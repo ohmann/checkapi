@@ -12,19 +12,17 @@ Parses a single trace given the syscall name, the arguments and the
 return value of that trace.
 
 Parsing proceeds in 4 steps.
-  1. Initialization: Get the expected type of arguments and return
-     values, according to the name of the syscall. Initialize a list
-     for the arguments and a list for the return values and set all
-     values to the Unknown object.
-  2. Parsing: For each expected argument and each expected return
-     value, check if the given value is of the expected format and
-     parse it. In case of an unexpected format, raise an exception.
-  3. Rearranging: Move some items from the arguments list to the
-     return value list. This happens because some arguments are used
-     to return values rather than to pass values to the system call.
-  4. Form IR: Combines the system call name, the argument list and
-     the return value list to construct the Intermediate
-     Representation.
+  1. Initialization: Get the expected type of arguments and return values, 
+     according to the name of the syscall. Initialize a list for the arguments 
+     and a list for the return values and set all values to the Unknown object.
+  2. Parsing: For each expected argument and each expected return value, check 
+     if the given value is of the expected format and parse it. In case of an 
+     unexpected format, raise an exception.
+  3. Rearranging: Move some items from the arguments list to the return value 
+     list. This happens because some arguments are used to return values rather 
+     than to pass values to the system call.
+  4. Form IR: Combines the system call name, the argument list and the return 
+     value list to construct the Intermediate Representation.
 """
 def parse_syscall(syscall_name, args, result):
   # handle any 'syscall64' the exact same way as 'syscall'
@@ -36,11 +34,10 @@ def parse_syscall(syscall_name, args, result):
     syscall_name = syscall_name[:syscall_name.rfind('4')]
 
   if syscall_name not in HANDLED_SYSCALLS_INFO:
-    # Keep track of how many times each syscall was skipped.
-    # These information can be printed every time the parser is used
-    # to help identify which are the most important and most
-    # frequently used syscalls. Subsequently, the parser can be
-    # extended to handle these.
+    # Keep track of how many times each syscall was skipped. These information 
+    # can be printed every time the parser is used to help identify which are
+    # the most important and most # frequently used syscalls. Subsequently, the
+    # parser can be extended to handle these.
     if(syscall_name in SKIPPED_SYSCALLS):
       SKIPPED_SYSCALLS[syscall_name]=SKIPPED_SYSCALLS[syscall_name]+1
     else:
@@ -52,12 +49,12 @@ def parse_syscall(syscall_name, args, result):
   ##########################
   # get the expected arguments from the intermediate representation.
   expected_args = list(HANDLED_SYSCALLS_INFO[syscall_name]['args'])
-  # get the expected return values from the intermediate
-  # representation.
-  expected_return=list(HANDLED_SYSCALLS_INFO[syscall_name]['return'])
+  # get the expected return values from the intermediate representation.
+  expected_return = list(HANDLED_SYSCALLS_INFO[syscall_name]['return'])
   # Initialize all arguments to Unknown()
   args_list = []
   for arg_index in range(len(expected_args)):
+    # call parse with no arguments which will return Unknown 
     args_list.append(expected_args[arg_index].parse())
   # Initialize all return values to Unknown()
   return_list = []
@@ -68,9 +65,8 @@ def parse_syscall(syscall_name, args, result):
   # 2. Parsing step #
   ###################
   # Parse the individual arguments of the syscall.
-  # Length of args can change. If the syscall contains a string
-  # argument and the string contained ", " the parser would have
-  # wrongly split the string.
+  # Length of args can change. If the syscall contains a string argument and 
+  # the string contained ", " the parser would have wrongly split the string.
   index = 0
   offset = 0
   while index < len(args):
@@ -80,12 +76,11 @@ def parse_syscall(syscall_name, args, result):
     
     # get the expected type for the current argument.
     # What is offset?
-    # If the syscall returned an error the value of structure
-    # variables will not be returned. Instead, where we expect the
-    # first value of the structure we get the address of the
-    # structure and the remaining values are simply not listed. Using
-    # offset we can skip these expected arguments since they are not
-    # provided.
+    # If the syscall returned an error the value of structure variables will not
+    # be returned. Instead, where we expect the first value of the structure 
+    # we get the address of the structure and the remaining values are simply 
+    # not listed. Using offset we can skip these expected arguments since they
+    # are not provided.
     expected_arg_type = expected_args[index + offset]
     
     # Skip all remaining arguments?
@@ -97,9 +92,8 @@ def parse_syscall(syscall_name, args, result):
     if isinstance(expected_arg_type, SkipRemaining):
       break
 
-    # Did the argument contain ", "? A few types can contain a ", "
-    # string, in which case the parser would have wrongly split these
-    # in two arguments.
+    # Did the argument contain ", "? A few types can contain a ", " string, in 
+    # which case the parser would have wrongly split these in two arguments.
     if(isinstance(expected_arg_type, FFsid) or 
        isinstance(expected_arg_type, StDev) or
        isinstance(expected_arg_type, StSizeOrRdev) or
@@ -109,22 +103,21 @@ def parse_syscall(syscall_name, args, result):
         args.pop(index+1)
     
     args_list[index+offset] = expected_arg_type.parse(args[index])
+    
     # Did the syscall return an error?
-    # Deal with the fact that some structure values may not be
-    # provided. We can detect when this happens by checking if the
-    # returned "parsed" value of some expected types is Unknown.
-    # How do we deal with this? The values of the expected arguments
-    # are set to Unknown and the offset variable is set appropriately
-    # so that in the next iteration we parse the correct argument
+    # Deal with the fact that some structure values may not be provided. We can 
+    # detect when this happens by checking if the returned "parsed" value of 
+    # some expected types is Unknown. How do we deal with this? The values of
+    # the expected arguments are set to Unknown and the offset variable is set
+    # appropriately so that in the next iteration we parse the correct argument
     # type.
-    # Firstly set the offset which indicates how many values after
-    # the current value are missing.
-    # Then for each missing value, get its expected type. The final 
-    # value will in any case be an Unknown object but getting the 
-    # expected type helps in constructing a more informative Unknown
-    # object. Specifically we can run the parse function of this
-    # type with no arguments which will return an Unknown object
-    # with its expected_type and its given_value variables set
+    # Firstly set the offset which indicates how many values after the current 
+    # value are missing.
+    # Then for each missing value, get its expected type. The final value will
+    # in any case be an Unknown object but getting the expected type helps in
+    # constructing a more informative Unknown object. Specifically we can run
+    # the parse function of this type with no arguments which will return an
+    # Unknown object with its expected_type and its given_value variables set
     # appropriately.
     if args_list[index+offset] == Unknown():
       # set the offset value according to what the current type is.
@@ -209,22 +202,26 @@ def parse_syscall(syscall_name, args, result):
   # 4. Form IR step #
   ###################
   # form the intermediate representation.
-  trace = (syscall_name+'_syscall', args_tuple, return_tuple)
-  return trace
+  return (syscall_name+'_syscall', args_tuple, return_tuple)
 
 
-
-#####################
-# Helper Functions. #
-#####################
+"""
+Used to fix errors on parsing parameters. Specifically, if a string value in the
+trace contains a ", " (without the quotes) the string will be wrongly split in
+two parameters. This method searches for parameters that start with a double
+quote (indicating that the parameter is a string) and if that parameter does not
+end with a double quote (an unescaped double quote, of course) then the string
+must have been split. Join this parameter with the next one and repeat the same
+procedure to fix.
+"""
 def mergeQuoteParameters(parameters):
   if len(parameters) <= 1:
     return
   index = 0
   while index < len(parameters):
+    # if the parameter starts with a quote but does not end with a quote, the
+    # parameter must have been split wrong.
     if parameters[index].startswith("\""):
-      # The only quote is the first quote which means the 
-      # sentence got split and should be put back together.
       while index+1 < len(parameters):
         if _endsInUnescapedQuote(parameters[index].strip(".")):
           break

@@ -1,0 +1,915 @@
+execve("/usr/bin/bash", 0x08047568, 0x08047574)  argc = 2
+sysinfo(SI_MACHINE, "i86pc", 257)		= 6
+mmap(0x00000000, 32, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FF0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FB0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FA0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F90000
+memcntl(0xD1FC1000, 13188, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+memcntl(0x08050000, 80860, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+resolvepath("/usr/lib/ld.so.1", "/lib/ld.so.1", 1023) = 12
+resolvepath("/usr/bin/bash", "/usr/bin/bash", 1023) = 13
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+stat64("/usr/bin/bash", 0x08047150)		= 0
+    d=0x00780000 i=4738  m=0100555 l=1  u=0     g=2     sz=654504
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.825792000 ]
+	mt = Feb  2 09:32:23 EST 2011  [ 1296657143.000000000 ]
+	ct = Jan 29 20:51:59 EST 2013  [ 1359510719.427391000 ]
+    bsz=8192  blks=1296  fs=ufs
+open("/var/ld/ld.config", O_RDONLY)		Err#2 ENOENT
+stat64("/lib/libcurses.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4916  m=0100755 l=1  u=0     g=2     sz=234080
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.776623000 ]
+	mt = Jul 25 18:10:36 EDT 2006  [ 1153865436.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.323213000 ]
+    bsz=8192  blks=480   fs=ufs
+resolvepath("/lib/libcurses.so.1", "/lib/libcurses.so.1", 1023) = 19
+open("/lib/libcurses.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F80000
+mmap(0x00010000, 241664, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F40000
+mmap(0xD1F40000, 138066, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1F40000
+mmap(0xD1F72000, 25655, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 139264) = 0xD1F72000
+mmap(0xD1F79000, 7664, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1F79000
+munmap(0xD1F62000, 65536)			= 0
+munmap(0xD1F80000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1F40000, 36360, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F80000
+stat64("/lib/libsocket.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4959  m=0100755 l=1  u=0     g=2     sz=92016
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.797674000 ]
+	mt = Jul  4 17:14:47 EDT 2011  [ 1309814087.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.643272000 ]
+    bsz=8192  blks=180   fs=ufs
+resolvepath("/lib/libsocket.so.1", "/lib/libsocket.so.1", 1023) = 19
+open("/lib/libsocket.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F30000
+mmap(0x00010000, 114688, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F10000
+mmap(0xD1F10000, 44082, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1F10000
+mmap(0xD1F2B000, 2645, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 45056) = 0xD1F2B000
+munmap(0xD1F1B000, 65536)			= 0
+munmap(0xD1F30000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1F10000, 12080, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libnsl.so.1", 0x08046A00)		= 0
+    d=0x00780000 i=4943  m=0100755 l=1  u=0     g=2     sz=730468
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.798490000 ]
+	mt = Jul  4 17:14:45 EDT 2011  [ 1309814085.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.569433000 ]
+    bsz=8192  blks=1456  fs=ufs
+resolvepath("/lib/libnsl.so.1", "/lib/libnsl.so.1", 1023) = 16
+open("/lib/libnsl.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F30000
+mmap(0x00010000, 647168, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1E70000
+mmap(0xD1E70000, 526941, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1E70000
+mmap(0xD1F01000, 19929, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 528384) = 0xD1F01000
+mmap(0xD1F06000, 30104, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1F06000
+munmap(0xD1EF1000, 65536)			= 0
+munmap(0xD1F30000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1E70000, 58116, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libdl.so.1", 0x08046A00)		= 0
+    d=0x00780000 i=4922  m=0100755 l=1  u=0     g=2     sz=6172
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.776815000 ]
+	mt = Jul  4 17:14:44 EDT 2011  [ 1309814084.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.353955000 ]
+    bsz=8192  blks=14    fs=ufs
+resolvepath("/lib/libdl.so.1", "/lib/libdl.so.1", 1023) = 15
+open("/lib/libdl.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 6172, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F30000
+mmap(0x00010000, 73728, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1E50000
+mmap(0xD1E50000, 1616, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1E50000
+mmap(0xD1E61000, 112, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 4096) = 0xD1E61000
+munmap(0xD1E51000, 65536)			= 0
+munmap(0xD1F30000, 6172)			= 0
+close(3)					= 0
+stat64("/lib/libc.so.1", 0x08046A00)		= 0
+    d=0x00780000 i=4910  m=0100755 l=1  u=0     g=2     sz=1420452
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.827331000 ]
+	mt = Jul  4 17:14:43 EDT 2011  [ 1309814083.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.279506000 ]
+    bsz=8192  blks=2800  fs=ufs
+resolvepath("/lib/libc.so.1", "/lib/libc.so.1", 1023) = 14
+open("/lib/libc.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F30000
+mmap(0x00010000, 1212416, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1D20000
+mmap(0xD1D20000, 1104421, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1D20000
+mmap(0xD1E3E000, 30375, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 1105920) = 0xD1E3E000
+mmap(0xD1E46000, 4320, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1E46000
+munmap(0xD1E2E000, 65536)			= 0
+munmap(0xD1F30000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1D20000, 124536, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F70000
+mmap(0x00010000, 24576, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F30000
+getcontext(0x08046FC0)
+getrlimit(RLIMIT_STACK, 0x08046FB8)		= 0
+	cur = 8683520  max = 133464064
+getpid()					= 1864 [1863]
+lwp_private(0, 1, 0xD1F32A00)			= 0x000001C3
+setustack(0xD1F32A60)
+sigfillset(0xD1E45E20)				= 0
+	sigmask = 0xFFFFFFFF 0x0000FFFF 0 0
+sysi86(SI86FPSTART, 0xD1E46790, 0x0000133F, 0x00001F80) = 0x00000001
+open64("/dev/tty", O_RDWR|O_NONBLOCK)		= 3
+close(3)					= 0
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+brk(0x08103140)					= 0
+brk(0x08104000)					= 0
+brk(0x08105000)					= 0
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+getuid()					= 0 [0]
+getgid()					= 0 [0]
+getuid()					= 0 [0]
+getgid()					= 0 [0]
+time()						= 1366938163
+brk(0x08106000)					= 0
+brk(0x08107000)					= 0
+fstat64(2, 0x08047320)				= 0
+    d=0x049C0000 i=12582922 m=0020620 l=1  u=0     g=7     rdev=0x00600003
+	at = Apr 25 21:02:42 EDT 2013  [ 1366938162.000000000 ]
+	mt = Apr 25 21:02:43 EDT 2013  [ 1366938163.000000000 ]
+	ct = Apr 25 19:01:32 EDT 2013  [ 1366930892.000000000 ]
+    bsz=8192  blks=0     fs=devfs
+fstat64(1, 0x08047320)				= 0
+    d=0x049C0000 i=12582922 m=0020620 l=1  u=0     g=7     rdev=0x00600003
+	at = Apr 25 21:02:42 EDT 2013  [ 1366938162.000000000 ]
+	mt = Apr 25 21:02:43 EDT 2013  [ 1366938163.000000000 ]
+	ct = Apr 25 19:01:32 EDT 2013  [ 1366930892.000000000 ]
+    bsz=8192  blks=0     fs=devfs
+schedctl()					= 0xD1F20000
+sigaction(SIGCLD, 0x08047370, 0x080473E0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x20000
+sigaction(SIGCLD, 0x08047370, 0x080473E0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sigaction(SIGINT, 0x08047370, 0x080473E0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sigaction(SIGINT, 0x08047370, 0x080473E0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sigaction(SIGQUIT, 0x08047370, 0x080473E0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sigaction(SIGQUIT, 0x08047370, 0x080473E0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sigaction(SIGQUIT, 0x08047360, 0x080473D0)	= 0
+    new: hand = 0x00000001 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sysinfo(SI_HOSTNAME, "unknown", 255)		= 8
+brk(0x08108000)					= 0
+brk(0x08109000)					= 0
+stat64("/savvas", 0x080472A0)			= 0
+    d=0x00780000 i=299445 m=0040755 l=7  u=0     g=0     sz=2560
+	at = Apr 25 21:02:41 EDT 2013  [ 1366938161.816098000 ]
+	mt = Apr 25 21:02:43 EDT 2013  [ 1366938163.795618000 ]
+	ct = Apr 25 21:02:43 EDT 2013  [ 1366938163.795618000 ]
+    bsz=8192  blks=6     fs=ufs
+stat64(".", 0x08047330)				= 0
+    d=0x00780000 i=299445 m=0040755 l=7  u=0     g=0     sz=2560
+	at = Apr 25 21:02:41 EDT 2013  [ 1366938161.816098000 ]
+	mt = Apr 25 21:02:43 EDT 2013  [ 1366938163.795618000 ]
+	ct = Apr 25 21:02:43 EDT 2013  [ 1366938163.795618000 ]
+    bsz=8192  blks=6     fs=ufs
+getpid()					= 1864 [1863]
+brk(0x0810A000)					= 0
+getpid()					= 1864 [1863]
+brk(0x0810B000)					= 0
+getpgrp()					= 1863
+sigaction(SIGCLD, 0x08047360, 0x080473D0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+sysconfig(_CONFIG_CHILD_MAX)			= 8021
+brk(0x0810C000)					= 0
+open64("/usr/bin/firefox", O_RDONLY)		= 3
+ioctl(3, TCGETA, 0x08047400)			Err#25 ENOTTY
+llseek(3, 0, SEEK_CUR)				= 0
+read(3, 0x08047430, 80)				= 80
+   # ! / b i n / b a s h\n #\n #   * * * * *   B E G I N   L I C E
+   N S E   B L O C K   * * * * *\n #   V e r s i o n :   M P L   1
+   . 1 / G P L   2 . 0 / L G P L  
+llseek(3, 0, SEEK_SET)				= 0
+getrlimit(RLIMIT_NOFILE, 0x080473F0)		= 0
+	cur = 256  max = 65536
+fcntl(3, F_DUP2FD, 0x000000FF)			= 255
+close(3)					= 0
+fcntl(255, F_SETFD, 0x00000001)			= 0
+fcntl(255, F_GETFL)				= 8192
+		FOFFMAX
+fstat64(255, 0x08047460)			= 0
+    d=0x00780000 i=108460 m=0100755 l=1  u=0     g=1     sz=4097
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.857524000 ]
+	mt = Apr 20 14:37:10 EDT 2011  [ 1303324630.000000000 ]
+	ct = Jan 29 20:58:00 EST 2013  [ 1359511080.282962000 ]
+    bsz=8192  blks=10    fs=ufs
+llseek(255, 0, SEEK_CUR)			= 0
+brk(0x0810E000)					= 0
+brk(0x0810F000)					= 0
+read(255, 0x0810C008, 4097)			= 4097
+   # ! / b i n / b a s h\n #\n #   * * * * *   B E G I N   L I C E
+   N S E   B L O C K   * * * * *\n #   V e r s i o n :   M P L   1
+   . 1 / G P L   2 . 0 / L G P L   2 . 1\n #\n #   T h e   c o n t
+   e n t s   o f   t h i s   f i l e   a r e   s u b j e c t   t o
+     t h e   M o z i l l a   P u b l i c   L i c e n s e   V e r s
+   i o n\n #   1 . 1   ( t h e   " L i c e n s e " ) ;   y o u   m
+   a y   n o t   u s e   t h i s   f i l e   e x c e p t   i n   c
+   o m p l i a n c e   w i t h\n #   t h e   L i c e n s e .   Y o
+   u   m a y   o b t a i n   a   c o p y   o f   t h e   L i c e n
+   s e   a t\n #   h t t p : / / w w w . m o z i l l a . o r g / M
+   P L /\n #\n #   S o f t w a r e   d i s t r i b u t e d   u n d
+   e r   t h e   L i c e n s e   i s   d i s t r i b u t e d   o n
+     a n   " A S   I S "   b a s i s ,\n #   W I T H O U T   W A R
+   R A N T Y   O F   A N Y   K I N D ,   e i t h e r   e x p r e s
+   s   o r   i m p l i e d .   S e e   t h e   L i c e n s e\n #  
+   f o r   t h e   s p e c i f i c   l a n g u a g e   g o v e r n
+   i n g   r i g h t s   a n d   l i m i t a t i o n s   u n d e r
+     t h e\n #   L i c e n s e .\n #\n #   T h e   O r i g i n a l
+     C o d e   i s   m o z i l l a . o r g   c o d e .\n #\n #   T
+   h e   I n i t i a l   D e v e l o p e r   o f   t h e   O r i g
+   i n a l   C o d e   i s\n #   N e t s c a p e   C o m m u n i c
+   a t i o n s   C o r p o r a t i o n .\n #   P o r t i o n s   c
+   r e a t e d   b y   t h e   I n i t i a l   D e v e l o p e r  
+   a r e   C o p y r i g h t   ( C )   1 9 9 8\n #   t h e   I n i
+   t i a l   D e v e l o p e r .   A l l   R i g h t s   R e s e r
+   v e d .\n #\n #   C o n t r i b u t o r ( s ) :\n #\n #   A l t
+   e r n a t i v e l y ,   t h e   c o n t e n t s   o f   t h i s
+     f i l e   m a y   b e   u s e d   u n d e r   t h e   t e r m
+   s   o f\n #   e i t h e r   t h e   G N U   G e n e r a l   P u
+   b l i c   L i c e n s e   V e r s i o n   2   o r   l a t e r  
+   ( t h e   " G P L " ) ,   o r\n #   t h e   G N U   L e s s e r
+     G e n e r a l   P u b l i c   L i c e n s e   V e r s i o n  
+   2 . 1   o r   l a t e r   ( t h e   " L G P L " ) ,\n #   i n  
+   w h i c h   c a s e   t h e   p r o v i s i o n s   o f   t h e
+     G P L   o r   t h e   L G P L   a r e   a p p l i c a b l e  
+   i n s t e a d\n #   o f   t h o s e   a b o v e .   I f   y o u
+     w i s h   t o   a l l o w   u s e   o f   y o u r   v e r s i
+   o n   o f   t h i s   f i l e   o n l y\n #   u n d e r   t h e
+     t e r m s   o f   e i t h e r   t h e   G P L   o r   t h e  
+   L G P L ,   a n d   n o t   t o   a l l o w   o t h e r s   t o
+  \n #   u s e   y o u r   v e r s i o n   o f   t h i s   f i l e
+     u n d e r   t h e   t e r m s   o f   t h e   M P L ,   i n d
+   i c a t e   y o u r\n #   d e c i s i o n   b y   d e l e t i n
+   g   t h e   p r o v i s i o n s   a b o v e   a n d   r e p l a
+   c e   t h e m   w i t h   t h e   n o t i c e\n #   a n d   o t
+   h e r   p r o v i s i o n s   r e q u i r e d   b y   t h e   G
+   P L   o r   t h e   L G P L .   I f   y o u   d o   n o t   d e
+   l e t e\n #   t h e   p r o v i s i o n s   a b o v e ,   a   r
+   e c i p i e n t   m a y   u s e   y o u r   v e r s i o n   o f
+     t h i s   f i l e   u n d e r\n #   t h e   t e r m s   o f  
+   a n y   o n e   o f   t h e   M P L ,   t h e   G P L   o r   t
+   h e   L G P L .\n #\n #   * * * * *   E N D   L I C E N S E   B
+   L O C K   * * * * *\n\n # #  \n # #   U s a g e :\n # #\n # #  
+   $   m o z i l l a   [ a r g s ]\n # #\n # #   T h i s   s c r i
+   p t   i s   m e a n t   t o   r u n   t h e   a p p l i c a t i
+   o n   b i n a r y   f r o m   m o z i l l a / d i s t / b i n .
+  \n # #\n # #   T h e   s c r i p t   w i l l   s e t u p   a l l
+     t h e   e n v i r o n m e n t   v o o d o o   n e e d e d   t
+   o   m a k e\n # #   t h e   a p p l i c a t i o n   b i n a r y
+     t o   w o r k .\n # #\n\n # u n c o m m e n t   f o r   d e b
+   u g g i n g\n # s e t   - x\n\n m o z _ l i b d i r = / u s r /
+   l i b / f i r e f o x - 3 . 6 . 1 2\n\n #   U s e   r u n - m o
+   z i l l a . s h   i n   t h e   c u r r e n t   d i r   i f   i
+   t   e x i s t s\n #   I f   n o t ,   t h e n   s t a r t   r e
+   s o l v i n g   s y m l i n k s   u n t i l   w e   f i n d   r
+   u n - m o z i l l a . s h\n f o u n d = 0\n p r o g n a m e = "
+   $ 0 "\n c u r d i r = ` d i r n a m e   " $ p r o g n a m e " `
+  \n p r o g b a s e = ` b a s e n a m e   " $ p r o g n a m e " `
+  \n r u n _ m o z = " $ c u r d i r / r u n - m o z i l l a . s h
+   "\n i f   t e s t   - x   " $ r u n _ m o z " ;   t h e n\n    
+   d i s t _ b i n = " $ c u r d i r "\n     f o u n d = 1\n e l s
+   e\n     h e r e = ` / b i n / p w d `\n     w h i l e   [   - h
+     " $ p r o g n a m e "   ] ;   d o\n         b n = ` b a s e n
+   a m e   " $ p r o g n a m e " `\n         c d   ` d i r n a m e
+     " $ p r o g n a m e " `\n         #   R e s o l v e   s y m l
+   i n k   o f   d i r n a m e\n         c d   ` / b i n / p w d `
+  \n         p r o g n a m e = ` / b i n / l s   - l   " $ b n "  
+   |   s e d   - e   ' s / ^ . *   - >   / / '   `\n         p r o
+   g b a s e = ` b a s e n a m e   " $ p r o g n a m e " `\n      
+     i f   [   !   - x   " $ p r o g n a m e "   ] ;   t h e n\n  
+             b r e a k\n         f i\n         c u r d i r = ` d i
+   r n a m e   " $ p r o g n a m e " `\n         r u n _ m o z = "
+   $ c u r d i r / r u n - m o z i l l a . s h "\n         i f   [
+     - x   " $ r u n _ m o z "   ] ;   t h e n\n             c d  
+   " $ c u r d i r "\n             d i s t _ b i n = ` / b i n / p
+   w d `\n             r u n _ m o z = " $ d i s t _ b i n / r u n
+   - m o z i l l a . s h "\n             f o u n d = 1\n          
+     b r e a k\n         f i\n     d o n e\n     c d   " $ h e r e
+   "\n f i\n i f   [   $ f o u n d   =   0   ] ;   t h e n\n     #
+     C h e c k   d e f a u l t   c o m p i l e - t i m e   l i b d
+   i r\n     i f   [   - x   " $ m o z _ l i b d i r / r u n - m o
+   z i l l a . s h "   ] ;   t h e n\n         d i s t _ b i n = "
+   $ m o z _ l i b d i r "\n         r u n _ m o z = " $ m o z _ l
+   i b d i r / r u n - m o z i l l a . s h "\n     e l s e\n      
+     e c h o   " C a n n o t   f i n d   F i r e f o x   r u n t i
+   m e   d i r e c t o r y .   E x i t i n g . "\n         e x i t
+     1\n     f i\n f i\n\n s c r i p t _ a r g s = " "\n d e b u g
+   g i n g = 0\n M O Z I L L A _ B I N = " $ { p r o g b a s e } -
+   b i n "\n\n i f   [   " $ O S T Y P E "   =   " b e o s "   ] ;
+     t h e n\n     m i m e s e t   - F   " $ M O Z I L L A _ B I N
+   "\n f i\n\n p a s s _ a r g _ c o u n t = 0\n w h i l e   [   $
+   #   - g t   $ p a s s _ a r g _ c o u n t   ]\n d o\n     c a s
+   e   " $ 1 "   i n\n         - p   |   - - p u r e   |   - p u r
+   e )\n             M O Z I L L A _ B I N = " $ { M O Z I L L A _
+   B I N } . p u r e "\n             s h i f t\n             ; ;\n
+           - g   |   - - d e b u g )\n             s c r i p t _ a
+   r g s = " $ s c r i p t _ a r g s   - g "\n             d e b u
+   g g i n g = 1\n             s h i f t\n             ; ;\n      
+     - d   |   - - d e b u g g e r )\n             s c r i p t _ a
+   r g s = " $ s c r i p t _ a r g s   - d   $ 2 "\n             s
+   h i f t   2\n             ; ;\n         * )\n             #   M
+   o v e   t h e   u n r e c o g n i z e d   a r g u m e n t   t o
+     t h e   e n d   o f   t h e   l i s t .\n             a r g =
+   " $ 1 "\n             s h i f t\n             s e t   - -   " $
+   @ "   " $ a r g "\n             p a s s _ a r g _ c o u n t = `
+   e x p r   $ p a s s _ a r g _ c o u n t   +   1 `\n            
+   ; ;\n     e s a c\n d o n e\n\n i f   [   !   - f   / t m p / f
+   i r e f o x 3 - p r e l o a d e d   - a   - x   / u s r / l i b
+   / g d m p r e f e t c h   ]\n t h e n\n     / u s r / l i b / g
+   d m p r e f e t c h   @ $ { d i s t _ b i n } / f i r e f o x -
+   p r e l o a d . l i s t\n     t o u c h   / t m p / f i r e f o
+   x 3 - p r e l o a d e d\n f i\n\n i f   [   $ d e b u g g i n g
+     =   1   ]\n t h e n\n     e c h o   $ d i s t _ b i n / r u n
+   - m o z i l l a . s h   $ s c r i p t _ a r g s   $ d i s t _ b
+   i n / $ M O Z I L L A _ B I N   " $ @ "\n f i\n " $ d i s t _ b
+   i n / r u n - m o z i l l a . s h "   $ s c r i p t _ a r g s  
+   " $ d i s t _ b i n / $ M O Z I L L A _ B I N "   " $ @ "\n e x
+   i t c o d e = $ ?\n\n e x i t   $ e x i t c o d e\n #   E O F .
+  \n
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+llseek(255, 0xFFFFFFFFFFFFF860, SEEK_CUR)	= 2145
+fork1()						= 1865
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+    Received signal #18, SIGCLD [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1865 status=0x0000
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046E00, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1865 status=0x0000
+waitid(P_ALL, 0, 0x08046E00, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046D00)
+sigaction(SIGCLD, 0x080471A0, 0x08047210)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+read(3, " / u s r / b i n\n", 128)		= 9
+read(3, 0x080471B8, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08047170, 0x080471E0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08047160, 0x080471D0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+read(255, 0x0810C008, 4097)			= 1952
+   p r o g b a s e = ` b a s e n a m e   " $ p r o g n a m e " `\n
+   r u n _ m o z = " $ c u r d i r / r u n - m o z i l l a . s h "
+  \n i f   t e s t   - x   " $ r u n _ m o z " ;   t h e n\n     d
+   i s t _ b i n = " $ c u r d i r "\n     f o u n d = 1\n e l s e
+  \n     h e r e = ` / b i n / p w d `\n     w h i l e   [   - h  
+   " $ p r o g n a m e "   ] ;   d o\n         b n = ` b a s e n a
+   m e   " $ p r o g n a m e " `\n         c d   ` d i r n a m e  
+   " $ p r o g n a m e " `\n         #   R e s o l v e   s y m l i
+   n k   o f   d i r n a m e\n         c d   ` / b i n / p w d `\n
+           p r o g n a m e = ` / b i n / l s   - l   " $ b n "   |
+     s e d   - e   ' s / ^ . *   - >   / / '   `\n         p r o g
+   b a s e = ` b a s e n a m e   " $ p r o g n a m e " `\n        
+   i f   [   !   - x   " $ p r o g n a m e "   ] ;   t h e n\n    
+           b r e a k\n         f i\n         c u r d i r = ` d i r
+   n a m e   " $ p r o g n a m e " `\n         r u n _ m o z = " $
+   c u r d i r / r u n - m o z i l l a . s h "\n         i f   [  
+   - x   " $ r u n _ m o z "   ] ;   t h e n\n             c d   "
+   $ c u r d i r "\n             d i s t _ b i n = ` / b i n / p w
+   d `\n             r u n _ m o z = " $ d i s t _ b i n / r u n -
+   m o z i l l a . s h "\n             f o u n d = 1\n            
+   b r e a k\n         f i\n     d o n e\n     c d   " $ h e r e "
+  \n f i\n i f   [   $ f o u n d   =   0   ] ;   t h e n\n     #  
+   C h e c k   d e f a u l t   c o m p i l e - t i m e   l i b d i
+   r\n     i f   [   - x   " $ m o z _ l i b d i r / r u n - m o z
+   i l l a . s h "   ] ;   t h e n\n         d i s t _ b i n = " $
+   m o z _ l i b d i r "\n         r u n _ m o z = " $ m o z _ l i
+   b d i r / r u n - m o z i l l a . s h "\n     e l s e\n        
+   e c h o   " C a n n o t   f i n d   F i r e f o x   r u n t i m
+   e   d i r e c t o r y .   E x i t i n g . "\n         e x i t  
+   1\n     f i\n f i\n\n s c r i p t _ a r g s = " "\n d e b u g g
+   i n g = 0\n M O Z I L L A _ B I N = " $ { p r o g b a s e } - b
+   i n "\n\n i f   [   " $ O S T Y P E "   =   " b e o s "   ] ;  
+   t h e n\n     m i m e s e t   - F   " $ M O Z I L L A _ B I N "
+  \n f i\n\n p a s s _ a r g _ c o u n t = 0\n w h i l e   [   $ #
+     - g t   $ p a s s _ a r g _ c o u n t   ]\n d o\n     c a s e
+     " $ 1 "   i n\n         - p   |   - - p u r e   |   - p u r e
+   )\n             M O Z I L L A _ B I N = " $ { M O Z I L L A _ B
+   I N } . p u r e "\n             s h i f t\n             ; ;\n  
+         - g   |   - - d e b u g )\n             s c r i p t _ a r
+   g s = " $ s c r i p t _ a r g s   - g "\n             d e b u g
+   g i n g = 1\n             s h i f t\n             ; ;\n        
+   - d   |   - - d e b u g g e r )\n             s c r i p t _ a r
+   g s = " $ s c r i p t _ a r g s   - d   $ 2 "\n             s h
+   i f t   2\n             ; ;\n         * )\n             #   M o
+   v e   t h e   u n r e c o g n i z e d   a r g u m e n t   t o  
+   t h e   e n d   o f   t h e   l i s t .\n             a r g = "
+   $ 1 "\n             s h i f t\n             s e t   - -   " $ @
+   "   " $ a r g "\n             p a s s _ a r g _ c o u n t = ` e
+   x p r   $ p a s s _ a r g _ c o u n t   +   1 `\n             ;
+   ;\n     e s a c\n d o n e\n\n i f   [   !   - f   / t m p / f i
+   r e f o x 3 - p r e l o a d e d   - a   - x   / u s r / l i b /
+   g d m p r e f e t c h   ]\n t h e n\n     / u s r / l i b / g d
+   m p r e f e t c h   @ $ { d i s t _ b i n } / f i r e f o x - p
+   r e l o a d . l i s t\n     t o u c h   / t m p / f i r e f o x
+   3 - p r e l o a d e d\n f i\n\n i f   [   $ d e b u g g i n g  
+   =   1   ]\n t h e n\n     e c h o   $ d i s t _ b i n / r u n -
+   m o z i l l a . s h   $ s c r i p t _ a r g s   $ d i s t _ b i
+   n / $ M O Z I L L A _ B I N   " $ @ "\n f i\n " $ d i s t _ b i
+   n / r u n - m o z i l l a . s h "   $ s c r i p t _ a r g s   "
+   $ d i s t _ b i n / $ M O Z I L L A _ B I N "   " $ @ "\n e x i
+   t c o d e = $ ?\n\n e x i t   $ e x i t c o d e\n #   E O F .\n
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+llseek(255, 0xFFFFFFFFFFFFF880, SEEK_CUR)	= 2177
+fork1()						= 1866
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+    Received signal #18, SIGCLD [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1866 status=0x0000
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046E00, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1866 status=0x0000
+waitid(P_ALL, 0, 0x08046E00, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046D00)
+sigaction(SIGCLD, 0x080471A0, 0x08047210)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+read(3, " f i r e f o x\n", 128)		= 8
+read(3, 0x080471B8, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08047170, 0x080471E0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08047160, 0x080471D0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+read(255, 0x0810C008, 4097)			= 1920
+   r u n _ m o z = " $ c u r d i r / r u n - m o z i l l a . s h "
+  \n i f   t e s t   - x   " $ r u n _ m o z " ;   t h e n\n     d
+   i s t _ b i n = " $ c u r d i r "\n     f o u n d = 1\n e l s e
+  \n     h e r e = ` / b i n / p w d `\n     w h i l e   [   - h  
+   " $ p r o g n a m e "   ] ;   d o\n         b n = ` b a s e n a
+   m e   " $ p r o g n a m e " `\n         c d   ` d i r n a m e  
+   " $ p r o g n a m e " `\n         #   R e s o l v e   s y m l i
+   n k   o f   d i r n a m e\n         c d   ` / b i n / p w d `\n
+           p r o g n a m e = ` / b i n / l s   - l   " $ b n "   |
+     s e d   - e   ' s / ^ . *   - >   / / '   `\n         p r o g
+   b a s e = ` b a s e n a m e   " $ p r o g n a m e " `\n        
+   i f   [   !   - x   " $ p r o g n a m e "   ] ;   t h e n\n    
+           b r e a k\n         f i\n         c u r d i r = ` d i r
+   n a m e   " $ p r o g n a m e " `\n         r u n _ m o z = " $
+   c u r d i r / r u n - m o z i l l a . s h "\n         i f   [  
+   - x   " $ r u n _ m o z "   ] ;   t h e n\n             c d   "
+   $ c u r d i r "\n             d i s t _ b i n = ` / b i n / p w
+   d `\n             r u n _ m o z = " $ d i s t _ b i n / r u n -
+   m o z i l l a . s h "\n             f o u n d = 1\n            
+   b r e a k\n         f i\n     d o n e\n     c d   " $ h e r e "
+  \n f i\n i f   [   $ f o u n d   =   0   ] ;   t h e n\n     #  
+   C h e c k   d e f a u l t   c o m p i l e - t i m e   l i b d i
+   r\n     i f   [   - x   " $ m o z _ l i b d i r / r u n - m o z
+   i l l a . s h "   ] ;   t h e n\n         d i s t _ b i n = " $
+   m o z _ l i b d i r "\n         r u n _ m o z = " $ m o z _ l i
+   b d i r / r u n - m o z i l l a . s h "\n     e l s e\n        
+   e c h o   " C a n n o t   f i n d   F i r e f o x   r u n t i m
+   e   d i r e c t o r y .   E x i t i n g . "\n         e x i t  
+   1\n     f i\n f i\n\n s c r i p t _ a r g s = " "\n d e b u g g
+   i n g = 0\n M O Z I L L A _ B I N = " $ { p r o g b a s e } - b
+   i n "\n\n i f   [   " $ O S T Y P E "   =   " b e o s "   ] ;  
+   t h e n\n     m i m e s e t   - F   " $ M O Z I L L A _ B I N "
+  \n f i\n\n p a s s _ a r g _ c o u n t = 0\n w h i l e   [   $ #
+     - g t   $ p a s s _ a r g _ c o u n t   ]\n d o\n     c a s e
+     " $ 1 "   i n\n         - p   |   - - p u r e   |   - p u r e
+   )\n             M O Z I L L A _ B I N = " $ { M O Z I L L A _ B
+   I N } . p u r e "\n             s h i f t\n             ; ;\n  
+         - g   |   - - d e b u g )\n             s c r i p t _ a r
+   g s = " $ s c r i p t _ a r g s   - g "\n             d e b u g
+   g i n g = 1\n             s h i f t\n             ; ;\n        
+   - d   |   - - d e b u g g e r )\n             s c r i p t _ a r
+   g s = " $ s c r i p t _ a r g s   - d   $ 2 "\n             s h
+   i f t   2\n             ; ;\n         * )\n             #   M o
+   v e   t h e   u n r e c o g n i z e d   a r g u m e n t   t o  
+   t h e   e n d   o f   t h e   l i s t .\n             a r g = "
+   $ 1 "\n             s h i f t\n             s e t   - -   " $ @
+   "   " $ a r g "\n             p a s s _ a r g _ c o u n t = ` e
+   x p r   $ p a s s _ a r g _ c o u n t   +   1 `\n             ;
+   ;\n     e s a c\n d o n e\n\n i f   [   !   - f   / t m p / f i
+   r e f o x 3 - p r e l o a d e d   - a   - x   / u s r / l i b /
+   g d m p r e f e t c h   ]\n t h e n\n     / u s r / l i b / g d
+   m p r e f e t c h   @ $ { d i s t _ b i n } / f i r e f o x - p
+   r e l o a d . l i s t\n     t o u c h   / t m p / f i r e f o x
+   3 - p r e l o a d e d\n f i\n\n i f   [   $ d e b u g g i n g  
+   =   1   ]\n t h e n\n     e c h o   $ d i s t _ b i n / r u n -
+   m o z i l l a . s h   $ s c r i p t _ a r g s   $ d i s t _ b i
+   n / $ M O Z I L L A _ B I N   " $ @ "\n f i\n " $ d i s t _ b i
+   n / r u n - m o z i l l a . s h "   $ s c r i p t _ a r g s   "
+   $ d i s t _ b i n / $ M O Z I L L A _ B I N "   " $ @ "\n e x i
+   t c o d e = $ ?\n\n e x i t   $ e x i t c o d e\n #   E O F .\n
+brk(0x08110000)					= 0
+brk(0x08111000)					= 0
+access("/usr/bin/run-mozilla.sh", X_OK)		Err#2 ENOENT
+setcontext(0x08047150)
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+llseek(255, 0xFFFFFFFFFFFFFB04, SEEK_CUR)	= 2821
+fork1()						= 1867
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGCLD, 0x08047010, 0x08047080)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+    Received signal #18, SIGCLD, in read() [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1867 status=0x0000
+read(3, 0x08047020, 128)			Err#4 EINTR
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046C40, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1867 status=0x0000
+waitid(P_ALL, 0, 0x08046C40, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046B40)
+read(3, " / s a v v a s\n", 128)		= 8
+read(3, 0x08047020, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046FE0, 0x08047050)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046FD0, 0x08047040)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+lstat64("/usr/bin/firefox", 0x08047110)		= 0
+    d=0x00780000 i=45725 m=0120777 l=1  u=0     g=0     sz=22
+	at = Apr 25 21:02:43 EDT 2013  [ 1366938163.856882000 ]
+	mt = Jan 29 20:57:57 EST 2013  [ 1359511077.969088000 ]
+	ct = Jan 29 20:57:57 EST 2013  [ 1359511077.969812000 ]
+    bsz=8192  blks=2     fs=ufs
+setcontext(0x08046FC0)
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1868
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+    Received signal #18, SIGCLD [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1868 status=0x0000
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046750, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1868 status=0x0000
+waitid(P_ALL, 0, 0x08046750, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046650)
+sigaction(SIGCLD, 0x08046B00, 0x08046B70)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+read(3, " f i r e f o x\n", 128)		= 8
+read(3, 0x08046B10, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046AD0, 0x08046B40)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046AC0, 0x08046B30)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1869
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+    Received signal #18, SIGCLD [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1869 status=0x0000
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046810, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1869 status=0x0000
+waitid(P_ALL, 0, 0x08046810, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046710)
+sigaction(SIGCLD, 0x08046BC0, 0x08046C30)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+read(3, " / u s r / b i n\n", 128)		= 9
+read(3, 0x08046BD0, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046B90, 0x08046C00)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046B80, 0x08046BF0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+stat64("/usr", 0x08046C60)			= 0
+    d=0x00780000 i=31    m=0040755 l=41 u=0     g=3     sz=1024
+	at = Apr 25 20:21:12 EDT 2013  [ 1366935672.416967000 ]
+	mt = Feb  4 18:48:39 EST 2013  [ 1360021719.519096000 ]
+	ct = Feb  4 18:48:39 EST 2013  [ 1360021719.519096000 ]
+    bsz=8192  blks=2     fs=ufs
+stat64("/usr/bin", 0x08046C60)			= 0
+    d=0x00780000 i=305   m=0040755 l=4  u=0     g=2     sz=18944
+	at = Apr 22 15:14:53 EDT 2013  [ 1366658093.117161000 ]
+	mt = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+	ct = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+    bsz=8192  blks=38    fs=ufs
+chdir("/usr/bin")				= 0
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1870
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+    Received signal #18, SIGCLD [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1870 status=0x0000
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x080468A0, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1870 status=0x0000
+waitid(P_ALL, 0, 0x080468A0, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x080467A0)
+sigaction(SIGCLD, 0x08046C50, 0x08046CC0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+read(3, " / u s r / b i n\n", 128)		= 9
+read(3, 0x08046C60, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046C20, 0x08046C90)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046C10, 0x08046C80)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+stat64("/usr", 0x08046CF0)			= 0
+    d=0x00780000 i=31    m=0040755 l=41 u=0     g=3     sz=1024
+	at = Apr 25 20:21:12 EDT 2013  [ 1366935672.416967000 ]
+	mt = Feb  4 18:48:39 EST 2013  [ 1360021719.519096000 ]
+	ct = Feb  4 18:48:39 EST 2013  [ 1360021719.519096000 ]
+    bsz=8192  blks=2     fs=ufs
+stat64("/usr/bin", 0x08046CF0)			= 0
+    d=0x00780000 i=305   m=0040755 l=4  u=0     g=2     sz=18944
+	at = Apr 22 15:14:53 EDT 2013  [ 1366658093.117161000 ]
+	mt = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+	ct = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+    bsz=8192  blks=38    fs=ufs
+chdir("/usr/bin")				= 0
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1871
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGCLD, 0x08046C30, 0x08046CA0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+    Received signal #18, SIGCLD, in read() [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1871 status=0x0000
+read(3, 0x08046C48, 128)			Err#4 EINTR
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046860, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1871 status=0x0000
+waitid(P_ALL, 0, 0x08046860, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046760)
+read(3, 0x08046C48, 128)			= 23
+   . . / l i b / f i r e f o x / f i r e f o x\n
+read(3, 0x08046C48, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046C00, 0x08046C70)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046BF0, 0x08046C60)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1874
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGCLD, 0x08046CD0, 0x08046D40)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+    Received signal #18, SIGCLD, in read() [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1874 status=0x0000
+read(3, 0x08046CE0, 128)			Err#4 EINTR
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046900, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1874 status=0x0000
+waitid(P_ALL, 0, 0x08046900, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046800)
+read(3, " f i r e f o x\n", 128)		= 8
+read(3, 0x08046CE0, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046CA0, 0x08046D10)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046C90, 0x08046D00)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+access("../lib/firefox/firefox", X_OK)		= 0
+setcontext(0x08046D10)
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1875
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGCLD, 0x08046DF0, 0x08046E60)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+    Received signal #18, SIGCLD, in read() [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1875 status=0x0000
+read(3, 0x08046E08, 128)			Err#4 EINTR
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x08046A20, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1875 status=0x0000
+waitid(P_ALL, 0, 0x08046A20, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x08046920)
+read(3, 0x08046E08, 128)			= 15
+   . . / l i b / f i r e f o x\n
+read(3, 0x08046E08, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046DC0, 0x08046E30)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046DB0, 0x08046E20)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+access("../lib/firefox/run-mozilla.sh", X_OK)	= 0
+setcontext(0x08046ED0)
+stat64("/usr", 0x08046DB0)			= 0
+    d=0x00780000 i=31    m=0040755 l=41 u=0     g=3     sz=1024
+	at = Apr 25 20:21:12 EDT 2013  [ 1366935672.416967000 ]
+	mt = Feb  4 18:48:39 EST 2013  [ 1360021719.519096000 ]
+	ct = Feb  4 18:48:39 EST 2013  [ 1360021719.519096000 ]
+    bsz=8192  blks=2     fs=ufs
+stat64("/usr/bin", 0x08046DB0)			= 0
+    d=0x00780000 i=305   m=0040755 l=4  u=0     g=2     sz=18944
+	at = Apr 22 15:14:53 EDT 2013  [ 1366658093.117161000 ]
+	mt = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+	ct = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+    bsz=8192  blks=38    fs=ufs
+stat64("/usr/bin", 0x08046DB0)			= 0
+    d=0x00780000 i=305   m=0040755 l=4  u=0     g=2     sz=18944
+	at = Apr 22 15:14:53 EDT 2013  [ 1366658093.117161000 ]
+	mt = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+	ct = Jan 29 21:07:16 EST 2013  [ 1359511636.610069000 ]
+    bsz=8192  blks=38    fs=ufs
+stat64("/usr/lib", 0x08046DB0)			= 0
+    d=0x00780000 i=343   m=0040755 l=130 u=0     g=2     sz=33280
+	at = Jan 29 20:49:51 EST 2013  [ 1359510591.522850000 ]
+	mt = Feb  1 13:20:36 EST 2013  [ 1359742836.907284000 ]
+	ct = Feb  1 13:20:36 EST 2013  [ 1359742836.907284000 ]
+    bsz=8192  blks=66    fs=ufs
+stat64("/usr/lib/firefox", 0x08046DB0)		= 0
+    d=0x00780000 i=108339 m=0040755 l=12 u=0     g=1     sz=1536
+	at = Mar 12 21:20:25 EDT 2013  [ 1363137625.707707000 ]
+	mt = Jan 29 21:00:51 EST 2013  [ 1359511251.272513000 ]
+	ct = Jan 29 21:00:51 EST 2013  [ 1359511251.272513000 ]
+    bsz=8192  blks=4     fs=ufs
+chdir("/usr/lib/firefox")			= 0
+pipe()						= 3 [4]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+fork1()						= 1876
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGCLD, 0x08046C70, 0x08046CE0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+close(4)					= 0
+    Received signal #18, SIGCLD, in read() [caught]
+      siginfo: SIGCLD CLD_EXITED pid=1876 status=0x0000
+read(3, 0x08046C80, 128)			Err#4 EINTR
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+waitid(P_ALL, 0, 0x080468A0, WEXITED|WTRAPPED|WNOHANG) = 0
+      siginfo: SIGCLD CLD_EXITED pid=1876 status=0x0000
+waitid(P_ALL, 0, 0x080468A0, WEXITED|WTRAPPED|WNOHANG) Err#10 ECHILD
+setcontext(0x080467A0)
+read(3, 0x08046C80, 128)			= 17
+   / u s r / l i b / f i r e f o x\n
+read(3, 0x08046C80, 128)			= 0
+close(3)					= 0
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046C40, 0x08046CB0)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x08046C30, 0x08046CA0)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+stat64("/savvas", 0x08047200)			= 0
+    d=0x00780000 i=299445 m=0040755 l=7  u=0     g=0     sz=2560
+	at = Apr 25 21:02:41 EDT 2013  [ 1366938161.816098000 ]
+	mt = Apr 25 21:02:43 EDT 2013  [ 1366938163.795618000 ]
+	ct = Apr 25 21:02:43 EDT 2013  [ 1366938163.795618000 ]
+    bsz=8192  blks=6     fs=ufs
+chdir("/savvas")				= 0
+read(255, 0x0810C008, 4097)			= 1276
+   i f   [   $ f o u n d   =   0   ] ;   t h e n\n     #   C h e c
+   k   d e f a u l t   c o m p i l e - t i m e   l i b d i r\n    
+   i f   [   - x   " $ m o z _ l i b d i r / r u n - m o z i l l a
+   . s h "   ] ;   t h e n\n         d i s t _ b i n = " $ m o z _
+   l i b d i r "\n         r u n _ m o z = " $ m o z _ l i b d i r
+   / r u n - m o z i l l a . s h "\n     e l s e\n         e c h o
+     " C a n n o t   f i n d   F i r e f o x   r u n t i m e   d i
+   r e c t o r y .   E x i t i n g . "\n         e x i t   1\n    
+   f i\n f i\n\n s c r i p t _ a r g s = " "\n d e b u g g i n g =
+   0\n M O Z I L L A _ B I N = " $ { p r o g b a s e } - b i n "\n
+  \n i f   [   " $ O S T Y P E "   =   " b e o s "   ] ;   t h e n
+  \n     m i m e s e t   - F   " $ M O Z I L L A _ B I N "\n f i\n
+  \n p a s s _ a r g _ c o u n t = 0\n w h i l e   [   $ #   - g t
+     $ p a s s _ a r g _ c o u n t   ]\n d o\n     c a s e   " $ 1
+   "   i n\n         - p   |   - - p u r e   |   - p u r e )\n    
+           M O Z I L L A _ B I N = " $ { M O Z I L L A _ B I N } .
+   p u r e "\n             s h i f t\n             ; ;\n         -
+   g   |   - - d e b u g )\n             s c r i p t _ a r g s = "
+   $ s c r i p t _ a r g s   - g "\n             d e b u g g i n g
+   = 1\n             s h i f t\n             ; ;\n         - d   |
+     - - d e b u g g e r )\n             s c r i p t _ a r g s = "
+   $ s c r i p t _ a r g s   - d   $ 2 "\n             s h i f t  
+   2\n             ; ;\n         * )\n             #   M o v e   t
+   h e   u n r e c o g n i z e d   a r g u m e n t   t o   t h e  
+   e n d   o f   t h e   l i s t .\n             a r g = " $ 1 "\n
+               s h i f t\n             s e t   - -   " $ @ "   " $
+   a r g "\n             p a s s _ a r g _ c o u n t = ` e x p r  
+   $ p a s s _ a r g _ c o u n t   +   1 `\n             ; ;\n    
+   e s a c\n d o n e\n\n i f   [   !   - f   / t m p / f i r e f o
+   x 3 - p r e l o a d e d   - a   - x   / u s r / l i b / g d m p
+   r e f e t c h   ]\n t h e n\n     / u s r / l i b / g d m p r e
+   f e t c h   @ $ { d i s t _ b i n } / f i r e f o x - p r e l o
+   a d . l i s t\n     t o u c h   / t m p / f i r e f o x 3 - p r
+   e l o a d e d\n f i\n\n i f   [   $ d e b u g g i n g   =   1  
+   ]\n t h e n\n     e c h o   $ d i s t _ b i n / r u n - m o z i
+   l l a . s h   $ s c r i p t _ a r g s   $ d i s t _ b i n / $ M
+   O Z I L L A _ B I N   " $ @ "\n f i\n " $ d i s t _ b i n / r u
+   n - m o z i l l a . s h "   $ s c r i p t _ a r g s   " $ d i s
+   t _ b i n / $ M O Z I L L A _ B I N "   " $ @ "\n e x i t c o d
+   e = $ ?\n\n e x i t   $ e x i t c o d e\n #   E O F .\n
+setcontext(0x08047150)
+setcontext(0x08047150)
+setcontext(0x08047140)
+stat64("/tmp/firefox3-preloaded", 0x08047280)	Err#2 ENOENT
+access("/usr/lib/gdmprefetch", X_OK)		Err#2 ENOENT
+setcontext(0x08047150)
+setcontext(0x08047150)
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+llseek(255, 0xFFFFFFFFFFFFFFDD, SEEK_CUR)	= 4062
+fork1()						= 1877
+lwp_sigmask(SIG_SETMASK, 0x00020002, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+lwp_sigmask(SIG_SETMASK, 0x00020000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x080473D0, 0x08047440)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+waitid(P_ALL, 0, 0x08047390, WEXITED|WTRAPPED) (sleeping...)
+waitid(P_ALL, 0, 0x08047390, WEXITED|WTRAPPED)	= 0
+      siginfo: SIGCLD CLD_EXITED pid=1877 status=0x0089
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sigaction(SIGINT, 0x080473C0, 0x08047430)	= 0
+    new: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+    old: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+read(255, 0x0810C008, 4097)			= 35
+   e x i t c o d e = $ ?\n\n e x i t   $ e x i t c o d e\n #   E O
+   F .\n
+setcontext(0x080471C0)
+_exit(137)

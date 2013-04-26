@@ -1,68 +1,52 @@
 """
 <Program>
-  posix_strace_parser.py
+  parser_strace_calls.py
 
 <Started>
   February 2013
 
 <Author>
-  Savvas Savvides
+  Savvas Savvides <savvas@nyu.edu>
 
 <Purpose>
-  This is the parser that translates traces from strace ouput format
-  to the intermediate representation, as it is defined in the file
-  posix_intermediate_representation.py. It provides a single public
-  function which takes as argument an open file and returns a list
-  containing all the traces parsed. The file must contain one trace
-  per line and each line must follow the strace output format.
-
+  This is the parser that translates traces from strace ouput format to the 
+  intermediate representation, as it is defined in the file 
+  parser_intermediate_representation.py. It provides a single public function 
+  which takes as argument an open file and returns a list containing all the 
+  trace actions parsed. The file must follow the strace output format. 
   Example of using this module:
 
     import parser_strace_calls
     fh = open(TRACE_FILE_NAME, "r")
     actions = parser_strace_calls.parse_trace(fh)
 
-  The above code will return a list and store it in traces. Each
-  entry of this list represents a system call in its intermediate
-  representation. The format of the intermediate representation is 
-  given below:
+  The above code will return a list of actions. Each action of this list 
+  represents a system call in its intermediate representation. The format of the
+  intermediate representation is given below: 
   ('syscallName_syscall', (arg1, arg2, ...), (return1, return2))
 
-  The above format, represents a single entry of the list returned.
-  It is a tuple that contains three elements. The first elemetns is a
-  string made up from the name of the system call (eg open, access),
-  followed by the set string '_syscall' (eg open_syscall,
-  access_syscall). The second element is a tuple that contains all
-  the value arguments passed to that system call. The final element
-  is another tuple containing all the return values of the system
-  call. Each of the arguments or the return values can be of any type
-  including lists. In some cases it is possible that the same
-  argument or return value will have different type in different
-  calls of the same system call. The order of the combination of
-  arguments and return values in the intermediate representation does
-  not necessarily match the order in which they appear in the strace
-  output format. Although the order of arguments and return values
-  separately does follow the order in which they appear in the strace
-  output format. In other words, some arguments when parsed could be
-  moved to the return value tuple. This happens if the argument
-  passed is used as a way to return a value rather than to pass a
-  value to the system call. For example passing a pointer of a
-  structure to be filled. More information about the intermediate
-  representation of each individual system call can be found in the
-  posix_intermediate_representation.py file.
+  The above format, represents a single entry of the list returned. It is a 
+  tuple that contains three elements. The first elemetns is a string made up 
+  from the name of the system call (eg open, access), followed by the set string 
+  '_syscall' (eg open_syscall, access_syscall). The second element is a tuple 
+  that contains all the value arguments passed to that system call. The final 
+  element is another tuple containing all the return values of the system call. 
+  Each of the arguments or the return values can be of any type including lists. 
+  In some cases it is possible that the same argument or return value will have 
+  different type in different calls of the same system call. 
 
-  Traces for this module (Strace):
-  Before gathering traces for this module consider going through the
-  man pages of strace. strace provides many options that can affect
-  the output format. The suggested options for gathering traces for
-  this module are the following:
-  strace -v -f -s1024 -o output_filename command
+  Traces for this module (strace):
+  Before gathering traces for this module consider going through the man pages 
+  of strace. strace provides many options that can affect the output format. The
+  expected options for gathering traces for this module are the following: 
 
-  -v print structure values unabbreviated.
-  -f trace child processes
-  -s1024 allow string arguments in system calls up to 1024 characters.
-  If this option is skipped, strace will truncate   strings exceeding
-  32 characters.
+    strace -v -f -s1024 -o output_filename command
+
+    -v print structure values unabbreviated.
+    -f trace child processes
+    -s1024 allow string arguments in system calls up to 1024 characters.
+    If this option is skipped, strace will truncate   strings exceeding
+    32 characters.
 
 """
 
@@ -75,7 +59,7 @@ DEBUG = False
 ###########
 class UnfinishedSyscall(object):
   """
-  If a syscall is interapted or blocked, strace will split it in multiple lines.
+  If a syscall is interrupted or blocked, strace will split it in multiple lines
   Example:
   19176 accept(3, <unfinished ...>
   19175 connect(5, {sa_family=AF_INET, sin_port=htons(25588), 
@@ -102,6 +86,7 @@ class UnfinishedSyscall(object):
 def parse_trace(fh):
   # this list will hold all the parsed syscalls
   actions = []
+
   # this list will hold all pending (i.e unfinished) syscalls
   unfinished_syscalls = []
   
@@ -135,14 +120,14 @@ def parse_trace(fh):
         continue
 
     # Ignore lines starting with Process:
-    if line[:line.find(" ")] == "Process":
+    if line.startswith("Process"):
       continue
     
     # Ignore incomplete syscall lines without '(', ')', and '='
     if line.find('(') == -1 or line.find(')') == -1 or line.find('=') == -1:
       continue
     
-    # Parser the syscall name.
+    # Parse the syscall name.
     if line[0] == '[':
       # format: [pid 12345] syscall_name(...
       syscall_name = line[line.find(']')+2:line.find('(')]
@@ -158,8 +143,8 @@ def parse_trace(fh):
     # Remove right bracket and split.
     parameters = parameterChunk[:-1].split(", ")
     
-    # if the syscall is getdents, keep only the first and last 
-    # parameters.
+    # if the syscall is getdents, keep only the first and last parameters. These
+    # are the file descriptor and the buffer size.
     if syscall_name.startswith("getdents"):
       parameters = [parameters[0], parameters[-1]]
     
@@ -173,19 +158,25 @@ def parse_trace(fh):
       if parameters[1].isdigit():
         parameters.pop(1)
 
+    # TODO: add support for fcntl third parameter according to second parameter.
+    if syscall_name.startswith("fcntl"):
+      # keep only the first two paramenters
+      parameters = [parameters[0], parameters[1]]
+
     # Fix errors from split on messages
     mergeQuoteParameters(parameters)
 
     # Get the return part.
     straceReturn = line[line.rfind('=')+1:].strip()
-    if straceReturn.find("(flags ") != -1:
+    if syscall_name.startswith("fcntl") and straceReturn.find("(flags ") != -1:
       # handle fcntl return part. I.e use the set of flags instead
       # of their hex representation.
       # example:
       # fcntl64(4, F_GETFL) = 0x402 (flags O_RDWR|O_APPEND)
-      # parse the part between '(flags' and ')'
-      straceReturn = straceReturn[straceReturn.find("(flags ") +
-                     len("(flags "):straceReturn.rfind(")")]
+      # replace the hex part: 0x402 with the flags O_RDWR|O_APPEND
+      # get the part between '(flags' and ')'
+      straceReturn = straceReturn[straceReturn.find("(flags ")+7:
+                                  straceReturn.rfind(")")]
       straceReturn = (straceReturn, None)
     else:
       spaced_results = straceReturn.split(" ")
@@ -203,13 +194,12 @@ def parse_trace(fh):
         # if no error, use None as the second return value
         straceReturn = (straceReturn, None)
 
-    action = parse_syscall(syscall_name, parameters, 
-                                               straceReturn)
+    action = parse_syscall(syscall_name, parameters, straceReturn)
     
     if action != UNIMPLEMENTED_ERROR:
       actions.append(action)
   
-  # display all skipped syscall_names.
+  # display all skipped syscall names.
   if(DEBUG):
     print "\nSkipped System Calls"
     for skipped in SKIPPED_SYSCALLS:

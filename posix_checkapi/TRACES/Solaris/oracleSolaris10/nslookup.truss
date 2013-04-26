@@ -1,0 +1,586 @@
+execve("/usr/sbin/nslookup", 0x08047564, 0x08047570)  argc = 2
+sysinfo(SI_MACHINE, "i86pc", 257)		= 6
+mmap(0x00000000, 32, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FF0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FB0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FA0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F90000
+memcntl(0xD1FC1000, 13188, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+memcntl(0x08048000, 30264, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+resolvepath("/usr/lib/ld.so.1", "/lib/ld.so.1", 1023) = 12
+resolvepath("/usr/sbin/nslookup", "/usr/sbin/nslookup", 1023) = 18
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+stat64("/usr/sbin/nslookup", 0x08047150)	= 0
+    d=0x00780000 i=43815 m=0100555 l=1  u=0     g=2     sz=382300
+	at = Apr 25 21:01:44 EDT 2013  [ 1366938104.084755000 ]
+	mt = Jun 20 08:51:53 EDT 2011  [ 1308574313.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997637000 ]
+    bsz=8192  blks=768   fs=ufs
+open("/var/ld/ld.config", O_RDONLY)		Err#2 ENOENT
+stat64("/usr/lib/dns/liblwres.so.50", 0x08046A00) = 0
+    d=0x00780000 i=43805 m=0100555 l=1  u=0     g=2     sz=115716
+	at = Feb  8 01:45:05 EST 2013  [ 1360305905.078733000 ]
+	mt = Jun 20 08:51:50 EDT 2011  [ 1308574310.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997337000 ]
+    bsz=8192  blks=256   fs=ufs
+resolvepath("/usr/lib/dns/liblwres.so.50", "/usr/lib/dns/liblwres.so.50.0.3", 1023) = 31
+open("/usr/lib/dns/liblwres.so.50", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F80000
+mmap(0x00010000, 139264, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F50000
+mmap(0xD1F50000, 68685, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1F50000
+mmap(0xD1F70000, 4430, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 65536) = 0xD1F70000
+munmap(0xD1F61000, 61440)			= 0
+munmap(0xD1F80000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1F50000, 17908, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F80000
+stat64("/usr/lib/dns/libdns.so.58", 0x08046A00)	= 0
+    d=0x00780000 i=43801 m=0100555 l=1  u=0     g=2     sz=2287772
+	at = Feb  8 01:45:05 EST 2013  [ 1360305905.093848000 ]
+	mt = Jun 20 08:51:49 EDT 2011  [ 1308574309.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997087000 ]
+    bsz=8192  blks=4496  fs=ufs
+resolvepath("/usr/lib/dns/libdns.so.58", "/usr/lib/dns/libdns.so.58.1.5", 1023) = 29
+open("/usr/lib/dns/libdns.so.58", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F40000
+mmap(0x00010000, 1925120, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1D60000
+mmap(0xD1D60000, 1835830, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1D60000
+mmap(0xD1F30000, 20676, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 1835008) = 0xD1F30000
+munmap(0xD1F21000, 61440)			= 0
+munmap(0xD1F40000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1D60000, 289932, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libbind9.so.50", 0x08046A00) = 0
+    d=0x00780000 i=43800 m=0100555 l=1  u=0     g=2     sz=48724
+	at = Feb  8 01:45:05 EST 2013  [ 1360305905.086050000 ]
+	mt = Jun 20 08:51:49 EDT 2011  [ 1308574309.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997023000 ]
+    bsz=8192  blks=96    fs=ufs
+resolvepath("/usr/lib/dns/libbind9.so.50", "/usr/lib/dns/libbind9.so.50.0.4", 1023) = 31
+open("/usr/lib/dns/libbind9.so.50", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F40000
+mmap(0x00010000, 102400, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1D40000
+mmap(0xD1D40000, 34459, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1D40000
+mmap(0xD1D58000, 3078, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 32768) = 0xD1D58000
+munmap(0xD1D49000, 61440)			= 0
+munmap(0xD1F40000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1D40000, 7932, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libisccfg.so.50", 0x08046A00) = 0
+    d=0x00780000 i=43804 m=0100555 l=1  u=0     g=2     sz=152992
+	at = Feb  8 01:45:05 EST 2013  [ 1360305905.044071000 ]
+	mt = Jun 20 08:51:50 EDT 2011  [ 1308574310.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997274000 ]
+    bsz=8192  blks=320   fs=ufs
+resolvepath("/usr/lib/dns/libisccfg.so.50", "/usr/lib/dns/libisccfg.so.50.0.3", 1023) = 32
+open("/usr/lib/dns/libisccfg.so.50", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F40000
+mmap(0x00010000, 167936, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1D10000
+mmap(0xD1D10000, 86567, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1D10000
+mmap(0xD1D35000, 9695, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 86016) = 0xD1D35000
+mmap(0xD1D38000, 584, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1D38000
+munmap(0xD1D26000, 61440)			= 0
+munmap(0xD1F40000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1D10000, 45984, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libisc.so.50", 0x08046A00)	= 0
+    d=0x00780000 i=43802 m=0100555 l=1  u=0     g=2     sz=593760
+	at = Feb  8 01:45:05 EST 2013  [ 1360305905.091315000 ]
+	mt = Jun 20 08:51:50 EDT 2011  [ 1308574310.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997149000 ]
+    bsz=8192  blks=1184  fs=ufs
+resolvepath("/usr/lib/dns/libisc.so.50", "/usr/lib/dns/libisc.so.50.4.1", 1023) = 29
+open("/usr/lib/dns/libisc.so.50", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F40000
+mmap(0x00010000, 487424, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1C90000
+mmap(0xD1C90000, 415920, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1C90000
+mmap(0xD1D05000, 5735, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 413696) = 0xD1D05000
+munmap(0xD1CF6000, 61440)			= 0
+munmap(0xD1F40000, 32768)			= 0
+close(3)					= 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F40000
+memcntl(0xD1C90000, 93860, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libcrypto.so.0.9.7", 0x08046A00) Err#2 ENOENT
+stat64("/usr/sfw/lib/libcrypto.so.0.9.7", 0x08046A00) = 0
+    d=0x00780000 i=4230  m=0100755 l=1  u=0     g=2     sz=1189240
+	at = Apr 25 20:59:49 EDT 2013  [ 1366937989.387855000 ]
+	mt = Mar  9 16:22:28 EST 2011  [ 1299705748.000000000 ]
+	ct = Jan 29 20:51:38 EST 2013  [ 1359510698.643499000 ]
+    bsz=8192  blks=2352  fs=ufs
+resolvepath("/usr/sfw/lib/libcrypto.so.0.9.7", "/usr/sfw/lib/libcrypto.so.0.9.7", 1023) = 31
+open("/usr/sfw/lib/libcrypto.so.0.9.7", O_RDONLY) = 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C80000
+mmap(0x00010000, 1130496, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1B60000
+mmap(0xD1B60000, 970980, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1B60000
+mmap(0xD1C5E000, 81450, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 974848) = 0xD1C5E000
+mmap(0xD1C72000, 7952, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1C72000
+munmap(0xD1C4E000, 65536)			= 0
+munmap(0xD1C80000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1B60000, 187192, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libisccc.so.50", 0x08046A00) = 0
+    d=0x00780000 i=43803 m=0100555 l=1  u=0     g=2     sz=55712
+	at = Feb  8 01:45:05 EST 2013  [ 1360305905.048470000 ]
+	mt = Jun 20 08:51:50 EDT 2011  [ 1308574310.000000000 ]
+	ct = Jan 29 20:56:30 EST 2013  [ 1359510990.997212000 ]
+    bsz=8192  blks=110   fs=ufs
+resolvepath("/usr/lib/dns/libisccc.so.50", "/usr/lib/dns/libisccc.so.50.0.1", 1023) = 31
+open("/usr/lib/dns/libisccc.so.50", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C80000
+mmap(0x00010000, 98304, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1B40000
+mmap(0xD1B40000, 29573, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1B40000
+mmap(0xD1B57000, 1674, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 28672) = 0xD1B57000
+munmap(0xD1B48000, 61440)			= 0
+munmap(0xD1C80000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1B40000, 11124, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libscf.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/sfw/lib/libscf.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/lib/libscf.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4955  m=0100755 l=1  u=0     g=2     sz=125712
+	at = Apr 25 20:59:49 EDT 2013  [ 1366937989.389280000 ]
+	mt = Jul 21 19:02:23 EDT 2009  [ 1248217343.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.635442000 ]
+    bsz=8192  blks=272   fs=ufs
+resolvepath("/usr/lib/libscf.so.1", "/lib/libscf.so.1", 1023) = 16
+open("/usr/lib/libscf.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C80000
+mmap(0x00010000, 163840, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1B10000
+mmap(0xD1B10000, 90168, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1B10000
+mmap(0xD1B37000, 1873, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 94208) = 0xD1B37000
+munmap(0xD1B27000, 65536)			= 0
+munmap(0xD1C80000, 32768)			= 0
+close(3)					= 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1D50000
+memcntl(0xD1B10000, 14640, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libxml2.so.2", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/sfw/lib/libxml2.so.2", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/lib/libxml2.so.2", 0x08046A00)	= 0
+    d=0x00780000 i=4024  m=0100755 l=1  u=0     g=2     sz=1251388
+	at = Apr 25 20:21:21 EDT 2013  [ 1366935681.020429000 ]
+	mt = Feb 23 09:21:23 EST 2011  [ 1298470883.000000000 ]
+	ct = Jan 29 20:51:14 EST 2013  [ 1359510674.985327000 ]
+    bsz=8192  blks=2464  fs=ufs
+resolvepath("/usr/lib/libxml2.so.2", "/usr/lib/libxml2.so.2", 1023) = 21
+open("/usr/lib/libxml2.so.2", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C80000
+mmap(0x00010000, 1200128, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD19E0000
+mmap(0xD19E0000, 1090800, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD19E0000
+mmap(0xD1AFA000, 38412, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 1089536) = 0xD1AFA000
+mmap(0xD1B04000, 472, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1B04000
+munmap(0xD1AEB000, 61440)			= 0
+munmap(0xD1C80000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD19E0000, 116324, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libz.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/sfw/lib/libz.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/lib/libz.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=3709  m=0100755 l=1  u=0     g=2     sz=66692
+	at = Apr 25 20:21:21 EDT 2013  [ 1366935681.072100000 ]
+	mt = Jan 30 14:01:40 EST 2007  [ 1170183700.000000000 ]
+	ct = Jan 29 20:50:51 EST 2013  [ 1359510651.689351000 ]
+    bsz=8192  blks=132   fs=ufs
+resolvepath("/usr/lib/libz.so.1", "/usr/lib/libz.so.1", 1023) = 18
+open("/usr/lib/libz.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C80000
+mmap(0x00010000, 126976, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD19C0000
+mmap(0xD19C0000, 58404, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD19C0000
+mmap(0xD19DE000, 2602, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 57344) = 0xD19DE000
+munmap(0xD19CF000, 61440)			= 0
+munmap(0xD1C80000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD19C0000, 4104, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libpthread.so.1", 0x08046A00) Err#2 ENOENT
+stat64("/usr/sfw/lib/libpthread.so.1", 0x08046A00) Err#2 ENOENT
+stat64("/usr/lib/libpthread.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4947  m=0100755 l=1  u=0     g=2     sz=21472
+	at = Apr 25 20:21:20 EDT 2013  [ 1366935680.985587000 ]
+	mt = Jan 22 21:24:09 EST 2005  [ 1106447049.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.593648000 ]
+    bsz=8192  blks=42    fs=ufs
+resolvepath("/usr/lib/libpthread.so.1", "/lib/libpthread.so.1", 1023) = 20
+open("/usr/lib/libpthread.so.1", O_RDONLY)	= 3
+mmap(0x00010000, 21472, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C80000
+munmap(0xD1C83000, 9184)			= 0
+close(3)					= 0
+stat64("/usr/lib/dns/libm.so.2", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/sfw/lib/libm.so.2", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/lib/libm.so.2", 0x08046A00)	= 0
+    d=0x00780000 i=3660  m=0100755 l=1  u=0     g=2     sz=366160
+	at = Apr 25 20:21:21 EDT 2013  [ 1366935681.044788000 ]
+	mt = Feb 26 13:13:33 EST 2010  [ 1267208013.000000000 ]
+	ct = Jan 29 20:50:48 EST 2013  [ 1359510648.295552000 ]
+    bsz=8192  blks=736   fs=ufs
+resolvepath("/usr/lib/libm.so.2", "/lib/libm.so.2", 1023) = 14
+open("/usr/lib/libm.so.2", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C50000
+mmap(0x00010000, 376832, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1960000
+mmap(0xD1960000, 296324, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1960000
+mmap(0xD19B8000, 13308, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 294912) = 0xD19B8000
+munmap(0xD19A9000, 61440)			= 0
+munmap(0xD1C50000, 32768)			= 0
+close(3)					= 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1D30000
+memcntl(0xD1960000, 25452, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libsocket.so.1", 0x08046A00) Err#2 ENOENT
+stat64("/usr/sfw/lib/libsocket.so.1", 0x08046A00) Err#2 ENOENT
+stat64("/usr/lib/libsocket.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4959  m=0100755 l=1  u=0     g=2     sz=92016
+	at = Apr 25 21:01:44 EDT 2013  [ 1366938104.035627000 ]
+	mt = Jul  4 17:14:47 EDT 2011  [ 1309814087.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.643272000 ]
+    bsz=8192  blks=180   fs=ufs
+resolvepath("/usr/lib/libsocket.so.1", "/lib/libsocket.so.1", 1023) = 19
+open("/usr/lib/libsocket.so.1", O_RDONLY)	= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C50000
+mmap(0x00010000, 114688, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1940000
+mmap(0xD1940000, 44082, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1940000
+mmap(0xD195B000, 2645, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 45056) = 0xD195B000
+munmap(0xD194B000, 65536)			= 0
+munmap(0xD1C50000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1940000, 12080, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libnsl.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/sfw/lib/libnsl.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/lib/libnsl.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4943  m=0100755 l=1  u=0     g=2     sz=730468
+	at = Apr 25 21:01:44 EDT 2013  [ 1366938104.036192000 ]
+	mt = Jul  4 17:14:45 EDT 2011  [ 1309814085.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.569433000 ]
+    bsz=8192  blks=1456  fs=ufs
+resolvepath("/usr/lib/libnsl.so.1", "/lib/libnsl.so.1", 1023) = 16
+open("/usr/lib/libnsl.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C50000
+mmap(0x00010000, 647168, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD18A0000
+mmap(0xD18A0000, 526941, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD18A0000
+mmap(0xD1931000, 19929, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 528384) = 0xD1931000
+mmap(0xD1936000, 30104, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1936000
+munmap(0xD1921000, 65536)			= 0
+munmap(0xD1C50000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD18A0000, 58116, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/usr/lib/dns/libthread.so.1", 0x08046A00) Err#2 ENOENT
+stat64("/usr/sfw/lib/libthread.so.1", 0x08046A00) Err#2 ENOENT
+stat64("/usr/lib/libthread.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4961  m=0100755 l=1  u=0     g=2     sz=24412
+	at = Apr 25 20:21:20 EDT 2013  [ 1366935680.995937000 ]
+	mt = Jan 22 21:24:10 EST 2005  [ 1106447050.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.647237000 ]
+    bsz=8192  blks=48    fs=ufs
+resolvepath("/usr/lib/libthread.so.1", "/lib/libthread.so.1", 1023) = 19
+open("/usr/lib/libthread.so.1", O_RDONLY)	= 3
+mmap(0x00010000, 24412, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1C50000
+munmap(0xD1C54000, 8028)			= 0
+close(3)					= 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1D00000
+stat64("/usr/lib/dns/libc.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/sfw/lib/libc.so.1", 0x08046A00)	Err#2 ENOENT
+stat64("/usr/lib/libc.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4910  m=0100755 l=1  u=0     g=2     sz=1420452
+	at = Apr 25 21:01:44 EDT 2013  [ 1366938104.086243000 ]
+	mt = Jul  4 17:14:43 EDT 2011  [ 1309814083.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.279506000 ]
+    bsz=8192  blks=2800  fs=ufs
+resolvepath("/usr/lib/libc.so.1", "/lib/libc.so.1", 1023) = 14
+open("/usr/lib/libc.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1AF0000
+mmap(0x00010000, 1212416, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1770000
+mmap(0xD1770000, 1104421, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1770000
+mmap(0xD188E000, 30375, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 1105920) = 0xD188E000
+mmap(0xD1896000, 4320, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1896000
+munmap(0xD187E000, 65536)			= 0
+munmap(0xD1AF0000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1770000, 124536, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1B50000
+stat64("/lib/libdoor.so.1", 0x08046A00)		= 0
+    d=0x00780000 i=4925  m=0100755 l=1  u=0     g=2     sz=22424
+	at = Apr 25 20:59:49 EDT 2013  [ 1366937989.389328000 ]
+	mt = Aug  6 12:27:58 EDT 2010  [ 1281112078.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.361353000 ]
+    bsz=8192  blks=44    fs=ufs
+resolvepath("/lib/libdoor.so.1", "/lib/libdoor.so.1", 1023) = 17
+open("/lib/libdoor.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 22424, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1B30000
+mmap(0x00010000, 77824, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1750000
+mmap(0xD1750000, 6971, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1750000
+mmap(0xD1762000, 488, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 8192) = 0xD1762000
+munmap(0xD1752000, 65536)			= 0
+munmap(0xD1B30000, 22424)			= 0
+close(3)					= 0
+memcntl(0xD1750000, 3220, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libuutil.so.1", 0x08046A00)	= 0
+    d=0x00780000 i=4966  m=0100755 l=1  u=0     g=2     sz=38956
+	at = Apr 25 20:59:49 EDT 2013  [ 1366937989.380740000 ]
+	mt = Jul  4 17:14:48 EDT 2011  [ 1309814088.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.661471000 ]
+    bsz=8192  blks=78    fs=ufs
+resolvepath("/lib/libuutil.so.1", "/lib/libuutil.so.1", 1023) = 18
+open("/lib/libuutil.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1AF0000
+mmap(0x00010000, 94208, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1730000
+mmap(0xD1730000, 22772, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1730000
+mmap(0xD1746000, 1043, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 24576) = 0xD1746000
+munmap(0xD1736000, 65536)			= 0
+munmap(0xD1AF0000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1730000, 5032, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libgen.so.1", 0x08046A00)		= 0
+    d=0x00780000 i=4928  m=0100755 l=1  u=0     g=2     sz=38672
+	at = Apr 25 21:00:53 EDT 2013  [ 1366938053.213202000 ]
+	mt = Jan 22 21:24:08 EST 2005  [ 1106447048.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.407678000 ]
+    bsz=8192  blks=76    fs=ufs
+resolvepath("/lib/libgen.so.1", "/lib/libgen.so.1", 1023) = 16
+open("/lib/libgen.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1AF0000
+mmap(0x00010000, 94208, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1710000
+mmap(0xD1710000, 20573, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1710000
+mmap(0xD1726000, 1655, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 24576) = 0xD1726000
+munmap(0xD1716000, 65536)			= 0
+munmap(0xD1AF0000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1710000, 5192, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1B30000
+stat64("/lib/libz.so.1", 0x08046A00)		Err#2 ENOENT
+stat64("/usr/sfw/lib/libcrypto_extra.so.0.9.7", 0x08046710) = 0
+    d=0x00780000 i=45469 m=0100755 l=1  u=0     g=2     sz=131220
+	at = Apr 25 20:59:49 EDT 2013  [ 1366937989.387878000 ]
+	mt = Mar  9 16:22:27 EST 2011  [ 1299705747.000000000 ]
+	ct = Jan 29 20:57:30 EST 2013  [ 1359511050.147133000 ]
+    bsz=8192  blks=288   fs=ufs
+resolvepath("/usr/sfw/lib/libcrypto_extra.so.0.9.7", "/usr/sfw/lib/libcrypto_extra.so.0.9.7", 1023) = 37
+open("/usr/sfw/lib/libcrypto_extra.so.0.9.7", O_RDONLY) = 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1AF0000
+mmap(0x00010000, 110592, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD16F0000
+mmap(0xD16F0000, 38153, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD16F0000
+mmap(0xD170A000, 1452, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 40960) = 0xD170A000
+munmap(0xD16FA000, 65536)			= 0
+munmap(0xD1AF0000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD16F0000, 4432, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1AF0000
+mmap(0x00010000, 24576, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD19D0000
+getcontext(0x08046FC0)
+getrlimit(RLIMIT_STACK, 0x08046FB8)		= 0
+	cur = 8683520  max = 133464064
+getpid()					= 1857 [1856]
+lwp_private(0, 1, 0xD19D2A00)			= 0x000001C3
+setustack(0xD19D2A60)
+sigfillset(0xD1895E20)				= 0
+	sigmask = 0xFFFFFFFF 0x0000FFFF 0 0
+sysi86(SI86FPSTART, 0xD1896790, 0x0000133F, 0x00001F80) = 0x00000001
+schedctl()					= 0xD19B0000
+sigaction(SIGPIPE, 0x08047380, 0x00000000)	= 0
+    new: hand = 0x00000001 mask = 0xFFBFFEFF 0x0000FFF7 0 0 flags = 0x0000
+sigaction(SIGHUP, 0x08047380, 0x00000000)	= 0
+    new: hand = 0x00000000 mask = 0xFFBFFEFF 0x0000FFF7 0 0 flags = 0x0000
+sigaction(SIGTERM, 0x08047380, 0x00000000)	= 0
+    new: hand = 0x00000000 mask = 0xFFBFFEFF 0x0000FFF7 0 0 flags = 0x0000
+sigaction(SIGINT, 0x08047380, 0x00000000)	= 0
+    new: hand = 0x00000000 mask = 0xFFBFFEFF 0x0000FFF7 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00004003, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+so_socket(PF_INET, SOCK_STREAM, IPPROTO_IP, "", SOV_XPG4_2) = 3
+close(3)					= 0
+so_socket(PF_INET6, SOCK_STREAM, IPPROTO_IP, "", SOV_XPG4_2) = 3
+getsockname(3, 0x08047490, 0x080474B8, SOV_DEFAULT) = 0
+	AF_INET6  name = ::  port = 0
+	scope id = 0  source id = 0x0
+	flow class = 0x00  flow label = 0x00000
+close(3)					= 0
+so_socket(PF_UNIX, SOCK_STREAM, 0, "", SOV_XPG4_2) = 3
+close(3)					= 0
+brk(0x0807BEC8)					= 0
+brk(0x0807DEC8)					= 0
+brk(0x0807DEC8)					= 0
+brk(0x08081EC8)					= 0
+brk(0x08081EC8)					= 0
+brk(0x08083EC8)					= 0
+brk(0x08083EC8)					= 0
+brk(0x080C3EC8)					= 0
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+mmap(0x00000000, 65536, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD16D0000
+mmap(0x00000000, 65536, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD16B0000
+sigaction(SIGCANCEL, 0x080471F0, 0x00000000)	= 0
+    new: hand = 0xD180E709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0008
+sysconfig(_CONFIG_STACK_PROT)			= 7
+mmap(0x00000000, 65536, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON, -1, 0) = 0xD1690000
+mmap(0x00010000, 65536, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1670000
+getcontext(0x08047010)
+lwp_create(0x08047240, LWP_SUSPENDED, 0x0804745C) = 2
+	lwpid:	2
+/1:	lwp_continue(2)					= 0
+/2:	lwp_create()	(returning as new lwp ...)	= 0
+/2:	setustack(0xD1670260)
+/2:	schedctl()					= 0xD19B0010
+/1:	mmap(0x00000000, 65536, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON, -1, 0) = 0xD1650000
+/1:	lwp_create(0x08047240, LWP_SUSPENDED, 0x08047460) = 3
+/1:		lwpid:	3
+/1:	lwp_continue(3)					= 0
+/3:	lwp_create()	(returning as new lwp ...)	= 0
+/3:	setustack(0xD1670A60)
+/1:	brk(0x080C3EC8)					= 0
+/1:	brk(0x080C7EC8)					= 0
+/1:	brk(0x080C7EC8)					= 0
+/1:	brk(0x080CBEC8)					= 0
+/1:	brk(0x080CBEC8)					= 0
+/1:	brk(0x080D1EC8)					= 0
+/1:	pipe()						= 3 [4]
+/1:	fcntl(3, F_GETFL)				= 2
+		FWRITE
+/1:	fcntl(3, F_SETFL, FWRITE|FNONBLOCK)		= 0
+/1:	brk(0x080D1EC8)					= 0
+/1:	brk(0x080D5EC8)					= 0
+/3:	schedctl()					= 0xD19B0020
+/1:	open("/dev/poll", O_RDWR)			= 5
+/1:	write(5, "03\0\0\001\0\0\0", 8)			= 8
+/1:	mmap(0x00000000, 65536, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON, -1, 0) = 0xD1630000
+/1:	lwp_create(0x080471B0, LWP_SUSPENDED, 0x080473D4) = 4
+/1:		lwpid:	4
+/1:	lwp_continue(4)					= 0
+/4:	lwp_create()	(returning as new lwp ...)	= 0
+/1:	brk(0x080D5EC8)					= 0
+/1:	brk(0x080D9EC8)					= 0
+/4:	setustack(0xD1671260)
+/4:	schedctl()					= 0xD19B0030
+/1:	brk(0x080D9EC8)					= 0
+/1:	brk(0x080DBEC8)					= 0
+/1:	time()						= 1366938104
+/1:	open("/etc/resolv.conf", O_RDONLY)		= 6
+/1:	fstat64(6, 0x080472E0)				= 0
+/1:	    d=0x00780000 i=186250 m=0100644 l=1  u=0     g=0     sz=35
+/1:		at = Apr 25 20:58:37 EDT 2013  [ 1366937917.776187000 ]
+/1:		mt = Apr 22 14:56:54 EDT 2013  [ 1366657014.716519000 ]
+/1:		ct = Apr 22 14:56:54 EDT 2013  [ 1366657014.901029000 ]
+/1:	    bsz=8192  blks=2     fs=ufs
+/1:	brk(0x080DBEC8)					= 0
+/1:	brk(0x080DDEC8)					= 0
+/1:	fstat64(6, 0x08047220)				= 0
+/1:	    d=0x00780000 i=186250 m=0100644 l=1  u=0     g=0     sz=35
+/1:		at = Apr 25 20:58:37 EDT 2013  [ 1366937917.776187000 ]
+/1:		mt = Apr 22 14:56:54 EDT 2013  [ 1366657014.716519000 ]
+/1:		ct = Apr 22 14:56:54 EDT 2013  [ 1366657014.901029000 ]
+/1:	    bsz=8192  blks=2     fs=ufs
+/1:	ioctl(6, TCGETA, 0x080472B4)			Err#25 ENOTTY
+/1:	read(6, 0x080DBA54, 8192)			= 35
+/1:	   d o m a i n   n y u . e d u\n n a m e s e r v e r   1 0 . 0 . 2
+/1:	   . 2\n
+/1:	read(6, 0x080DBA54, 8192)			= 0
+/1:	llseek(6, 0, SEEK_CUR)				= 35
+/1:	close(6)					= 0
+/1:	lwp_unpark(2)					= 0
+/2:	lwp_park(0x00000000, 0)				= 0
+/2:	brk(0x080DDEC8)					= 0
+/2:	brk(0x080E1EC8)					= 0
+/2:	getpid()					= 1857 [1856]
+/2:	time()						= 1366938104
+/2:	brk(0x080E1EC8)					= 0
+/2:	brk(0x080F1EC8)					= 0
+/2:	brk(0x080F1EC8)					= 0
+/2:	brk(0x08101EC8)					= 0
+/2:	brk(0x08101EC8)					= 0
+/2:	brk(0x08103EC8)					= 0
+/2:	lwp_unpark(3)					= 0
+/2:	lwp_sigmask(SIG_SETMASK, 0x00000001, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+/3:	lwp_park(0x00000000, 0)				= 0
+/2:	lwp_sigmask(SIG_SETMASK, 0x00004003, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+/2:	so_socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP, "", SOV_XPG4_2) = 6
+/2:	fcntl(6, F_DUPFD, 0x00000014)			= 20
+/2:	close(6)					= 0
+/2:	fcntl(20, F_GETFL)				= 2
+		FWRITE
+/2:	fcntl(20, F_SETFL, FWRITE|FNONBLOCK)		= 0
+/2:	getsockopt(20, SOL_SOCKET, SO_RCVBUF, 0xD169FF10, 0xD169FF0C, SOV_XPG4_2) = 0
+/2:	bind(20, 0x08079EE0, 16, SOV_XPG4_2)		= 0
+/2:		AF_INET  name = 0.0.0.0  port = 0
+/2:	recvmsg(20, 0xD169FDF8, 32768)			Err#11 EAGAIN
+/2:	write(4, "14\0\0\0FDFFFFFF", 8)			= 8
+/2:	sendmsg(20, 0xD169FDAC, 32768)			= 32
+/2:		AF_INET  msg_name = 10.0.2.2  port = 53
+/4:	ioctl(5, DP_POLL, 0xD163FF48)			= 1
+/4:	read(3, "14\0\0\0FDFFFFFF", 8)			= 8
+/4:	write(5, "14\0\0\001\0\0\0", 8)			= 8
+/4:	read(3, 0xD163FE58, 8)				Err#11 EAGAIN
+/4:	ioctl(5, DP_POLL, 0xD163FF48)			= 1
+/4:	lwp_unpark(2)					= 0
+/4:	write(5, "14\0\0\0\0\b\0\0", 8)			= 8
+/2:	lwp_park(0x00000000, 0)				= 0
+/2:	recvmsg(20, 0xD169FE94, 32768)			= 264
+/2:		AF_INET  msg_name = 10.0.2.2  port = 53
+/2:	ioctl(1, TCGETA, 0xD169E754)			= 0
+/2:		iflag=0026402 oflag=0000005 cflag=0002277 lflag=0105073 line=0
+/2:		    cc:  003 034 177 025 004 377 377 000
+/2:	fstat64(1, 0xD169E6C0)				= 0
+/2:	    d=0x049C0000 i=12582922 m=0020620 l=1  u=0     g=7     rdev=0x00600003
+/2:		at = Apr 25 21:01:42 EDT 2013  [ 1366938102.000000000 ]
+/2:		mt = Apr 25 21:01:44 EDT 2013  [ 1366938104.000000000 ]
+/2:		ct = Apr 25 19:01:32 EDT 2013  [ 1366930892.000000000 ]
+/2:	    bsz=8192  blks=0     fs=devfs
+/2:	write(1, 0xD1896BA4, 18)			= 18
+/2:	   S e r v e r :\t\t 1 0 . 0 . 2 . 2\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   A d d r e s s :\t 1 0 . 0 . 2 . 2 # 5 3\n
+/2:	write(1, "\n", 1)				= 1
+/2:	write(1, 0xD1896BA4, 26)			= 26
+/2:	   N o n - a u t h o r i t a t i v e   a n s w e r :\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   N a m e :\t w w w . g o o g l e . c o m\n
+/2:	write(1, 0xD1896BA4, 23)			= 23
+/2:	   A d d r e s s :   7 4 . 1 2 5 . 2 6 . 1 4 7\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   N a m e :\t w w w . g o o g l e . c o m\n
+/2:	write(1, 0xD1896BA4, 22)			= 22
+/2:	   A d d r e s s :   7 4 . 1 2 5 . 2 6 . 9 9\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   N a m e :\t w w w . g o o g l e . c o m\n
+/2:	write(1, 0xD1896BA4, 23)			= 23
+/2:	   A d d r e s s :   7 4 . 1 2 5 . 2 6 . 1 0 3\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   N a m e :\t w w w . g o o g l e . c o m\n
+/2:	write(1, 0xD1896BA4, 23)			= 23
+/2:	   A d d r e s s :   7 4 . 1 2 5 . 2 6 . 1 0 4\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   N a m e :\t w w w . g o o g l e . c o m\n
+/2:	write(1, 0xD1896BA4, 23)			= 23
+/2:	   A d d r e s s :   7 4 . 1 2 5 . 2 6 . 1 0 5\n
+/2:	write(1, 0xD1896BA4, 21)			= 21
+/2:	   N a m e :\t w w w . g o o g l e . c o m\n
+/2:	write(1, 0xD1896BA4, 23)			= 23
+/2:	   A d d r e s s :   7 4 . 1 2 5 . 2 6 . 1 0 6\n
+/2:	lwp_unpark(3)					= 0
+/2:	write(4, "14\0\0\0FBFFFFFF", 8)			= 8
+/2:	getpid()					= 1857 [1856]
+/2:	kill(1857, SIGTERM)				= 0
+/1:	    Received signal #15, SIGTERM, in sigtimedwait() [default]
+/1:	      siginfo: SIGTERM pid=1857 uid=0
+/1:	sigtimedwait(0x080473B0, 0x080473C0, 0x00000000) = SIGTERM
+/1:		sigmask = 0x00004003 0 0 0
+/1:	      siginfo: SIGTERM pid=1857 uid=0
+/1:	write(1, "\n", 1)				= 1
+/1:	lwp_unpark(2)					= 0
+/2:	lwp_park(0x00000000, 0)				= 0
+/2:	lwp_sigmask(SIG_SETMASK, 0xFFBFFEFF, 0x0000FFF7) = 0xFFBFFEFF [0x0000FFFF]
+/2:	lwp_exit()
+/1:	lwp_wait(2, 0x080474D4)				= 0
+/1:		lwpid:	2
+/1:	write(4, "\0\0\0\0FFFFFFFF", 8)			= 8
+/4:	ioctl(5, DP_POLL, 0xD163FF48)			= 1
+/4:	read(3, "14\0\0\0FBFFFFFF", 8)			= 8
+/4:	write(5, "14\0\0\0\0\b\0\0", 8)			= 8
+/4:	write(5, "14\0\0\0\0\b\0\0", 8)			= 8
+/4:	close(20)					= 0
+/4:	read(3, "\0\0\0\0FFFFFFFF", 8)			= 8
+/4:	lwp_sigmask(SIG_SETMASK, 0xFFBFFEFF, 0x0000FFF7) = 0xFFBFFEFF [0x0000FFFF]
+/4:	lwp_exit()
+/1:	lwp_wait(4, 0x080474D0)				= 0
+/1:		lwpid:	4
+/1:	write(5, "03\0\0\0\0\b\0\0", 8)			= 8
+/1:	close(5)					= 0
+/1:	close(3)					= 0
+/1:	close(4)					= 0
+/3:	lwp_park(0xD165FEC8, 0)				= 0
+/3:		timeout: 4.971331713 sec
+/3:	lwp_sigmask(SIG_SETMASK, 0xFFBFFEFF, 0x0000FFF7) = 0xFFBFFEFF [0x0000FFFF]
+/3:	lwp_exit()
+/1:	lwp_wait(3, 0x080474CC)				= 0
+/1:		lwpid:	3
+_exit(0)

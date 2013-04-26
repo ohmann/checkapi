@@ -1,0 +1,201 @@
+2384:	execve("/usr/bin/ls", 0x08047550, 0x0804755C)  argc = 2
+2384:	sysinfo(SI_MACHINE, "i86pc", 257)		= 6
+2384:	mmap(0x00000000, 32, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FF0000
+2384:	mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FB0000
+2384:	mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FA0000
+2384:	mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F90000
+2384:	memcntl(0xD1FC1000, 13188, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+2384:	memcntl(0x08050000, 3784, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+2384:	resolvepath("/usr/lib/ld.so.1", "/lib/ld.so.1", 1023) = 12
+2384:	resolvepath("/usr/bin/ls", "/usr/bin/ls", 1023)	= 11
+2384:	sysconfig(_CONFIG_PAGESIZE)			= 4096
+2384:	stat64("/usr/bin/ls", 0x08047140)		= 0
+2384:	    d=0x00780000 i=650   m=0100555 l=1  u=0     g=2     sz=18700
+2384:		at = Apr 25 23:02:49 EDT 2013  [ 1366945369.166054000 ]
+2384:		mt = Jul  4 17:15:36 EDT 2011  [ 1309814136.000000000 ]
+2384:		ct = Jan 29 20:49:54 EST 2013  [ 1359510594.335417000 ]
+2384:	    bsz=8192  blks=38    fs=ufs
+2384:	open("/var/ld/ld.config", O_RDONLY)		Err#2 ENOENT
+2384:	stat64("/lib/libsec.so.1", 0x080469F0)		= 0
+2384:	    d=0x00780000 i=4956  m=0100755 l=1  u=0     g=2     sz=78872
+2384:		at = Apr 25 22:57:43 EDT 2013  [ 1366945063.040799000 ]
+2384:		mt = Jul  4 17:14:47 EDT 2011  [ 1309814087.000000000 ]
+2384:		ct = Jan 29 20:52:59 EST 2013  [ 1359510779.638008000 ]
+2384:	    bsz=8192  blks=156   fs=ufs
+2384:	resolvepath("/lib/libsec.so.1", "/lib/libsec.so.1", 1023) = 16
+2384:	open("/lib/libsec.so.1", O_RDONLY)		= 3
+2384:	mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F80000
+2384:	mmap(0x00010000, 143360, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F50000
+2384:	mmap(0xD1F50000, 50863, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1F50000
+2384:	mmap(0xD1F6D000, 11829, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 53248) = 0xD1F6D000
+2384:	mmap(0xD1F70000, 8216, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1F70000
+2384:	munmap(0xD1F5D000, 65536)			= 0
+2384:	munmap(0xD1F80000, 32768)			= 0
+2384:	close(3)					= 0
+2384:	memcntl(0xD1F50000, 8836, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+2384:	mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F80000
+2384:	stat64("/lib/libc.so.1", 0x080469F0)		= 0
+2384:	    d=0x00780000 i=4910  m=0100755 l=1  u=0     g=2     sz=1420452
+2384:		at = Apr 25 23:02:49 EDT 2013  [ 1366945369.175763000 ]
+2384:		mt = Jul  4 17:14:43 EDT 2011  [ 1309814083.000000000 ]
+2384:		ct = Jan 29 20:52:59 EST 2013  [ 1359510779.279506000 ]
+2384:	    bsz=8192  blks=2800  fs=ufs
+2384:	resolvepath("/lib/libc.so.1", "/lib/libc.so.1", 1023) = 14
+2384:	open("/lib/libc.so.1", O_RDONLY)		= 3
+2384:	mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F60000
+2384:	mmap(0x00010000, 1212416, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1E20000
+2384:	mmap(0xD1E20000, 1104421, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1E20000
+2384:	mmap(0xD1F3E000, 30375, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 1105920) = 0xD1F3E000
+2384:	mmap(0xD1F46000, 4320, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1F46000
+2384:	munmap(0xD1F2E000, 65536)			= 0
+2384:	munmap(0xD1F60000, 32768)			= 0
+2384:	close(3)					= 0
+2384:	memcntl(0xD1E20000, 124536, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+2384:	stat64("/lib/libavl.so.1", 0x080469F0)		= 0
+2384:	    d=0x00780000 i=4908  m=0100755 l=1  u=0     g=2     sz=9568
+2384:		at = Apr 25 22:57:43 EDT 2013  [ 1366945063.039935000 ]
+2384:		mt = Jul  4 17:14:42 EDT 2011  [ 1309814082.000000000 ]
+2384:		ct = Jan 29 20:52:59 EST 2013  [ 1359510779.189858000 ]
+2384:	    bsz=8192  blks=20    fs=ufs
+2384:	resolvepath("/lib/libavl.so.1", "/lib/libavl.so.1", 1023) = 16
+2384:	open("/lib/libavl.so.1", O_RDONLY)		= 3
+2384:	mmap(0x00010000, 9568, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F60000
+2384:	mmap(0x00010000, 73728, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1E00000
+2384:	mmap(0xD1E00000, 2804, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1E00000
+2384:	mmap(0xD1E11000, 204, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 4096) = 0xD1E11000
+2384:	munmap(0xD1E01000, 65536)			= 0
+2384:	munmap(0xD1F60000, 9568)			= 0
+2384:	close(3)					= 0
+2384:	memcntl(0xD1E00000, 1056, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+2384:	mmap(0x00010000, 24576, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F60000
+2384:	getcontext(0x08046FB0)
+2384:	getrlimit(RLIMIT_STACK, 0x08046FA8)		= 0
+2384:		cur = 8683520  max = 133464064
+2384:	getpid()					= 2384 [2383]
+2384:	lwp_private(0, 1, 0xD1F62A00)			= 0x000001C3
+2384:	setustack(0xD1F62A60)
+2384:	sysi86(SI86FPSTART, 0xD1F46790, 0x0000133F, 0x00001F80) = 0x00000001
+2384:	brk(0x080651E8)					= 0
+2384:	brk(0x080671E8)					= 0
+2384:	time()						= 1366945369
+2384:	ioctl(1, TCGETA, 0x080472AC)			= 0
+2384:		iflag=0026402 oflag=0000005 cflag=0002277 lflag=0105073 line=0
+2384:		    cc:  003 034 177 025 004 377 377 000
+2384:	sysconfig(_CONFIG_PAGESIZE)			= 4096
+2384:	ioctl(1, TIOCGWINSZ, 0x08064460)		= 0
+2384:		row=40  col=125 xpixel=0   ypixel=0  
+2384:	brk(0x080671E8)					= 0
+2384:	brk(0x080711E8)					= 0
+2384:	lstat64(".", 0x08046180)			= 0
+2384:	    d=0x00780000 i=299445 m=0040755 l=7  u=0     g=0     sz=2560
+2384:		at = Apr 25 23:02:37 EDT 2013  [ 1366945357.871621000 ]
+2384:		mt = Apr 25 23:02:10 EDT 2013  [ 1366945330.895648000 ]
+2384:		ct = Apr 25 23:02:10 EDT 2013  [ 1366945330.895648000 ]
+2384:	    bsz=8192  blks=6     fs=ufs
+2384:	openat(-3041965, ".", O_RDONLY|O_NDELAY|O_LARGEFILE) = 3
+2384:	fcntl(3, F_SETFD, 0x00000001)			= 0
+2384:	fstat64(3, 0x080471D0)				= 0
+2384:	    d=0x00780000 i=299445 m=0040755 l=7  u=0     g=0     sz=2560
+2384:		at = Apr 25 23:02:37 EDT 2013  [ 1366945357.871621000 ]
+2384:		mt = Apr 25 23:02:10 EDT 2013  [ 1366945330.895648000 ]
+2384:		ct = Apr 25 23:02:10 EDT 2013  [ 1366945330.895648000 ]
+2384:	    bsz=8192  blks=6     fs=ufs
+2384:	getdents64(3, 0xD1F64000, 8192)			= 1408
+2384:	    ino=299445 off=12   rlen=24  "."
+2384:	    ino=2     off=24   rlen=24  ".."
+2384:	    ino=299725 off=56   rlen=32  "dtruss"
+2384:	    ino=299631 off=80   rlen=32  "fs_syscalls.d"
+2384:	    ino=299543 off=100  rlen=32  "out.dtrace"
+2384:	    ino=299630 off=116  rlen=32  "backup"
+2384:	    ino=302908 off=140  rlen=32  "DTRACE_TRACES"
+2384:	    ino=299759 off=160  rlen=32  "syscalls.o"
+2384:	    ino=299367 off=180  rlen=32  "Makefile"
+2384:	    ino=299671 off=200  rlen=32  "syscalls.c"
+2384:	    ino=299776 off=232  rlen=40  "syscalls_functions.c"
+2384:	    ino=299777 off=252  rlen=32  "syscalls"
+2384:	    ino=299783 off=284  rlen=40  "syscalls_functions.h"
+2384:	    ino=299757 off=308  rlen=24  "core"
+2384:	    ino=299678 off=324  rlen=32  "test.c"
+2384:	    ino=299743 off=344  rlen=32  "bind.truss"
+2384:	    ino=299519 off=380  rlen=32  "truss.zip"
+2384:	    ino=299673 off=404  rlen=32  "syscalls2.txt"
+2384:	    ino=299775 off=436  rlen=40  "syscalls_functions.o"
+2384:	    ino=299765 off=460  rlen=32  "syscalls.txt"
+2384:	    ino=299689 off=484  rlen=32  "accept.truss"
+2384:	    ino=299736 off=512  rlen=32  "access.truss"
+2384:	    ino=299753 off=532  rlen=32  "chdir.truss"
+2384:	    ino=299666 off=560  rlen=32  "truss.sh"
+2384:	    ino=299675 off=592  rlen=40  "syscalls_functions.c~"
+2384:	    ino=299731 off=628  rlen=32  "creat.truss"
+2384:	    ino=299683 off=652  rlen=32  "errors_input"
+2384:	    ino=302918 off=676  rlen=32  "TRUSS_TRACES"
+2384:	    ino=299610 off=700  rlen=32  "errors_output"
+2384:	    ino=299793 off=720  rlen=32  "truss.sh~"
+2384:	    ino=299782 off=740  rlen=32  "close.truss"
+2384:	    ino=299795 off=764  rlen=32  "connect.truss"
+2384:	    ino=299764 off=784  rlen=32  "dup.truss"
+2384:	    ino=299796 off=804  rlen=32  "dup2.truss"
+2384:	    ino=301448 off=824  rlen=32  "fcntl.truss"
+2384:	    ino=301449 off=844  rlen=32  "fstat.truss"
+2384:	    ino=301450 off=868  rlen=40  "fstatvfs.truss"
+2384:	    ino=301447 off=1024 rlen=40  "getdents.truss"
+2384:	    ino=299608 off=1232 rlen=32  "dtlog.d"
+2384:	    ino=299672 off=1460 rlen=32  "syscalls.link"
+2384:	    ino=299602 off=1536 rlen=32  "shared"
+2384:	    ino=299547 off=2048 rlen=40  "trussExamples.txt"
+2384:	    ino=299773 off=2560 rlen=32  "syscalls_dir"
+2384:	getdents64(3, 0xD1F64000, 8192)			= 0
+2384:	close(3)					= 0
+2384:	ioctl(1, TCGETA, 0x08045354)			= 0
+2384:		iflag=0026402 oflag=0000005 cflag=0002277 lflag=0105073 line=0
+2384:		    cc:  003 034 177 025 004 377 377 000
+2384:	fstat64(1, 0x080452C0)				= 0
+2384:	    d=0x049C0000 i=12582922 m=0020620 l=1  u=0     g=7     rdev=0x00600003
+2384:		at = Apr 25 23:02:48 EDT 2013  [ 1366945368.000000000 ]
+2384:		mt = Apr 25 23:02:49 EDT 2013  [ 1366945369.000000000 ]
+2384:		ct = Apr 25 19:01:32 EDT 2013  [ 1366930892.000000000 ]
+2384:	    bsz=8192  blks=0     fs=devfs
+2384:	write(1, 0xD1F46BA4, 113)			= 113
+2384:	   .                                             c h d i r . t r u
+2384:	   s s                         e r r o r s _ i n p u t            
+2384:	             s y s c a l l s                               s y s c
+2384:	   a l l s _ f u n c t i o n s . h\n
+2384:	write(1, 0xD1F46BA4, 113)			= 113
+2384:	   . .                                           c l o s e . t r u
+2384:	   s s                         e r r o r s _ o u t p u t          
+2384:	             s y s c a l l s . c                           s y s c
+2384:	   a l l s _ f u n c t i o n s . o\n
+2384:	write(1, 0xD1F46BA4, 99)			= 99
+2384:	   D T R A C E _ T R A C E S                     c o n n e c t . t
+2384:	   r u s s                     f c n t l . t r u s s              
+2384:	             s y s c a l l s . l i n k                     t e s t
+2384:	   . c\n
+2384:	write(1, 0xD1F46BA4, 101)			= 101
+2384:	   M a k e f i l e                               c o r e          
+2384:	                               f s _ s y s c a l l s . d          
+2384:	             s y s c a l l s . o                           t r u s
+2384:	   s . s h\n
+2384:	write(1, 0xD1F46BA4, 102)			= 102
+2384:	   T R U S S _ T R A C E S                       c r e a t . t r u
+2384:	   s s                         f s t a t . t r u s s              
+2384:	             s y s c a l l s . t x t                       t r u s
+2384:	   s . s h ~\n
+2384:	write(1, 0xD1F46BA4, 102)			= 102
+2384:	   a c c e p t . t r u s s                       d t l o g . d    
+2384:	                               f s t a t v f s . t r u s s        
+2384:	             s y s c a l l s 2 . t x t                     t r u s
+2384:	   s . z i p\n
+2384:	write(1, 0xD1F46BA4, 110)			= 110
+2384:	   a c c e s s . t r u s s                       d t r u s s      
+2384:	                               g e t d e n t s . t r u s s        
+2384:	             s y s c a l l s _ d i r                       t r u s
+2384:	   s E x a m p l e s . t x t\n
+2384:	write(1, 0xD1F46BA4, 90)			= 90
+2384:	   b a c k u p                                   d u p . t r u s s
+2384:	                               o u t . d t r a c e                
+2384:	             s y s c a l l s _ f u n c t i o n s . c\n
+2384:	write(1, 0xD1F46BA4, 91)			= 91
+2384:	   b i n d . t r u s s                           d u p 2 . t r u s
+2384:	   s                           s h a r e d                        
+2384:	             s y s c a l l s _ f u n c t i o n s . c ~\n
+2384:	_exit(0)

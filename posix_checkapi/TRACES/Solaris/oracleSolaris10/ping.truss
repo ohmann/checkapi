@@ -1,0 +1,346 @@
+execve("/usr/sbin/ping", 0x08047570, 0x0804757C)  argc = 2
+sysinfo(SI_MACHINE, "i86pc", 257)		= 6
+mmap(0x00000000, 32, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FF0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FB0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1FA0000
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F90000
+memcntl(0xD1FC1000, 13188, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+memcntl(0x08050000, 5500, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+resolvepath("/usr/lib/ld.so.1", "/lib/ld.so.1", 1023) = 12
+resolvepath("/usr/sbin/ping", "/usr/sbin/ping", 1023) = 14
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+stat64("/usr/sbin/ping", 0x08047160)		= 0
+    d=0x00780000 i=4675  m=0104555 l=1  u=0     g=2     sz=45016
+	at = Apr 25 19:57:10 EDT 2013  [ 1366934230.252940000 ]
+	mt = Apr 26 01:57:34 EDT 2005  [ 1114495054.000000000 ]
+	ct = Jan 29 20:51:50 EST 2013  [ 1359510710.096886000 ]
+    bsz=8192  blks=88    fs=ufs
+open("/var/ld/ld.config", O_RDONLY)		Err#2 ENOENT
+stat64("/lib/libxnet.so.1", 0x08046A10)		= 0
+    d=0x00780000 i=4968  m=0100755 l=1  u=0     g=2     sz=10404
+	at = Apr 25 19:56:59 EDT 2013  [ 1366934219.520949000 ]
+	mt = Apr  1 19:20:40 EDT 2011  [ 1301700040.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.662568000 ]
+    bsz=8192  blks=22    fs=ufs
+resolvepath("/lib/libxnet.so.1", "/lib/libxnet.so.1", 1023) = 17
+open("/lib/libxnet.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 10404, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F80000
+mmap(0x00010000, 8192, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F70000
+mmap(0xD1F70000, 5288, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1F70000
+munmap(0xD1F80000, 10404)			= 0
+close(3)					= 0
+stat64("/lib/libsocket.so.1", 0x08046A10)	= 0
+    d=0x00780000 i=4959  m=0100755 l=1  u=0     g=2     sz=92016
+	at = Apr 25 19:57:10 EDT 2013  [ 1366934230.248426000 ]
+	mt = Jul  4 17:14:47 EDT 2011  [ 1309814087.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.643272000 ]
+    bsz=8192  blks=180   fs=ufs
+resolvepath("/lib/libsocket.so.1", "/lib/libsocket.so.1", 1023) = 19
+open("/lib/libsocket.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F80000
+mmap(0x00010000, 114688, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1F50000
+mmap(0xD1F50000, 44082, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1F50000
+mmap(0xD1F6B000, 2645, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 45056) = 0xD1F6B000
+munmap(0xD1F5B000, 65536)			= 0
+munmap(0xD1F80000, 32768)			= 0
+close(3)					= 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F80000
+memcntl(0xD1F50000, 12080, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libnsl.so.1", 0x08046A10)		= 0
+    d=0x00780000 i=4943  m=0100755 l=1  u=0     g=2     sz=730468
+	at = Apr 25 19:57:10 EDT 2013  [ 1366934230.249178000 ]
+	mt = Jul  4 17:14:45 EDT 2011  [ 1309814085.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.569433000 ]
+    bsz=8192  blks=1456  fs=ufs
+resolvepath("/lib/libnsl.so.1", "/lib/libnsl.so.1", 1023) = 16
+open("/lib/libnsl.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F60000
+mmap(0x00010000, 647168, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1EB0000
+mmap(0xD1EB0000, 526941, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1EB0000
+mmap(0xD1F41000, 19929, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 528384) = 0xD1F41000
+mmap(0xD1F46000, 30104, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1F46000
+munmap(0xD1F31000, 65536)			= 0
+munmap(0xD1F60000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1EB0000, 58116, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libm.so.2", 0x08046A10)		= 0
+    d=0x00780000 i=3660  m=0100755 l=1  u=0     g=2     sz=366160
+	at = Apr 25 19:56:59 EDT 2013  [ 1366934219.534717000 ]
+	mt = Feb 26 13:13:33 EST 2010  [ 1267208013.000000000 ]
+	ct = Jan 29 20:50:48 EST 2013  [ 1359510648.295552000 ]
+    bsz=8192  blks=736   fs=ufs
+resolvepath("/lib/libm.so.2", "/lib/libm.so.2", 1023) = 14
+open("/lib/libm.so.2", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F60000
+mmap(0x00010000, 376832, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1E50000
+mmap(0xD1E50000, 296324, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1E50000
+mmap(0xD1EA8000, 13308, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 294912) = 0xD1EA8000
+munmap(0xD1E99000, 61440)			= 0
+munmap(0xD1F60000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1E50000, 25452, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+stat64("/lib/libc.so.1", 0x08046A10)		= 0
+    d=0x00780000 i=4910  m=0100755 l=1  u=0     g=2     sz=1420452
+	at = Apr 25 19:57:10 EDT 2013  [ 1366934230.263973000 ]
+	mt = Jul  4 17:14:43 EDT 2011  [ 1309814083.000000000 ]
+	ct = Jan 29 20:52:59 EST 2013  [ 1359510779.279506000 ]
+    bsz=8192  blks=2800  fs=ufs
+resolvepath("/lib/libc.so.1", "/lib/libc.so.1", 1023) = 14
+open("/lib/libc.so.1", O_RDONLY)		= 3
+mmap(0x00010000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ALIGN, 3, 0) = 0xD1F60000
+mmap(0x00010000, 1212416, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1D20000
+mmap(0xD1D20000, 1104421, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_TEXT, 3, 0) = 0xD1D20000
+mmap(0xD1E3E000, 30375, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_INITDATA, 3, 1105920) = 0xD1E3E000
+mmap(0xD1E46000, 4320, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0) = 0xD1E46000
+munmap(0xD1E2E000, 65536)			= 0
+munmap(0xD1F60000, 32768)			= 0
+close(3)					= 0
+memcntl(0xD1D20000, 124536, MC_ADVISE, MADV_WILLNEED, 0, 0) = 0
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1F60000
+mmap(0x00010000, 24576, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1EA0000
+getcontext(0x08046FD0)
+getrlimit(RLIMIT_STACK, 0x08046FC8)		= 0
+	cur = 8683520  max = 133464064
+getpid()					= 1499 [1498]
+lwp_private(0, 1, 0xD1EA2A00)			= 0x000001C3
+setustack(0xD1EA2A60)
+mmap(0x00000000, 4096, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0) = 0xD1E30000
+sigfillset(0xD1E45E20)				= 0
+	sigmask = 0xFFFFFFFF 0x0000FFFF 0 0
+sysi86(SI86FPSTART, 0xD1E46790, 0x0000133F, 0x00001F80) = 0x00000001
+getuid()					= 0 [0]
+getuid()					= 0 [0]
+fstat64(1, 0x08047410)				= 0
+    d=0x049C0000 i=12582922 m=0020620 l=1  u=0     g=7     rdev=0x00600003
+	at = Apr 25 19:57:09 EDT 2013  [ 1366934229.000000000 ]
+	mt = Apr 25 19:57:10 EDT 2013  [ 1366934230.000000000 ]
+	ct = Apr 25 19:01:32 EDT 2013  [ 1366930892.000000000 ]
+    bsz=8192  blks=0     fs=devfs
+getpid()					= 1499 [1498]
+sysconfig(_CONFIG_PAGESIZE)			= 4096
+open("/etc/netconfig", O_RDONLY|O_LARGEFILE)	= 3
+brk(0x0809BE78)					= 0
+brk(0x0809DE78)					= 0
+time()						= 1366934230
+rctlsys(0, "process.max-file-descriptor", 0x00000000, 0x0809C298, 0, 0) = 0
+read(3, 0x0809BE90, 1024)			= 1024
+   # p r a g m a   i d e n t\t " @ ( # ) n e t c o n f i g\t 1 . 1
+   6\t 9 9 / 1 0 / 2 5   S M I "\n #\n #   T h e   " N e t w o r k
+     C o n f i g u r a t i o n "   F i l e .\n #\n #   E a c h   e
+   n t r y   i s   o f   t h e   f o r m :\n #\n #               <
+   n e t w o r k _ i d >   < s e m a n t i c s >   < f l a g s >  
+   < p r o t o f a m i l y >   < p r o t o n a m e >   \\n #      
+                           < d e v i c e >   < n a m e t o a d d r
+   _ l i b s >\n #\n #   T h e   " - "   i n   < n a m e t o a d d
+   r _ l i b s >   f o r   i n e t   f a m i l y   t r a n s p o r
+   t s   i n d i c a t e s\n #   r e d i r e c t i o n   t o   t h
+   e   n a m e   s e r v i c e   s w i t c h   p o l i c i e s   f
+   o r   " h o s t s "   a n d\n #   " s e r v i c e s " .   T h e
+     " - "   m a y   b e   r e p l a c e d   b y   n a m e t o a d
+   d r   l i b r a r i e s   t h a t\n #   c o m p l y   w i t h  
+   t h e   S V r 4   s p e c s ,   i n   w h i c h   c a s e   t h
+   e   n a m e   s e r v i c e   s w i t c h\n #   w i l l   n o t
+     b e   u s e d   f o r   n e t d i r _ g e t b y n a m e ,   n
+   e t d i r _ g e t b y a d d r ,\n #   g e t h o s t b y n a m e
+   ,   g e t h o s t b y a d d r ,   g e t s e r v b y n a m e ,  
+   a n d   g e t s e r v b y p o r t .\n #   T h e r e   a r e   n
+   o   n a m e t o a d d r _ l i b s   f o r   t h e   i n e t   f
+   a m i l y   i n   S o l a r i s   a n y m o r e .\n #\n u d p 6
+                 t p i _ c l t s             v           i n e t 6
+         u d p         / d e v / u d p 6               -\n t c p 6
+                 t p i _ c o t s _ o r d     v           i n e t 6
+         t c p         / d e v / t c p 6               -\n u d p  
+                 t p i _ c l t s             v           i n e t  
+         u d p         / d e v / u d p                 -\n t c p  
+                 t p i _ c o t s _ o r d     v           i n e t  
+         t c p         / d e v / t c p                 -\n r a w i
+   p             t p i _ r a w               -           i n e t  
+         -             / d e v / r a w i p             -\n t i c l
+read(3, 0x0809BE90, 1024)			= 215
+   t s           t p i _ c l t s             v         l o o p b a
+   c k   -             / d e v / t i c l t s           s t r a d d
+   r . s o\n t i c o t s o r d     t p i _ c o t s _ o r d     v  
+         l o o p b a c k   -             / d e v / t i c o t s o r
+   d     s t r a d d r . s o\n t i c o t s           t p i _ c o t
+   s             v         l o o p b a c k   -             / d e v
+   / t i c o t s           s t r a d d r . s o\n
+read(3, 0x0809BE90, 1024)			= 0
+lseek(3, 0, SEEK_SET)				= 0
+read(3, 0x0809BE90, 1024)			= 1024
+   # p r a g m a   i d e n t\t " @ ( # ) n e t c o n f i g\t 1 . 1
+   6\t 9 9 / 1 0 / 2 5   S M I "\n #\n #   T h e   " N e t w o r k
+     C o n f i g u r a t i o n "   F i l e .\n #\n #   E a c h   e
+   n t r y   i s   o f   t h e   f o r m :\n #\n #               <
+   n e t w o r k _ i d >   < s e m a n t i c s >   < f l a g s >  
+   < p r o t o f a m i l y >   < p r o t o n a m e >   \\n #      
+                           < d e v i c e >   < n a m e t o a d d r
+   _ l i b s >\n #\n #   T h e   " - "   i n   < n a m e t o a d d
+   r _ l i b s >   f o r   i n e t   f a m i l y   t r a n s p o r
+   t s   i n d i c a t e s\n #   r e d i r e c t i o n   t o   t h
+   e   n a m e   s e r v i c e   s w i t c h   p o l i c i e s   f
+   o r   " h o s t s "   a n d\n #   " s e r v i c e s " .   T h e
+     " - "   m a y   b e   r e p l a c e d   b y   n a m e t o a d
+   d r   l i b r a r i e s   t h a t\n #   c o m p l y   w i t h  
+   t h e   S V r 4   s p e c s ,   i n   w h i c h   c a s e   t h
+   e   n a m e   s e r v i c e   s w i t c h\n #   w i l l   n o t
+     b e   u s e d   f o r   n e t d i r _ g e t b y n a m e ,   n
+   e t d i r _ g e t b y a d d r ,\n #   g e t h o s t b y n a m e
+   ,   g e t h o s t b y a d d r ,   g e t s e r v b y n a m e ,  
+   a n d   g e t s e r v b y p o r t .\n #   T h e r e   a r e   n
+   o   n a m e t o a d d r _ l i b s   f o r   t h e   i n e t   f
+   a m i l y   i n   S o l a r i s   a n y m o r e .\n #\n u d p 6
+                 t p i _ c l t s             v           i n e t 6
+         u d p         / d e v / u d p 6               -\n t c p 6
+                 t p i _ c o t s _ o r d     v           i n e t 6
+         t c p         / d e v / t c p 6               -\n u d p  
+                 t p i _ c l t s             v           i n e t  
+         u d p         / d e v / u d p                 -\n t c p  
+                 t p i _ c o t s _ o r d     v           i n e t  
+         t c p         / d e v / t c p                 -\n r a w i
+   p             t p i _ r a w               -           i n e t  
+         -             / d e v / r a w i p             -\n t i c l
+read(3, 0x0809BE90, 1024)			= 215
+   t s           t p i _ c l t s             v         l o o p b a
+   c k   -             / d e v / t i c l t s           s t r a d d
+   r . s o\n t i c o t s o r d     t p i _ c o t s _ o r d     v  
+         l o o p b a c k   -             / d e v / t i c o t s o r
+   d     s t r a d d r . s o\n t i c o t s           t p i _ c o t
+   s             v         l o o p b a c k   -             / d e v
+   / t i c o t s           s t r a d d r . s o\n
+read(3, 0x0809BE90, 1024)			= 0
+close(3)					= 0
+open("/dev/udp", O_RDONLY)			= 3
+ioctl(3, SIOCGLIFNUM, 0x080471A0)		= 0
+		write/read (struct lifnum)
+close(3)					= 0
+open("/dev/udp6", O_RDONLY)			= 3
+ioctl(3, SIOCGLIFNUM, 0x080471B0)		= 0
+		write/read (struct lifnum)
+close(3)					= 0
+open("/dev/udp", O_RDONLY)			= 3
+ioctl(3, SIOCGLIFNUM, 0x080471B0)		= 0
+		write/read (struct lifnum)
+close(3)					= 0
+brk(0x0809DE78)					= 0
+brk(0x0809FE78)					= 0
+getuid()					= 0 [0]
+getpid()					= 1499 [1498]
+open("/proc/1499/psinfo", O_RDONLY)		= 3
+read(3, 0x08046F50, 336)			= 336
+  \0\0\00201\0\0\0DB05\0\0DA05\0\0DA05\0\0 v05\0\0\0\0\0\0\0\0\0\0
+  \0\0\0\0\0\0\0\0E8 iFED8FC\t\0\0A404\0\0\0\0\0\003\0 `\019\0 2\0
+  D6C2 y Q @\vAE0E\0\0\0\0\fDCFE\0\0\0\0\0\0\0\0\0 p i n g\0\0\0\0
+  \0\0\0\0\0\0\0\0 p i n g   g o o g l e . c o m\0\0\0\0\0\0\0\0\0
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\002\0\0\0
+   p u04\b | u04\b01\0\0\0 M\0\0\001\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0
+   W\0\0\0\0\0\0\0\0\0\0\001\0\0\0E01C9CD8\0\0\0\0\006 O1403\0 (\0
+   ;\0\0\019\0\0\0D6C2 y Q\0\0\0\0\0\0\0\0\rDCFE\0 I A\0\0\0\0\0\0
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0FFFFFFFFFFFFFFFF\0\0\0\0
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0
+close(3)					= 0
+mmap(0x00010000, 65536, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON|MAP_ALIGN, -1, 0) = 0xD1D00000
+getuid()					= 0 [0]
+getuid()					= 0 [0]
+open64("/var/run/name_service_door", O_RDONLY)	= 3
+fcntl(3, F_SETFD, 0x00000001)			= 0
+door_info(3, 0xD1E3F504)			= 0
+	target=140 proc=0x80695AA data=0xDEADBEED
+	attributes=DOOR_UNREF
+	uniquifier=333
+door_call(3, 0x08046FA0)			= 0
+	data_ptr=0xD1D00000 data_size=527
+	desc_ptr=0x0 desc_num=0
+	rbuf=0xD1D00000 rsize=25600
+open("/etc/default/nss", O_RDONLY|O_LARGEFILE)	= 4
+time()						= 1366934230
+read(4, 0x0809F070, 1024)			= 1024
+   #   i d e n t\t " @ ( # ) n s s\t 1 . 2\t 0 2 / 1 2 / 1 3   S M
+   I "\n #\n #   C o p y r i g h t   2 0 0 0 - 2 0 0 2   S u n   M
+   i c r o s y s t e m s ,   I n c .     A l l   r i g h t s   r e
+   s e r v e d .\n #   U s e   i s   s u b j e c t   t o   l i c e
+   n s e   t e r m s .\n #\n #   N E T I D _ A U T H O R I T A T I
+   V E   c h a n g e s   t h e   b e h a v i o u r   o f   n a m e
+   s e r v i c e   l o o k u p s   t o   u s e\n #   t h e   n e t
+   i d   o r   g r o u p   t a b l e   w h e n   s a t i s f y i n
+   g   t h e   i n i t g r o u p s ( )   c a l l .\n #   T h e   d
+   e f a u l t   i s   t o   u s e   t h e   g r o u p   t a b l e
+   ,   s e t t i n g   t h e   v a l u e   o f   T R U E   f o r c
+   e s\n #   t h e   i n i t g r o u p s ( )   f u n c t i o n   c
+   a l l   t o   u s e   n e t i d   a s   t h e   s o u r c e   f
+   o r   s u p p l e m e n t a r y\n #   g r o u p s   r a t h e r
+     t h a n   t h e   g r o u p   t a b l e .\n #   I t   i s   t
+   h e   r e s p o n s i b i l i t y   o f   t h e   n a m e s e r
+   v i c e   a d m i n i s t r a t o r   t o   e n s u r e   t h a
+   t\n #   t h e   n e t i d   t a b l e   c o n t a i n s   v a l
+   i d   s u p p l e m e n t a r y   g r o u p   i n f o r m a t i
+   o n   f o r   u s e r s ,\n #   n o t   a l l   n a m e s e r v
+   i c e s   a r e   c a p a b l e   o f   k e e p i n g   t h e  
+   m e m b e r s   l i s t e d   i n   t h e\n #   g r o u p s   t
+   a b l e   i n   s y n c   w i t h   t h e   n e t i d   t a b l
+   e   a u t o m a t i c a l l y .\n #\n # N E T I D _ A U T H O R
+   I T A T I V E = T R U E\n #\n # S O R T _ A D D R S   c a n   b
+   e   u s e d   t o   d i s a b l e   t h e   s o r t i n g   o f
+     a d d r e s s e s   r e t u r n e d   b y  \n # n a m e   l o
+   o k u p   f u n c t i o n s   s u c h   a s   g e t h o s t b y
+   n a m e ( ) ,   g e t a d d r i n f o ( ) ,  \n # g e t i p n o
+   d e b y n a m e ( )   a n d   n e t d i r _ g e t b y n a m e (
+   ) .\n # S e t t i n g   S O R T _ A D D R S = F A L S E   w i l
+   l   d i s a b l e   a d d r e s s   s o r t i n g   d o n e   b
+read(4, 0x0809F070, 1024)			= 211
+   y   t h o s e\n # f u n c t i o n s .   T h i s   i s   u s e f
+   u l   i n   c a s e   t h e   o r d e r   o f   a d d r e s s e
+   s   r e t u r n e d\n # b y   t h e   n a m e s e r v e r   n e
+   e d s   t o   b e   m a i n t a i n e d .   ( e x a m p l e :  
+   D N S   r o u n d   r o b i n   f e a t u r e )\n # B y   d e f
+   a u l t ,   a d d r e s s   s o r t i n g   i s   d o n e .\n #
+  \n # S O R T _ A D D R S = F A L S E\n
+read(4, 0x0809F070, 1024)			= 0
+close(4)					= 0
+open("/dev/udp6", O_RDONLY)			= 4
+ioctl(4, I_STR, 0x080470C0)			= 0
+	cmd=SIOCGDSTINFO timout=0 len=624 dp=0x0809F060
+		write/read 0 bytes
+close(4)					= 0
+so_socket(PF_INET, SOCK_DGRAM, IPPROTO_IP, "", SOV_XPG4_2) = 4
+connect(4, 0x0809F220, 16, SOV_XPG4_2)		= 0
+	AF_INET  name = 173.194.43.41  port = 1792
+getsockname(4, 0x0809F220, 0x08047488, SOV_DEFAULT) = 0
+	AF_INET  name = 10.0.2.15  port = 32859
+close(4)					= 0
+so_socket(PF_INET, SOCK_RAW, IPPROTO_ICMP, "", SOV_XPG4_2) = 4
+setsockopt(4, SOL_SOCKET, SO_RCVBUF, 0x080474C4, 4, SOV_DEFAULT) = 0
+setsockopt(4, SOL_SOCKET, SO_SNDBUF, 0x080474C4, 4, SOV_DEFAULT) = 0
+sendto(4, 0x0808B9E0, 64, 32768, 0x0806AA90, 16) = 64
+  \b\0 R d05DB\0\0D6C2 y Q `A904\0\b\t\n\v\f\r0E0F1011121314151617
+  18191A1B1C1D1E1F   ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7
+	AF_INET  to = 173.194.43.41  port = 0
+schedctl()					= 0xD1CF0000
+sigaction(SIGALRM, 0x08047410, 0x08047490)	= 0
+    new: hand = 0xD1DBE709 mask = 0xFFBFFEFF 0x0000FFFF 0 0 flags = 0x0000
+    old: hand = 0x00000000 mask = 0 0 0 0 flags = 0x0000
+lwp_sigmask(SIG_SETMASK, 0x00000000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+alarm(1)					= 0
+    Received signal #14, SIGALRM, in pollsys() [caught]
+pollsys(0x08047350, 1, 0x00000000, 0x00000000)	Err#4 EINTR
+	fd=4  ev=POLLRDNORM rev=0
+lwp_sigmask(SIG_SETMASK, 0x00002000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sendto(4, 0x0808B9E0, 64, 32768, 0x0806AA90, 16) = 64
+  \b\0DD l05DB\001D7C2 y QD49F04\0\b\t\n\v\f\r0E0F1011121314151617
+  18191A1B1C1D1E1F   ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7
+	AF_INET  to = 173.194.43.41  port = 0
+alarm(1)					= 0
+setcontext(0x08046E80)
+    Received signal #14, SIGALRM, in pollsys() [caught]
+pollsys(0x08047350, 1, 0x00000000, 0x00000000)	Err#4 EINTR
+	fd=4  ev=POLLRDNORM rev=0
+lwp_sigmask(SIG_SETMASK, 0x00002000, 0x00000000) = 0xFFBFFEFF [0x0000FFFF]
+sendto(4, 0x0808B9E0, 64, 32768, 0x0806AA90, 16) = 64
+  \b\0D3 X05DB\002D8C2 y QDDB204\0\b\t\n\v\f\r0E0F1011121314151617
+  18191A1B1C1D1E1F   ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7
+	AF_INET  to = 173.194.43.41  port = 0
+alarm(1)					= 0
+setcontext(0x08046E80)
+    Received signal #2, SIGINT, in pollsys() [default]
+pollsys(0x08047350, 1, 0x00000000, 0x00000000)	Err#4 EINTR
+	fd=4  ev=POLLRDNORM rev=0

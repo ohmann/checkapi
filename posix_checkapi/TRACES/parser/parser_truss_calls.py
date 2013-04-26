@@ -1,26 +1,30 @@
 """
 <Program>
-  posix_truss_parser.py
+  parser_truss_calls.py
 
 <Started>
   February 2013
 
 <Author>
-  Savvas Savvides
+  Savvas Savvides <savvas@nyu.edu>
 
 <Purpose>
   
 
 """
-import sys
+
+from parser_helper_calls import *
+
 
 DEBUG = True
 
-###################################
-# Public function of this module. #
-###################################
-def get_traces(fh):
-  traces = []
+
+
+
+def parse_trace(fh):
+  # this list will hold all the parsed syscalls
+  actions = []
+  
   # process each line
   while True:
     line = fh.readline()
@@ -49,15 +53,20 @@ def get_traces(fh):
     else:
       syscall_name = line[:line.find('(')]
 
-    # Get the function parameters.
+    # Get the syscall parameters.
     parameterChunk = line[line.find('(')+1:line.rfind(')')].strip()
     parameters = parameterChunk.split(", ")
-    # if the syscall is getdents, keep only the first and last 
-    # parameters.
+    
+    # if the syscall is getdents, keep only the first and last parameters.
     if syscall_name.startswith("getdents"):
       parameters = [parameters[0], parameters[-1]]
+
+    # if the syscall is getdents, keep only the first two paramenters
+    if syscall_name.startswith("fcntl"):
+      parameters = [parameters[0], parameters[1]]
+    
     # Fix errors from split on messages
-    _mergeQuoteParameters(parameters)
+    mergeQuoteParameters(parameters)
     
     # Get the return part.
     trussResult = line[line.rfind(')')+1:]
@@ -82,13 +91,13 @@ def get_traces(fh):
       trussResult = (trussResult, None)
 
     # translate arguments to the format expected by the IR
-    syscall_name = _translate_truss_arguments(fh, syscall_name, 
-                       parameters, trussResult)
+    syscall_name = _translate_truss_arguments(fh, syscall_name, parameters, 
+                                                trussResult)
 
-    trace = parse_trace(syscall_name, parameters, trussResult)
+    action = parse_syscall(syscall_name, parameters, trussResult)
     
-    if trace != UNIMPLEMENTED_ERROR:
-      traces.append(trace)
+    if action != UNIMPLEMENTED_ERROR:
+      actions.append(action)
   
   # display all skipped syscall_names.
   if(DEBUG):
@@ -96,16 +105,13 @@ def get_traces(fh):
     for skipped in SKIPPED_SYSCALLS:
       print skipped + ": " + str(SKIPPED_SYSCALLS[skipped])
   
-  # generate the initial file system needed by the model.
-  posix_generate_fs.generate_fs(traces, "posix_fs")
-
-  return traces
+  return actions
 
 """
-posix_intermediate_representation expects a slightly different
-argument format than the format used in truss. This IR format was
-heavily based on the format used in strace. Hence a translation step
-must be performed before the IR can parse these arguments.
+posix_intermediate_representation expects a slightly different argument format 
+than the format used in truss. This IR format was heavily based on the format 
+used in strace. Hence a translation step must be performed before the IR can 
+parse these arguments.
 """
 def _translate_truss_arguments(fh, syscall_name, args, result):
   # handle any 'syscall64' the exact same way as 'syscall'
@@ -116,14 +122,15 @@ def _translate_truss_arguments(fh, syscall_name, args, result):
   if syscall_name.endswith('4'):
     syscall_name = syscall_name[:syscall_name.rfind('4')]
   
-  # these system calls prepend an unnecessary argument. Remove it and
-  # rename the syscalls.
-  if syscall_name == "xstat" or syscall_name == "fxstat":
-    if syscall_name == "xstat":
-      syscall_name = "stat"
-    if syscall_name == "fxstat":
-      syscall_name = "fstat"
+  # these system calls prepend an unnecessary argument. Remove it and rename the
+  # syscalls.
+  if syscall_name == "xstat":
+    syscall_name = "stat"
     args.pop(0)
+  if syscall_name == "fxstat":
+    syscall_name = "fstat"
+    args.pop(0)
+    
   
   # Translate individual syscalls.
   if syscall_name == "so_socket":
@@ -262,20 +269,38 @@ def _translate_truss_arguments(fh, syscall_name, args, result):
     args.insert(10, st_atime)
     args.insert(11, st_mtime)
     args.insert(12, st_ctime)
+  
+  elif syscall_name == "fcntl":
+    if args[1] == "F_GETFL":
+      # translate return value from int to flags
+      result = (_translate_fcntl(result[0]), result[1])
+    # TODO: deal with different cmd options.
 
   elif (syscall_name == "close" or syscall_name == "access" or
         syscall_name == "chdir" or syscall_name == "rmdir" or 
         syscall_name == "mkdir" or syscall_name == "link" or
         syscall_name == "symlink" or syscall_name == "unlink" or
         syscall_name == "open" or syscall_name == "lseek" or
-        syscall_name == "dup" or syscall_name == "dup2" or 
-        syscall_name == "fcntl"):
+        syscall_name == "dup" or syscall_name == "dup2"):
     # 1698: close(3)          = 0
     # 1600: access("syscalls.txt", F_OK)          = 0
     # 1621: chdr(".")          = 0
     # 1621: rmdir("sycalls_dir")          = 0
     # 1621: mkdir("sycalls_dir", 0775)          = 0
     pass
+
+  """
+  I need to add support for:
+    statvfs
+    fstatvfs
+    fcntl -- return value 
+    recvmsg
+    sendmsg
+    clone
+    ioctl
+    select
+    poll
+  """
 
   return syscall_name
 
@@ -284,44 +309,16 @@ def _translate_truss_arguments(fh, syscall_name, args, result):
 #####################
 # Helper Functions. #
 #####################
-def _mergeQuoteParameters(parameters):
-  _removeEmptyParameters(parameters)
-  if len(parameters) <= 1:
-    return
-  index = 0
-  while index < len(parameters):
-    if  parameters[index][0] == "\"" and (len(parameters[index]) == 1 or parameters[index].strip(".")[-1] != "\"" or parameters[index].endswith("\\\"")):
-      # The only quote is the first quote which means the whole sentence got split and should be put back together.
-      while index+1 < len(parameters):
-        if parameters[index+1].strip(".")[-1] != "\"" or parameters[index+1].strip(".").endswith("\\\""):
-          parameters[index] += ", " + parameters[index+1]
-          parameters.pop(index+1)
-        else:
-          parameters[index] += ", " + parameters[index+1]
-          parameters.pop(index+1)
-          break
-    index += 1
-
-
-def _removeEmptyParameters(parameters):
-  index = 0
-  while index < len(parameters):
-    if len(parameters[index]) == 0:
-      parameters.pop(index)
-    else:
-      index += 1
-
-
 def _get_sockaddr(fh, result):
   """
   Returns a tuple (family, ip, port)
 
-  The sockaddr structure is given in the line following the current
-  line. If the line is of the expected format, the line is read and
-  the information returned in a tuple. Otherwise an exception is
-  raised.
+  The sockaddr structure is given in the line following the current line. If the
+  line is of the expected format, the line is read and the information returned 
+  in a tuple. Otherwise undo reading the next line.
   """
   
+  # initialize to empty strings
   family = ""
   ip = ""
   port = ""
@@ -622,6 +619,46 @@ def _translate_mode(mode):
   return flags + "|0" + str(mode)
 
 
+def _translate_fcntl(num):
+  """
+  Translate fcntl return value from format:
+  2 to "O_RDWR"
+  or
+  130 to "O_NONBLOCK|O_RDWR"
+  """
+
+  # taken from Solaris 10: /usr/include/sys/fcntl.h
+  fcntl_flags = {
+    0:"O_RDONLY",
+    1:"O_WRONLY",
+    2:"O_RDWR",
+    4:"O_NDELAY",
+    8:"O_APPEND",
+    16:"O_SYNC",
+    64:"O_DSYNC",
+    128:"O_NONBLOCK",
+    4096:"O_PRIV",
+    8192:"O_LARGEFILE",
+    32768:"O_RSYNC"
+  }
+  
+  num = int(num)
+
+  flags = ""
+  while num != 0:
+    if DEBUG:
+      print num
+    for f in sorted(fcntl_flags.keys(), reverse=True):
+      if num >= f:
+        if flags == "":
+          flags = fcntl_flags[f]
+        else:
+          flags += "|" + fcntl_flags[f]
+
+        num -= f
+    
+  return flags
+
 
 def _translate_time(time):
   """
@@ -671,20 +708,3 @@ def _translate_time(time):
                     time_parts[4] + " of time: " + time)
   return (time_parts[4] + "/" + time_parts[0] + "/" + time_parts[1] +
          "-" + time_parts[2])
-
-
-
-
-if __name__ == "__main__":
-  if len(sys.argv) < 2:
-    raise Exception("Too few command line arguments.\nUsage: python " + 
-                    sys.argv[0] + " traceFile [syscalName]")
-
-  fh = open(sys.argv[1], "r")
-  trace = get_traces(fh)
-  for action in trace:
-    if len(sys.argv) > 2:
-      if sys.argv[2]+"_syscall" == action[0]:
-        print "Action: ", action
-    else:
-      print "Action: ", action

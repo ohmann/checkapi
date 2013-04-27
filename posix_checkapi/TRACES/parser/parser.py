@@ -38,7 +38,7 @@ import generate_lind_fs
 import parser_truss_calls
 import parser_strace_calls
 
-DEBUG = False
+DEBUG = True
 
 """
 Given a path to a trace file, this function performs the following operations:
@@ -74,8 +74,8 @@ def generate_trace_bundle(trace_path, parser):
 
   if DEBUG:
     for action in actions:
-      print "Action: ", action
-
+      print action
+  """
   # generate the initial file system needed by the model.
   generate_lind_fs.generate_fs(actions)
   
@@ -132,7 +132,7 @@ def generate_trace_bundle(trace_path, parser):
   for fname in os.listdir(os.getcwd()):
     if fname.startswith("linddata."):
       os.remove(fname)
-
+  """
 
 
 

@@ -16,7 +16,7 @@
 from parser_helper_calls import *
 
 
-DEBUG = True
+DEBUG = False
 
 
 
@@ -85,14 +85,15 @@ def parse_trace(fh):
 
     # in case of an error include the error name as well.
     if trussResult == -1 and len(spaced_results) > 1:
-      trussResult = (trussResult, spaced_results[1])
+      trussResult = [trussResult, spaced_results[1]]
     else:
       # if no error, use None as the second return value
-      trussResult = (trussResult, None)
+      trussResult = [trussResult, None]
 
     # translate arguments to the format expected by the IR
     syscall_name = _translate_truss_arguments(fh, syscall_name, parameters, 
                                                 trussResult)
+    
 
     action = parse_syscall(syscall_name, parameters, trussResult)
     
@@ -171,8 +172,6 @@ def _translate_truss_arguments(fh, syscall_name, args, result):
       args.insert(2, port)
       args.insert(3, ip)
 
-    print args
-
   elif syscall_name == "sendto" or syscall_name == "recvfrom":
     # 3323: sendto(3, 0x08059C1D, 20, 0, 0x080474F0, 16)  = 20
     # 3323:    M e s s a g e   f o r   s e n d t o .\0
@@ -186,6 +185,7 @@ def _translate_truss_arguments(fh, syscall_name, args, result):
       # string is given rather than the string itself. The latter is
       # hence provided in the next line.
       args[1] = _get_message(fh, result[0]) # replace string address
+    
     # read family ip and port from the next line.
     (afamily, ip, port) = _get_sockaddr(fh, result)
     # replace argument 4 with afamily. Before this replacement,
@@ -269,11 +269,53 @@ def _translate_truss_arguments(fh, syscall_name, args, result):
     args.insert(10, st_atime)
     args.insert(11, st_mtime)
     args.insert(12, st_ctime)
+
+  elif syscall_name == "fstatvfs" or syscall_name == "statvfs":
+    # strace example:
+    # 7196  fstatfs(3, {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, 
+    #                   f_blocks=4553183, f_bfree=1919236, f_bavail=1687940, 
+    #                   f_files=1158720, f_ffree=658797, 
+    #                   f_fsid={-1853641883, -1823071587}, 
+    #                   f_namelen=255, f_frsize=4096}) = 0
+    #
+    # truss example:
+    # 2373: fstatvfs(3, 0x08047460)       = 0
+    # 2373:   bsize=8192       frsize=1024      blocks=8139687  bfree=3830956  
+    # 2373:   bavail=3749560   files=984256     ffree=797256    favail=797256   
+    # 2373:   fsid=0x780000    basetype=ufs     namemax=255
+    # 2373:   flag=ST_NOTRUNC
+    # 2373:   fstr=""
+
+    (f_type, f_bsize, f_blocks, f_bfree, f_bavail, f_files, f_ffree, f_fsid, 
+     f_namelen, f_frsize) = _get_statvfs(fh, result)
+    
+    args[1] = f_type # replace structure address
+    args.insert(2, f_bsize)
+    args.insert(3, f_blocks)
+    args.insert(4, f_bfree)
+    args.insert(5, f_bavail)
+    args.insert(6, f_files)
+    args.insert(7, f_ffree)
+    args.insert(8, f_fsid)
+    args.insert(9, f_namelen)
+    args.insert(10, f_frsize)
+
+    if syscall_name == "fstatvfs":
+      syscall_name = "fstatfs"
+    else:
+      syscall_name = "statfs"
+
   
   elif syscall_name == "fcntl":
     if args[1] == "F_GETFL":
       # translate return value from int to flags
-      result = (_translate_fcntl(result[0]), result[1])
+      flags = _translate_fcntl(result[0])
+      
+      # remove the current result[0]
+      result.pop(0)
+      # and replace it with the flags
+      result.insert(0, flags)
+
     # TODO: deal with different cmd options.
 
   elif (syscall_name == "close" or syscall_name == "access" or
@@ -329,13 +371,16 @@ def _get_sockaddr(fh, result):
     last_file_pos = fh.tell()
     line = fh.readline()
     # the expected format must contain the label "port =" and either
-    # "name =" or "to ="
-    if ((line.find("name =") != -1 or line.find("to =") != -1) and 
-         line.find("port =") != -1):
-      # ip can be labeled as "name =" or "to ="
+    # "name =" or "to =" or "from ="
+    if ((line.find("name =") != -1 or line.find("to =") != -1 or 
+         line.find("from =") != -1) and line.find("port =") != -1):
+      # ip can be labeled as "name =" or "to =" or "from ="
       if line.find("name =") != -1:
         family = line[line.find(":")+1:line.find("name =")].strip()
         ip = line[line.find("name =")+6:line.find("port =")].strip()
+      elif line.find("from =") != -1:
+        family = line[line.find(":")+1:line.find("from =")].strip()
+        ip  = line[line.find("from =")+6:line.find("port =")].strip()
       else:
         family = line[line.find(":")+1:line.find("to =")].strip()
         ip  = line[line.find("to =")+4:line.find("port =")].strip()
@@ -580,6 +625,103 @@ def _get_stat(fh, result):
           st_mtime, st_ctime)
 
 
+def _get_statvfs(fh, result):
+  """
+  Returns a tuple (f_type, f_bsize, f_blocks, f_bfree, f_bavail, f_files, 
+                   f_ffree, f_fsid, f_namelen, f_frsize)
+
+  The statvfs structure is given in the lines following the current line. If the 
+  lines contain the information needed, the lines are read and the information 
+  returned in a tuple. If the line is not of the expected format an exception is 
+  raised.
+  """
+
+  # initialize expected values.
+  f_type = ""
+  f_bsize = ""
+  f_blocks = ""
+  f_bfree = ""
+  f_bavail = ""
+  f_files = ""
+  f_ffree = ""
+  f_fsid = ""
+  f_namelen = ""
+  f_frsize = ""
+  
+  skip_rest = False
+  # if the syscall returned an error, don't parse the statvfs structure
+  if result[0] != -1:
+    # first line:
+    # 2373:   bsize=8192       frsize=1024      blocks=8139687  bfree=3830956  
+    last_file_pos = fh.tell()
+    line = fh.readline()
+    
+    if (line.find("bsize=") != -1 and line.find("frsize=") != -1 and
+        line.find("blocks=") != -1 and line.find("bfree=") != -1):
+      # parse the values from the line
+      f_bsize = line[line.find("bsize=")+6:line.find("frsize=")].strip()
+      f_frsize = line[line.find("frsize=")+7:line.find("blocks=")].strip()
+      f_blocks = line[line.find("blocks=")+7:line.find("bfree=")].strip()
+      f_bfree = line[line.find("bfree=")+6:].strip()
+    else:
+      # undo reading so that the next line will be read in the next
+      # iteration.
+      fh.seek(last_file_pos)
+      # if the first statvfs line is missing then so will all the other
+      # statvfs lines
+      skip_rest = True
+
+    if not skip_rest:
+      # second line:
+      # 2373:   bavail=3749560   files=984256     ffree=797256    favail=797256   
+      line = fh.readline()
+      if (line.find("bavail=") != -1 and line.find("files=") != -1 and 
+          line.find("ffree=") != -1 and line.find("favail=") != -1):
+        # parse the values from the line
+        f_bavail = line[line.find("bavail=")+7:line.find("files=")].strip()
+        f_files = line[line.find("files=")+6:line.find("ffree=")].strip()
+        f_ffree = line[line.find("ffree=")+6:line.find("favail=")].strip()
+      else:
+        raise Exception("Unexpected format when translating second line "
+                        "of statvfs: " + line)
+
+    if not skip_rest:
+      # third line:
+      # 2373:   fsid=0x780000    basetype=ufs     namemax=255
+      line = fh.readline()
+      if (line.find("fsid=") != -1 and line.find("basetype=") != -1 and 
+          line.find("namemax=") != -1):
+        # parse the values from the line
+        f_fsid = line[line.find("fsid=")+5:line.find("basetype=")].strip()
+        f_type = line[line.find("basetype=")+9:line.find("namemax=")].strip()
+        f_namelen = line[line.find("namemax=")+8:].strip()
+      else:
+        raise Exception("Unexpected format when translating third line "
+                        "of statvfs: " + line)
+      
+
+  # translate to expected format.
+  # Example expected format:
+  # 7196  fstatfs(3, {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, 
+  #                   f_blocks=4553183, f_bfree=1919236, f_bavail=1687940, 
+  #                   f_files=1158720, f_ffree=658797, 
+  #                   f_fsid={-1853641883, -1823071587}, 
+  #                   f_namelen=255, f_frsize=4096}) = 0
+  f_type = "f_type=" + f_type
+  f_bsize = "f_bsize=" + f_bsize
+  f_blocks = "f_blocks=" + f_blocks
+  f_bfree = "f_bfree=" + f_bfree
+  f_bavail = "f_bavail=" + f_bavail
+  f_files = "f_files=" + f_files
+  f_ffree = "f_ffree=" + f_ffree
+  f_fsid = "f_fsid=" + f_fsid
+  f_namelen = "f_namelen=" + f_namelen
+  f_frsize = "f_frsize=" + f_frsize + "}"
+  
+  return (f_type, f_bsize, f_blocks, f_bfree, f_bavail, f_files, f_ffree, f_fsid, 
+          f_namelen, f_frsize)
+
+
 def _translate_mode(mode):
   """
   Translate mode from format:
@@ -613,10 +755,18 @@ def _translate_mode(mode):
   while flag_num != 0:
     for f in sorted(stat_flags.keys(), reverse=True):
       if flag_num >= f:
-        flags += stat_flags[f] + "|"
+        if flags == "":
+          flags = stat_flags[f]
+        else:
+          flags += "|" + stat_flags[f]
+
         flag_num -= f
-    
-  return flags + "|0" + str(mode)
+        break
+  
+  if mode != 0:
+    flags += "|0" + str(mode)
+
+  return flags
 
 
 def _translate_fcntl(num):
@@ -656,7 +806,10 @@ def _translate_fcntl(num):
           flags += "|" + fcntl_flags[f]
 
         num -= f
-    
+        break
+
+  if flags == "":
+    return "O_RDONLY"
   return flags
 
 

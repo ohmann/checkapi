@@ -113,10 +113,7 @@ class Int():
     # dereferenced numbers are wrapped in []
     if val.startswith('[') and val.endswith(']'):
       val = val[1:-1]
-    # some numbers are followed by a comment inside /* */
-    # eg shutdown syscall.
-    if val.find('/*') != -1 and val.find('*/') != -1:
-      val = val[:val.find('/*')].strip()
+      
     try:
       val = int(val)
     except ValueError:
@@ -289,13 +286,10 @@ class FFsid():
   def parse(self, val=None):
     if val == None or val == "" or val.startswith('0x'):
       return Unknown('FFsid', val)
-    if val.find("f_fsid={") == -1 or val.find("}") == -1:
+    if val.startswith("f_fsid="):
+      val = val[val.find("f_fsid=")+7:]
+    else:
       raise Exception("Unexpected format when parsing FFsid", val)
-    val = val[val.find("f_fsid=")+7:]
-    val = val.replace("{", "")
-    val = val.replace("}", "")
-    val = val.replace(",", "")
-    val = map(int, val.split())
     return val
 
 
@@ -382,16 +376,33 @@ Add support for:
   - sendfile
 """
 HANDLED_SYSCALLS_INFO = {
-  # int socket(int domain, int type, int protocol);
+  # int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
   # 
   # Example strace output:
-  # 19176 socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
-  # 19294 socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP) = 3
-  "socket": {
-    'args': (ZeroOrListOfFlags(), ZeroOrListOfFlags(), 
-             ZeroOrListOfFlags()),
+  # 19176 accept(3, {sa_family=AF_INET, sin_port=htons(42572),
+  #              sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+  "accept": {
+    'args': (Int(), 
+             ZeroOrListOfFlags(label_left="sa_family=", output=True), 
+             Int(label_left="sin_port=htons(", label_right=")", 
+                 output=True),
+             Str(label_left="sin_addr=inet_addr(", label_right=")", 
+                 output=True), 
+             Int(output=True)),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+
+  # int access(const char *pathname, int mode);
+  # 
+  # Example strace output:
+  # 19178 access("syscalls.txt", F_OK) = 0
+  # 19178 access("syscalls.txt", R_OK|W_OK) = 0
+  # 19178 access("syscalls.txt", X_OK) = -1 EACCES (Permission denied)
+  "access": {
+    'args': (Str(), ZeroOrListOfFlags()),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+
   # int bind(int sockfd, const struct sockaddr *addr, 
   #          socklen_t addrlen);
   # 
@@ -408,6 +419,49 @@ HANDLED_SYSCALLS_INFO = {
             Int()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+  
+  # int chdir(const char *path);
+  # 
+  # Example strace output:
+  # 19217 chdir(".") = 0
+  "chdir": {
+    'args': (Str(),),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+
+  # int clone(int (*fn)(void *), void *child_stack, int flags, 
+  #           void *arg, ... /* pid_t *ptid, struct user_desc *tls, 
+  #           pid_t *ctid */ );
+  # 
+  # Example strace output:
+  # 7122 clone(child_stack=0xb7507464, 
+  #            flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|
+  #                  CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|
+  #                  CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, 
+  #            parent_tidptr=0xb7507ba8, {entry_number:6, 
+  #            base_addr:0xb7507b40, limit:1048575, seg_32bit:1, 
+  #            contents:0, read_exec_only:0, limit_in_pages:1, 
+  #            seg_not_present:0, useable:1}, 
+  #            child_tidptr=0xb7507ba8) = 7123
+  # 
+  "clone": {
+    'args': (Str(label_left="child_stack="), 
+             ZeroOrListOfFlags(label_left="flags="),
+             SkipRemaining()),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+
+  # int socket(int domain, int type, int protocol);
+  # 
+  # Example strace output:
+  # 19176 socket(PF_INET, SOCK_STREAM,accept IPPROTO_IP) = 3
+  # 19294 socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP) = 3
+  "socket": {
+    'args': (ZeroOrListOfFlags(), ZeroOrListOfFlags(), 
+             ZeroOrListOfFlags()),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+  
   # int connect(int sockfd, const struct sockaddr *addr, 
   #             socklen_t addrlen);
   # 
@@ -512,21 +566,7 @@ HANDLED_SYSCALLS_INFO = {
     'args': (Int(), Int()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
-  # int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-  # 
-  # Example strace output:
-  # 19176 accept(3, {sa_family=AF_INET, sin_port=htons(42572),
-  #              sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
-  "accept": {
-    'args': (Int(), 
-             ZeroOrListOfFlags(label_left="sa_family=", output=True), 
-             Int(label_left="sin_port=htons(", label_right=")", 
-                 output=True),
-             Str(label_left="sin_addr=inet_addr(", label_right=")", 
-                 output=True), 
-             Int(output=True)),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
+
   # int getsockopt(int sockfd, int level, int optname, void *optval, 
   #                socklen_t *optlen);
   # 
@@ -554,7 +594,7 @@ HANDLED_SYSCALLS_INFO = {
   # 19316 shutdown(5, 0 /* receive */) = 0
   # 19316 shutdown(5, 2 /* send and receive */) = 0
   "shutdown": {
-    'args': (Int(), Int()),
+    'args': (Int(), ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
   # int close(int fd);
@@ -607,24 +647,8 @@ HANDLED_SYSCALLS_INFO = {
              Int(label_left="f_frsize=", label_right="}", output=True)),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
-  # int access(const char *pathname, int mode);
-  # 
-  # Example strace output:
-  # 19178 access("syscalls.txt", F_OK) = 0
-  # 19178 access("syscalls.txt", R_OK|W_OK) = 0
-  # 19178 access("syscalls.txt", X_OK) = -1 EACCES (Permission denied)
-  "access": {
-    'args': (Str(), ZeroOrListOfFlags()),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
-  # int chdir(const char *path);
-  # 
-  # Example strace output:
-  # 19217 chdir(".") = 0
-  "chdir": {
-    'args': (Str(),),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
+  
+  
   # int mkdir(const char *pathname, mode_t mode);
   # 
   # Example strace output:
@@ -681,6 +705,14 @@ HANDLED_SYSCALLS_INFO = {
   #    st_ctime=2013/03/06-00:17:54}) = 0
   # 19321 stat64("hopefully_no_such_filename_exists.txt", 
   #              0xbf8c7d50) = -1 ENOENT (No such file or directory)
+  #
+  # Example truss output:
+  # 2303: stat64("/savvas/syscalls", 0x08047130)    = 0
+  # 2303:     d=0x00780000 i=299777 m=0100755 l=1  u=0     g=0     sz=59236
+  # 2303:   at = Apr 25 22:54:48 EDT 2013  [ 1366944888.736170000 ]
+  # 2303:   mt = Apr 25 21:43:45 EDT 2013  [ 1366940625.857272000 ]
+  # 2303:   ct = Apr 25 21:43:45 EDT 2013  [ 1366940625.857272000 ]
+  # 2303:     bsz=8192  blks=116   fs=ufs
   "stat": {
     'args': (Str(), StDev(output=True), 
              Int(label_left="st_ino=", output=True), 
@@ -866,27 +898,7 @@ HANDLED_SYSCALLS_INFO = {
              ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
-  # int clone(int (*fn)(void *), void *child_stack, int flags, 
-  #           void *arg, ... /* pid_t *ptid, struct user_desc *tls, 
-  #           pid_t *ctid */ );
-  # 
-  # Example strace output:
-  # 7122 clone(child_stack=0xb7507464, 
-  #            flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|
-  #                  CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|
-  #                  CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, 
-  #            parent_tidptr=0xb7507ba8, {entry_number:6, 
-  #            base_addr:0xb7507b40, limit:1048575, seg_32bit:1, 
-  #            contents:0, read_exec_only:0, limit_in_pages:1, 
-  #            seg_not_present:0, useable:1}, 
-  #            child_tidptr=0xb7507ba8) = 7123
-  # 
-  "clone": {
-    'args': (Str(label_left="child_stack="), 
-             ZeroOrListOfFlags(label_left="flags="),
-             SkipRemaining()),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
+  
   # int ioctl(int d, int request, ...);
   # 
   # ioctl(0, SNDCTL_TMR_TIMEBASE or TCGETS, {c_iflags=0x6d02, 

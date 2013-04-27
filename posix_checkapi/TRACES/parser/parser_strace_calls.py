@@ -147,6 +147,13 @@ def parse_trace(fh):
     # are the file descriptor and the buffer size.
     if syscall_name.startswith("getdents"):
       parameters = [parameters[0], parameters[-1]]
+
+    # change number to flag in shutdown according to first letter of second 
+    # parameter
+    # 7169  shutdown(5, 0 /* receive */)          = 0
+    if syscall_name.startswith("shutdown"):
+      shutdown_flags = {0:'SHUT_RD', 1:'SHUT_WR', 2:'SHUT_RDWR'}
+      parameters[1] = shutdown_flags[int(parameters[1][0])]
     
     # system calls statfs64 or fstatfs64, sometimes include an 
     # unnecessary numeric value as their second parameter. Remove it.

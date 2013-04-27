@@ -1,0 +1,552 @@
+     TRACE AND INTERMEDIATE REPRESENTATION(ACTIONS) COMPARISON 
+             BETWEEN LINUX(STRACE) AND SOLARIS(TRUSS)
+             ========================================
+
+Description:
+- For each system call, we provide a trace example for Linux and Solaris and
+the Linux IR action followed by the Solaris IR action.
+
+
+ACCEPT:
+=======
+Trace:
+7123  accept(3,  <unfinished ...>
+7122  connect(5, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16 <unfinished ...>
+7123  <... accept resumed> {sa_family=AF_INET, sin_port=htons(50383), sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+7122  <... connect resumed> )           = 0
+2303/2:   accept(3, 0xD1D3EFA0, 0xD1D3EF9C, SOV_DEFAULT)  = 4
+2303/2:     AF_INET  name = 127.0.0.1  port = 32892
+
+Action:
+('accept_syscall', (3,), (4, (['AF_INET'], 50383, '127.0.0.1', 16)))
+('accept_syscall', (3,), (4, (['AF_INET'], 32892, '127.0.0.1', <Unknown, expected_type='Int', given_value='0xD1D3EF9C'>)))
+
+Remarks:
+- truss does not dereference int*. The third parameter in Solaris will always be
+  Unknown.
+
+
+ACCESS:
+=======
+Trace:
+32289 access("syscalls.txt", F_OK)      = 0
+2309: access("syscalls.txt", F_OK)      = 0
+
+Action:
+('access_syscall', ('syscalls.txt', ['F_OK']), (0, None))
+('access_syscall', ('syscalls.txt', ['F_OK']), (0, None))
+
+
+BIND:
+=====
+Trace:
+438   bind(3, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+2535/2:   bind(3, 0xD1D3EFC0, 16, SOV_SOCKBSD)    = 0
+2535/2:     AF_INET  name = 0.0.0.0  port = 25588
+
+Action:
+('bind_syscall', (3, ['AF_INET'], 25588, '127.0.0.1', 16), (0, None))
+('bind_syscall', (3, ['AF_INET'], 25588, '0.0.0.0', 16), (0, None))
+
+
+CHDIR:
+======
+Trace:
+28991 chdir(".")                        = 0
+2315: chdir(".")          = 0
+
+Action:
+('chdir_syscall', ('.',), (0, None))
+('chdir_syscall', ('.',), (0, None))
+
+
+CLONE:
+=======
+Trace:
+
+Action:
+
+
+CLOSE:
+=======
+Trace:
+7175  close(3)                          = 0
+2329: close(3)          = 0
+
+Action:
+('close_syscall', (3,), (0, None))
+('close_syscall', (3,), (0, None))
+
+
+CONNECT:
+=======
+Trace:
+29303 connect(5, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+2335/1:   connect(5, 0x080474E0, 16, SOV_DEFAULT)   = 0
+2335/1:     AF_INET  name = 0.0.0.0  port = 25588
+
+Action:
+('connect_syscall', (5, ['AF_INET'], 25588, '127.0.0.1', 16), (0, None))
+('connect_syscall', (5, ['AF_INET'], 25588, '0.0.0.0', 16), (0, None))
+
+
+CREAT:
+=======
+Trace:
+11445 creat("syscalls.txt", 0666)       = 3
+2343: creat("syscalls.txt", 0666)     = 3
+
+Action:
+('creat_syscall', ('syscalls.txt', ['S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IWOTH', 'S_IROTH']), (3, None))
+('creat_syscall', ('syscalls.txt', ['S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IWOTH', 'S_IROTH']), (3, None))
+
+
+DUP:
+=======
+Trace:
+11458 dup(3)                            = 4
+2349: dup(3)            = 4
+
+Action:
+('dup_syscall', (3,), (4, None))
+('dup_syscall', (3,), (4, None))
+
+
+DUP2:
+=======
+Trace:
+11460 dup2(3, 4)                        = 4
+2355: fcntl(3, F_DUP2FD, 0x00000004)      = 4
+
+Action:
+('dup2_syscall', (3, 4), (4, None))
+('fcntl_syscall', (3, ['F_DUP2FD']), (4, None))
+
+Remarks:
+- in Solaris dup2 is replaced with fcntl with F_DUP2FD as its second argument.
+
+
+DUP3:
+=======
+Trace:
+11464 dup3(3, 4, O_CLOEXEC)             = 4
+
+Action:
+('dup3_syscall', (3, 4, ['O_CLOEXEC']), (4, None))
+
+Remarks:
+- dup3 does not exist in Solaris.
+
+
+FCNTL:
+======
+Trace:
+11470 fcntl64(3, F_GETFL)               = 0 (flags O_RDONLY)
+11470 fcntl64(4, F_GETFL)               = 0x402 (flags O_RDWR|O_APPEND)
+2361: fcntl(3, F_GETFL)       = 0
+    (no flags)
+2361: fcntl(4, F_GETFL)       = 10
+    FWRITE|FAPPEND
+
+Action:
+('fcntl_syscall', (3, ['F_GETFL']), (['O_RDONLY'], None))
+('fcntl_syscall', (4, ['F_GETFL']), (['O_RDWR', 'O_APPEND'], None))
+('fcntl_syscall', (3, ['F_GETFL']), (['O_RDONLY'], None))
+('fcntl_syscall', (4, ['F_GETFL']), (['O_APPEND', 'O_RDWR'], None))
+
+
+FSTAT:
+======
+Trace:
+11439 fstat64(3, {st_dev=makedev(8, 6), st_ino=700117, st_mode=S_IFREG|0664, st_nlink=1, st_uid=1000, st_gid=1000, st_blksize=4096, st_blocks=0, st_size=0, st_atime=2013/03/06-04:16:17, st_mtime=2013/03/06-04:16:17, st_ctime=2013/03/06-04:16:17}) = 0
+11439 fstat64(3, 0xbf8ec670)            = -1 EBADF (Bad file descriptor)
+2367: fxstat(2, 3, 0x08047470)      = 0
+2367:     d=0x00780000 i=299765 m=0100644 l=1  u=0     g=0     sz=0
+2367:   at = Apr 25 21:56:13 EDT 2013  [ 1366941373.210122000 ]
+2367:   mt = Apr 25 23:01:00 EDT 2013  [ 1366945260.884232000 ]
+2367:   ct = Apr 25 23:01:00 EDT 2013  [ 1366945260.884232000 ]
+2367:     bsz=8192  blks=0     fs=ufs
+2367: close(3)          = 0
+2367: fxstat(2, 3, 0x08047470)      Err#9 EBADF
+
+Action:
+('fstat_syscall', (3,), (0, ('makedev(8, 6)', 700117, ['S_IFREG', 'S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IROTH'], 1, 1000, 1000, 4096, 0, 0, '2013/03/06-04:16:17', '2013/03/06-04:16:17', '2013/03/06-04:16:17')))
+('fstat_syscall', (3,), (-1, 'EBADF'))
+('fstat_syscall', (3,), (0, ('0x00780000', 299765, ['S_IFREG', 'S_IWUSR', 'S_IRUSR', 'S_IRGRP', 'S_IROTH'], 1, 0, 0, 8192, 0, 0, '2013/04/25-21:56:13', '2013/04/25-23:01:00', '2013/04/25-23:01:00')))
+('fstat_syscall', (3,), (-1, 'EBADF'))
+
+Remarks:
+- Solaris uses fxstat as the name of the syscall
+- Solaris prepends an int as the first argument of the syscall.
+- Linux uses a different representation for st_dev
+
+
+FSTATFS:
+=======
+Trace:
+7196  fstatfs(3, {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, f_blocks=4553183, f_bfree=1919236, f_bavail=1687940, f_files=1158720, f_ffree=658797, f_fsid={-1853641883, -1823071587}, f_namelen=255, f_frsize=4096}) = 0
+2373: fstatvfs(3, 0x08047460)       = 0
+2373:   bsize=8192       frsize=1024      blocks=8139687  bfree=3830956  
+2373:   bavail=3749560   files=984256     ffree=797256    favail=797256   
+2373:   fsid=0x780000    basetype=ufs     namemax=255
+2373:   flag=ST_NOTRUNC
+2373:   fstr=""
+
+Action:
+('fstatfs_syscall', (3,), (0, ('EXT2_SUPER_MAGIC', 4096, 4553183, 1919236, 1687940, 1158720, 658797, '{-1853641883, -1823071587}', 255, 4096)))
+('fstatfs_syscall', (3,), (0, ('ufs', 8192, 8139687, 3830956, 3749560, 984256, 797256, '0x780000', 255, 1024)))
+
+Remarks:
+- Solaris names this syscall fstavfs
+- Solaris uses the struct statvfs and Linux uses the struct statfs
+- Solaris includes a few extra labels which are skipped
+- Solaris does not dereference the f_fsid field.
+
+
+GETDENTS:
+=========
+Trace:
+1859  getdents64(3, {{d_ino=852433, d_off=364899947, d_type=DT_REG, d_reclen=32, d_name="syscalls"} {d_ino=852432, d_off=517800833, d_type=DT_REG, d_reclen=40, d_name="syscalls_functions.o"} {d_ino=652911, d_off=915943621, d_type=DT_DIR, d_reclen=24, d_name=".."} {d_ino=852431, d_off=926822635, d_type=DT_REG, d_reclen=32, d_name="syscalls.o"} {d_ino=818756, d_off=1094670544, d_type=DT_DIR, d_reclen=32, d_name="reformatting"} {d_ino=825266, d_off=1165177313, d_type=DT_REG, d_reclen=32, d_name="syscalls.h"} {d_ino=818755, d_off=1273569230, d_type=DT_REG, d_reclen=40, d_name="all_characters.py"} {d_ino=818750, d_off=1320755092, d_type=DT_REG, d_reclen=32, d_name="client.c"} {d_ino=818736, d_off=1488048576, d_type=DT_REG, d_reclen=40, d_name="syscalls_functions.c"} {d_ino=818733, d_off=1583054200, d_type=DT_DIR, d_reclen=24, d_name="."} {d_ino=881760, d_off=1693411400, d_type=DT_DIR, d_reclen=32, d_name="TRACES"} {d_ino=852580, d_off=1719963212, d_type=DT_REG, d_reclen=40, d_name="getdents.strace"} {d_ino=818751, d_off=1790623270, d_type=DT_REG, d_reclen=32, d_name="server.c"} {d_ino=818743, d_off=1993576571, d_type=DT_REG, d_reclen=32, d_name="Makefile"} {d_ino=818749, d_off=2124195000, d_type=DT_REG, d_reclen=32, d_name="syscalls.c"} {d_ino=818739, d_off=2147483647, d_type=DT_REG, d_reclen=40, d_name="syscalls_functions.h"}}, 32768) = 536
+2384: getdents64(3, 0xD1F64000, 8192)     = 1408
+2384:     ino=299445 off=12   rlen=24  "."
+2384:     ino=2     off=24   rlen=24  ".."
+2384:     ino=299725 off=56   rlen=32  "dtruss"
+2384:     ino=299631 off=80   rlen=32  "fs_syscalls.d"
+2384:     ino=299672 off=1460 rlen=32  "syscalls.link"
+2384:     ino=299602 off=1536 rlen=32  "shared"
+2384:     ino=299547 off=2048 rlen=40  "trussExamples.txt"
+2384:     ino=299773 off=2560 rlen=32  "syscalls_dir"
+2384: getdents64(3, 0xD1F64000, 8192)     = 0
+
+Action:
+('getdents_syscall', (3, 32768), (536, None))
+('getdents_syscall', (3, 8192), (1408, None))
+
+Remarks:
+- we keep only the first and last arguments of getdents
+
+
+GETPEERNAME:
+============
+Trace:
+7088  getpeername(5, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, [16]) = 0
+2388/1:   getpeername(5, 0x080474C0, 0x080474D8, SOV_DEFAULT) = 0
+2388/1:     AF_INET  name = 127.0.0.1  port = 25588
+
+Action:
+('getpeername_syscall', (5,), (0, (['AF_INET'], 25588, '127.0.0.1', 16)))
+('getpeername_syscall', (5,), (0, (['AF_INET'], 25588, '127.0.0.1', <Unknown, expected_type='Int', given_value='0x080474D8'>)))
+
+Remarks:
+- In Solaris, int* not dereferences, hence address length not displayed.
+
+
+GETSOCKNAME:
+============
+Trace:
+12183 getsockname(3, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, [16]) = 0
+2394: getsockname(3, 0x080474C0, 0x080474DC, SOV_DEFAULT) = 0
+2394:   AF_INET  name = 0.0.0.0  port = 25588
+
+Action:
+('getsockname_syscall', (3,), (0, (['AF_INET'], 25588, '127.0.0.1', 16)))
+('getsockname_syscall', (3,), (0, (['AF_INET'], 25588, '0.0.0.0', <Unknown, expected_type='Int', given_value='0x080474DC'>)))
+
+Remarks:
+- In Solaris, int* not dereferences, hence address length not displayed.
+
+
+GETSOCKOPT:
+===========
+Trace:
+7141  getsockopt(3, SOL_SOCKET, SO_TYPE, [1], [4]) = 0
+2400: getsockopt(3, SOL_SOCKET, SO_TYPE, 0x08047500, 0x080474FC, SOV_DEFAULT) = 0
+
+Action:
+('getsockopt_syscall', (3, ['SOL_SOCKET'], ['SO_TYPE']), (0, (1, 4)))
+('getsockopt_syscall', (3, ['SOL_SOCKET'], ['SO_TYPE']), (0, (<Unknown, expected_type='Int', given_value='0x08047500'>, <Unknown, expected_type='Int', given_value='0x080474FC'>)))
+
+Remarks:
+- In Solaris, int* not dereferenced.
+
+
+IOCTL:
+=======
+Trace:
+
+Action:
+
+
+LINK:
+=======
+Trace:
+11426 link("syscalls.txt", "syscalls.link") = 0
+2406: link("syscalls.txt", "syscalls.link")   Err#17 EEXIST
+
+Action:
+('link_syscall', ('syscalls.txt', 'syscalls.link'), (0, None))
+('link_syscall', ('syscalls.txt', 'syscalls.link'), (-1, 'EEXIST'))
+
+
+LISTEN:
+=======
+Trace:
+13207 listen(3, 5)                      = 0
+2412/2:   listen(3, 5, SOV_DEFAULT)     = 0
+
+Action:
+('listen_syscall', (3, 5), (0, None))
+('listen_syscall', (3, 5), (0, None))
+
+
+
+LSEEK:
+=======
+Trace:
+11447 lseek(3, 1, SEEK_SET)             = 1
+2418: lseek(3, 1, SEEK_SET)       = 1
+
+Action:
+('lseek_syscall', (3, 1, ['SEEK_SET']), (1, None))
+('lseek_syscall', (3, 1, ['SEEK_SET']), (1, None))
+
+
+MKDIR:
+=======
+Trace:
+2478  mkdir("syscalls_dir", 0775)       = 0
+2424: mkdir("syscalls_dir", 0775)     Err#17 EEXIST
+
+Action:
+('mkdir_syscall', ('syscalls_dir', ['S_IRWXU', 'S_IRWXG', 'S_IXOTH', 'S_IROTH']), (0, None))
+('mkdir_syscall', ('syscalls_dir', ['S_IRWXU', 'S_IRWXG', 'S_IXOTH', 'S_IROTH']), (-1, 'EEXIST'))
+
+
+OPEN:
+=======
+Trace:
+11443 open("syscalls.txt", O_RDONLY|O_CREAT, 0664) = 3
+2430: open("syscalls.txt", O_RDONLY|O_CREAT, 0664)  = 3
+
+Action:
+('open_syscall', ('syscalls.txt', ['O_RDONLY', 'O_CREAT'], ['S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IROTH']), (3, None))
+('open_syscall', ('syscalls.txt', ['O_RDONLY', 'O_CREAT'], ['S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IROTH']), (3, None))
+
+
+POLL:
+=======
+Trace:
+
+Action:
+
+
+READ:
+=======
+Trace:
+11452 read(3, "abcdefghijklmnopqrst", 20) = 20
+2436: read(3, 0x080474D0, 20)       = 20
+2436:    a b c d e f g h i j k l m n o p q r s t
+
+Action:
+('read_syscall', (3, 20), (20, ('abcdefghijklmnopqrst',)))
+('read_syscall', (3, 20), (20, ('abcdefghijklmnopqrst',)))
+
+
+RECV:
+=======
+Trace:
+7051  recv(5,  <unfinished ...>
+7052  send(4, "Message to be received.\0", 24, 0) = 24
+7051  <... recv resumed> "Message to be received.\0", 24, 0) = 24
+2463: recv(5, 0x080474A0, 24, 0)      = 24
+2463:    M e s s a g e   t o   b e   r e c e i v e d .\0
+
+Action:
+('recv_syscall', (5, 24, 0), (24, ('Message to be received.\x00',)))
+('recv_syscall', (5, 24, 0), (24, ('Message to be received.\x00',)))
+
+
+RECVFROM:
+=======
+Trace:
+7022  recvfrom(3,  <unfinished ...>
+7021  sendto(4, "Message for sendto.\0", 20, 0, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 20
+7022  <... recvfrom resumed> "Message for sendto.\0", 512, 0, {sa_family=AF_INET, sin_port=htons(52213), sin_addr=inet_addr("127.0.0.1")}, [16]) = 20
+2535/2:   recvfrom(3, 0xD1D3EDA0, 512, 0, 0xD1D3EFB0, 0xD1D3EFA8) (sleeping...)
+2535/1:   sendto(4, 0x08059F3D, 20, 0, 0x080474D0, 16)  = 20
+2535/1:      M e s s a g e   f o r   s e n d t o .\0
+2535/1:     AF_INET  to = 0.0.0.0  port = 25588
+2535/2:   recvfrom(3, 0xD1D3EDA0, 512, 0, 0xD1D3EFB0, 0xD1D3EFA8) = 20
+2535/2:      M e s s a g e   f o r   s e n d t o .\0
+2535/2:     AF_INET  from = 127.0.0.1  port = 33035
+
+Action:
+('recvfrom_syscall', (3, 512, 0), (20, ('Message for sendto.\x00', ['AF_INET'], 52213, '127.0.0.1', 16)))
+('recvfrom_syscall', (3, 512, 0), (20, ('Message for sendto.\x00', ['AF_INET'], 33035, '= 127.0.0.1', <Unknown, expected_type='Int', given_value='0xD1D3EFA8'>)))
+
+Remarks:
+- Solaris: int not dereferenced.
+
+RECVMSG:
+=======
+Trace:
+
+Action:
+
+
+RMDIR:
+=======
+Trace:
+2833  rmdir("syscalls_dir")             = 0
+2549: rmdir("syscalls_dir")       = 0
+
+Action:
+('rmdir_syscall', ('syscalls_dir',), (0, None))
+('rmdir_syscall', ('syscalls_dir',), (0, None))
+
+
+SELECT:
+=======
+Trace:
+
+Action:
+
+
+SEND:
+=======
+Trace:
+526   send(5, "None shall be revealed\0", 23, MSG_OOB) = 23
+2563/1:   send(5, 0x08059F11, 23, 1)      = 23
+2563/1:      N o n e   s h a l l   b e   r e v e a l e d\0
+
+Action:
+('send_syscall', (5, 'None shall be revealed\x00', 23, ['MSG_OOB']), (23, None))
+('send_syscall', (5, 'None shall be revealed\x00', 23, <Unknown, expected_type='ZeroOrListOfFlags', given_value=1>), (23, None))
+
+
+SENDMSG:
+=======
+Trace:
+
+Action:
+
+
+SENDTO:
+=======
+Trace:
+493   sendto(3, "Message for sendto.\0", 20, 0, {sa_family=AF_INET, sin_port=htons(25588), sin_addr=inet_addr("127.0.0.1")}, 16) = 20
+2569: sendto(3, 0x08059F3D, 20, 0, 0x080474E0, 16)  = 20
+2569:    M e s s a g e   f o r   s e n d t o .\0
+2569:   AF_INET  to = 0.0.0.0  port = 25588
+
+Action:
+('sendto_syscall', (3, 'Message for sendto.\x00', 20, 0, ['AF_INET'], 25588, '127.0.0.1', 16), (20, None))
+('sendto_syscall', (3, 'Message for sendto.\x00', 20, 0, ['AF_INET'], 25588, '0.0.0.0', 16), (20, None))
+
+
+SETSOCKOPT:
+=======
+Trace:
+7165  setsockopt(3, SOL_SOCKET, SO_REUSEADDR, [1], 4) = 0
+2575: setsockopt(3, SOL_SOCKET, SO_REUSEADDR, 0x080474F8, 4, SOV_DEFAULT) = 0
+
+Action:
+('setsockopt_syscall', (3, ['SOL_SOCKET'], ['SO_REUSEADDR'], 1, 4), (0, None))
+('setsockopt_syscall', (3, ['SOL_SOCKET'], ['SO_REUSEADDR'], <Unknown, expected_type='Int', given_value='0x080474F8'>, 4), (0, None))
+
+Remarks:
+- Solaris not dereferencing int
+
+
+SHUTDOWN:
+=======
+Trace:
+7169  shutdown(5, 2 /* send and receive */) = 0
+2581/1:   shutdown(5, SHUT_RDWR, SOV_DEFAULT)   = 0
+
+Action:
+('shutdown_syscall', (5, ['SHUT_RDWR']), (0, None))
+('shutdown_syscall', (5, ['SHUT_RDWR']), (0, None))
+
+
+SOCKET:
+=======
+Trace:
+413   socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
+2587: so_socket(PF_INET, SOCK_DGRAM, IPPROTO_IP, "", SOV_DEFAULT) = 4
+
+Action:
+('socket_syscall', (['PF_INET'], ['SOCK_STREAM'], ['IPPROTO_IP']), (3, None))
+('socket_syscall', (['PF_INET'], ['SOCK_DGRAM'], ['IPPROTO_IP']), (4, None))
+
+
+STAT:
+=======
+Trace:
+11433 stat64("syscalls.txt", {st_dev=makedev(8, 6), st_ino=700117, st_mode=S_IFREG|0664, st_nlink=1, st_uid=1000, st_gid=1000, st_blksize=4096, st_blocks=0, st_size=0, st_atime=2013/03/06-04:16:17, st_mtime=2013/03/06-04:16:17, st_ctime=2013/03/06-04:16:17}) = 0
+2593: xstat(2, "syscalls.txt", 0x08047470)    = 0
+2593:     d=0x00780000 i=299765 m=0100644 l=1  u=0     g=0     sz=45
+2593:   at = Apr 25 23:04:41 EDT 2013  [ 1366945481.275064000 ]
+2593:   mt = Apr 25 23:04:41 EDT 2013  [ 1366945481.274374000 ]
+2593:   ct = Apr 25 23:04:41 EDT 2013  [ 1366945481.274374000 ]
+2593:     bsz=8192  blks=2     fs=ufs
+
+Action:
+('stat_syscall', ('syscalls.txt',), (0, ('makedev(8, 6)', 700117, ['S_IFREG', 'S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IROTH'], 1, 1000, 1000, 4096, 0, 0, '2013/03/06-04:16:17', '2013/03/06-04:16:17', '2013/03/06-04:16:17')))
+('stat_syscall', ('syscalls.txt',), (0, ('0x00780000', 299765, ['S_IFREG', 'S_IWUSR', 'S_IRUSR', 'S_IRGRP', 'S_IROTH'], 1, 0, 0, 8192, 2, 45, '2013/04/25-23:04:41', '2013/04/25-23:04:41', '2013/04/25-23:04:41')))
+
+Remarks:
+- st_dev not dereferenced in Solaris.
+
+
+STATFS:
+=======
+Trace:
+11418 statfs("syscalls.txt", {f_type="EXT2_SUPER_MAGIC", f_bsize=4096, f_blocks=4553183, f_bfree=1919636, f_bavail=1688340, f_files=1158720, f_ffree=658721, f_fsid={-1853641883, -1823071587}, f_namelen=255, f_frsize=4096}) = 0
+2606: statvfs("syscalls.txt", 0x08047460)   = 0
+2606:   bsize=8192       frsize=1024      blocks=8139687  bfree=3830801  
+2606:   bavail=3749405   files=984256     ffree=797237    favail=797237   
+2606:   fsid=0x780000    basetype=ufs     namemax=255
+2606:   flag=ST_NOTRUNC
+2606:   fstr=""
+
+Action:
+('statfs_syscall', ('syscalls.txt',), (0, ('EXT2_SUPER_MAGIC', 4096, 4553183, 1919636, 1688340, 1158720, 658721, '{-1853641883, -1823071587}', 255, 4096)))
+('statfs_syscall', ('syscalls.txt',), (0, ('ufs', 8192, 8139687, 3830801, 3749405, 984256, 797237, '0x780000', 255, 1024)))
+
+Remarks:
+- see FSTATFS
+
+
+SYMLINK:
+=======
+Trace:
+11428 symlink("syscalls.txt", "syscalls.symlink") = 0
+2612: symlink("syscalls.txt", "syscalls.symlink") = 0
+
+Action:
+('symlink_syscall', ('syscalls.txt', 'syscalls.symlink'), (0, None))
+('symlink_syscall', ('syscalls.txt', 'syscalls.symlink'), (0, None))
+
+
+UNLINK:
+=======
+Trace:
+3647  unlink("syscalls.symlink")        = 0
+2618: unlink("syscalls.symlink")      = 0
+
+Action:
+('unlink_syscall', ('syscalls.symlink',), (0, None))
+('unlink_syscall', ('syscalls.symlink',), (0, None))
+
+
+WRITE:
+=======
+Trace:
+11454 write(3, "Sample output text\n", 19) = 19
+2624: write(3, 0x08059EDB, 19)      = 19
+2624:    S a m p l e   o u t p u t   t e x t\n
+
+Action:
+('write_syscall', (3, 'Sample output text\n', 19), (19, None))
+('write_syscall', (3, 'Sample output text\n', 19), (19, None))

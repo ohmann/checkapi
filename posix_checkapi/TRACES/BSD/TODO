@@ -1,0 +1,11 @@
+-flags for sa_family
+-flags for access
+-times in stat
+- compare struct vales with strace struct value format.
+- dtrace -l -P syscall to see different probes. Adjust syscall_name* appropriately.
+- getdents only records 1st and last arg at the moment
+- lseek third arg translate to flag
+- mode to flags in all syscalls
+- check out dtrace -l -P syscall for variations of same syscall eg read  -> pread etc
+- recvfrom structure length throws error when dereferenced
+- dtrace output includes dtrace syscalls, can fix by checking pids

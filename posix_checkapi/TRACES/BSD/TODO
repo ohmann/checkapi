@@ -7,5 +7,4 @@
 - lseek third arg translate to flag
 - mode to flags in all syscalls
 - check out dtrace -l -P syscall for variations of same syscall eg read  -> pread etc
-- recvfrom structure length throws error when dereferenced
-- dtrace output includes dtrace syscalls, can fix by checking pids
+- recvfrom structure length throws error when dereferenced.

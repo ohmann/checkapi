@@ -1,0 +1,74 @@
+Contents
+========
+A.Gathering traces in BSD
+B.Gathering simple test traces
+C.Parsing traces
+D.Setting up DTrace
+
+
+
+A.Gathering traces in BSD
+=========================
+A d script is provided, which can be used to gather traces on BSD systems. Use
+it like this:
+
+  dtrace_bsd.d -o <output_name.dtrace> -c "<command with arguments>"
+
+Please note the quotes around the command and arguments.
+
+When trying to run the d script the following error might come up:
+
+  dtrace: failed to initialize dtrace: DTrace device not available on system
+
+If this happens, dtrace is not configured in your system. Dtrace is not 
+supported by default on BSD systems. The kernel needs to be customized before 
+dtrace can be used. See below for instructions on how to do this.
+
+
+B.Gathering simple test traces
+==============================
+A C program is provided under the syscalls directory which can be used to 
+explicitly run certain system calls. This program can be used in combination 
+with the dtrace script to gather simple traces of specific system calls.
+
+
+C.Parsing traces
+================
+A parser is provided
+python parser.py <trace_file>
+
+
+D.Setting up DTrace on BSD
+==========================
+Links with some very useful information on how to do this are given at the end 
+of this section. I found that on my BSD system (FreeBSD 9.0-RELEASE) the 
+instructions given were not enough to set up DTrace so I list the steps I 
+followed here:
+  
+  1. Find your kernel configuration file. Mine was here: /usr/src/sys/i386/conf
+  2. Backup your GENERIC kernel configuration file in you home directory.
+  3. Copy the GENERIC conf file and give it another name e.g MYKERNEL. This will
+     be your customized kernel configuration file.
+  4. Insert the following lines in your customized kernel file.
+       options         KDTRACE_HOOKS
+       options         DDB_CTF
+  5. Change directory to /usr/src
+  6. Run the command: "make WITH_CTF=1 buildkernel KERNCONF=MYKERNEL" This will 
+     take a while to complete.
+  7. Run the command: "make WITH_CTF=1 installkernel KERNCONF=MYKERNEL"
+  8. Restart your system.
+  9. Go to /usr/ports/shells/ksh93
+  10.Run make install clean
+  11.Go to /usr/ports/sysutils/DTraceToolkit.
+  12.Run make install clean
+  13.Run kldload dtraceall. YOu will probably have to do this every time you
+     start your system
+  14.You should now be able to run dtrace on your system.
+
+General Information on DTrace BSD can be found here:
+  http://www.freebsd.org/doc/en/books/handbook/dtrace.html
+Information on how to set up DTrace on BSD can be found here:
+  http://www.freebsd.org/doc/en/books/handbook/dtrace-enable.html
+Inormation on how to customize the BSD kernel can be found here:
+  http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html
+

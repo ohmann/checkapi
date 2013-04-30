@@ -1,25 +1,11 @@
-#!/bin/sh
+#!/usr/sbin/dtrace -s
 
-### Default variables
-filename="out.dtrace"
-buf="10m"
-
-shift `expr $OPTIND - 1`
-
-# Get the command to trace
-if [ "$*" = "" ]; then
-	echo "Please give the command to trace"
-	exit
-fi
-command="$*"
-
-# Define D Script
-dtrace='
 #pragma D option quiet
 #pragma D option switchrate=10
 
 dtrace:::BEGIN 
 {
+  err[0] = "";
   err[0] = "";
   err[EPERM] = "EPERM";
   err[ENOENT] = "ENOENT";
@@ -146,7 +132,7 @@ dtrace:::BEGIN
 }
 
 
-/* ===GETSOCKNAME/GETPEERNAME===
+/* ===ACCEPT/GETSOCKNAME/GETPEERNAME===
  * int getsockname(int  s,  struct  sockaddr  *name,  socklen_t *namelen);
  * int getpeername(int  s,  struct  sockaddr  *name,  socklen_t *namelen);
  * int      accept(int  s,  struct  sockaddr  *addr,  socklen_t *addrlen);
@@ -154,18 +140,18 @@ dtrace:::BEGIN
 syscall::*getsockname*:entry,
 syscall::*getpeername*:entry,
 syscall::*accept*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
   self->arg1 = arg1;
   self->arg2 = arg2;
-  
 }
 
 syscall::*getsockname*:return,
 syscall::*getpeername*:return,
 syscall::*accept*:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->sock = (struct sockaddr_in *) copyin(self->arg1, sizeof(struct sockaddr));
   
@@ -210,6 +196,7 @@ syscall::*accept*:return
 syscall::*access*:entry,
 syscall::*mkdir*:entry,
 syscall::*creat*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -218,7 +205,7 @@ syscall::*creat*:entry
 syscall::*access*:return,
 syscall::*mkdir*:return,
 syscall::*creat*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -242,6 +229,7 @@ syscall::*creat*:return
  */
 syscall::*bind*:entry,
 syscall::*connect*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -251,7 +239,7 @@ syscall::*connect*:entry
 }
 syscall::*bind*:return,
 syscall::*connect*:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->sock = (struct sockaddr_in *) copyin(
                  self->arg1, sizeof(struct sockaddr));
@@ -298,6 +286,7 @@ syscall::*connect*:return
 syscall::chdir*:entry,
 syscall::rmdir*:entry,
 syscall::unlink*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -305,7 +294,7 @@ syscall::unlink*:entry
 syscall::chdir*:return,
 syscall::rmdir*:return,
 syscall::unlink*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -325,13 +314,14 @@ syscall::unlink*:return
  */
 syscall::*close*:entry,
 syscall::*dup:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
 }
 syscall::*close*:return,
 syscall::*dup:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -350,13 +340,14 @@ syscall::*dup:return
  * int dup2(int oldfd, int newfd);
  */
 syscall::dup2*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
   self->arg1 = arg1;
 }
 syscall::dup2*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -377,6 +368,7 @@ syscall::dup2*:return
  *
  */
 syscall::fcntl*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -384,7 +376,7 @@ syscall::fcntl*:entry
   self->arg2 = arg2;
 }
 syscall::fcntl*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s(%d, %d, %d)\t\t " , probefunc
@@ -405,6 +397,7 @@ syscall::fcntl*:return
  *
  */
 syscall::fstat:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -412,7 +405,7 @@ syscall::fstat:entry
 }
 
 syscall::fstat:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->stat = (struct stat*) copyin((uintptr_t) self->arg1, sizeof(struct stat));
   
@@ -447,6 +440,7 @@ syscall::fstat:return
  *
  */
 syscall::fstatfs:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -454,7 +448,7 @@ syscall::fstatfs:entry
 }
 
 syscall::fstatfs:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->statfs = (struct statfs*) copyin((uintptr_t) self->arg1, sizeof(struct statfs));
   
@@ -501,6 +495,7 @@ syscall::fstatfs:return
  */
 syscall::getdents:entry,
 syscall::getdirentries:entry
+/pid != $pid/
 
 {
   self->start = timestamp;
@@ -512,7 +507,7 @@ syscall::getdirentries:entry
 syscall::getdents:return,
 syscall::getdirentries:return
 
-/self->start/
+/self->start && pid != $pid/
 {
   
   printf("%d ", pid);
@@ -535,6 +530,7 @@ syscall::getdirentries:return
  *
  */
 syscall::getsockopt*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -545,7 +541,7 @@ syscall::getsockopt*:entry
 }
 
 syscall::getsockopt*:return
-/self->start/
+/self->start && pid != $pid/
 {
   self->len = *(socklen_t *) copyin(self->arg4, sizeof(socklen_t));
   self->val = *(socklen_t *) copyin(self->arg3, self->len);
@@ -577,6 +573,7 @@ syscall::getsockopt*:return
  */
 syscall::link*:entry,
 syscall::symlink*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -585,7 +582,7 @@ syscall::symlink*:entry
 
 syscall::link*:return,
 syscall::symlink*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -608,6 +605,7 @@ syscall::symlink*:return
  */
 syscall::listen:entry,
 syscall::shutdown:entry
+/pid != $pid/
 
 {
   self->start = timestamp;
@@ -617,7 +615,7 @@ syscall::shutdown:entry
 
 syscall::listen:return,
 syscall::shutdown:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -639,6 +637,7 @@ syscall::shutdown:return
  *
  */
 syscall::*lseek:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -647,7 +646,7 @@ syscall::*lseek:entry
 }
 
 syscall::*lseek:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -670,6 +669,7 @@ syscall::*lseek:return
  * int open(const char *pathname, int flags, mode_t mode);
  */
 syscall::open:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -678,7 +678,7 @@ syscall::open:entry
 }
 
 syscall::open:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -702,6 +702,7 @@ syscall::open:return
  */
 syscall::read:entry,
 syscall::write:entry
+/pid != $pid/
 
 {
   self->start = timestamp;
@@ -712,7 +713,7 @@ syscall::write:entry
 
 syscall::read:return,
 syscall::write:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -738,6 +739,7 @@ syscall::write:return
  */
 syscall::*send:entry,
 syscall::*recv:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -748,7 +750,7 @@ syscall::*recv:entry
 
 syscall::*send:return,
 syscall::*recv:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -774,6 +776,7 @@ syscall::*recv:return
  *
  */
 syscall::*recvfrom:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -785,7 +788,7 @@ syscall::*recvfrom:entry
 }
 
 syscall::*recvfrom:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->sock = (struct sockaddr_in *) copyin(self->arg4, sizeof(struct sockaddr));
   
@@ -834,6 +837,7 @@ syscall::*recvfrom:return
  *
  */
 syscall::sendto*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -855,7 +859,7 @@ syscall::sendto*:entry
 }
 
 syscall::sendto*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", probefunc);
@@ -886,6 +890,7 @@ syscall::sendto*:return
  * 
  */
 syscall::setsockopt*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -896,7 +901,7 @@ syscall::setsockopt*:entry
 }
 
 syscall::setsockopt*:return
-/self->start/
+/self->start && pid != $pid/
 {
   self->val = *(socklen_t *) copyin(self->arg3, self->arg4);
   
@@ -926,6 +931,7 @@ syscall::setsockopt*:return
  * int socket(int domain, int type, int protocol);
  */
 syscall::*socket*:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -934,7 +940,7 @@ syscall::*socket*:entry
 }
 
 syscall::*socket*:return
-/self->start/
+/self->start && pid != $pid/
 {
   printf("%d ", pid);
   printf("%s", "socket");
@@ -958,6 +964,7 @@ syscall::*socket*:return
  *
  */
 syscall::stat:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -965,7 +972,7 @@ syscall::stat:entry
 }
 
 syscall::stat:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->path = copyinstr(self->arg0);
   
@@ -1016,6 +1023,7 @@ syscall::stat:return
  * int statfs(const char *path, struct statfs *buf);
  */
 syscall::statfs:entry
+/pid != $pid/
 {
   self->start = timestamp;
   self->arg0 = arg0;
@@ -1023,7 +1031,7 @@ syscall::statfs:entry
 }
 
 syscall::statfs:return
-/self->start/
+/self->start && pid != $pid/
 {
   this->path = copyinstr(self->arg0);
 
@@ -1054,22 +1062,6 @@ syscall::statfs:return
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* program exited */
 proc:::exit
 /pid == $target/
@@ -1077,13 +1069,6 @@ proc:::exit
 	exit(0);
 }
 
-
 dtrace:::END
 {
 }
-'
-
-### Run DTrace
-rm -f $filename
-/usr/sbin/dtrace -x dynvarsize=$buf -x evaltime=exec -n "$dtrace" \
-      -c "$command" -o $filename

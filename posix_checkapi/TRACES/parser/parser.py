@@ -75,7 +75,7 @@ def generate_trace_bundle(trace_path, parser):
   if DEBUG:
     for action in actions:
       print action
-  """
+
   # generate the initial file system needed by the model.
   generate_lind_fs.generate_fs(actions)
   
@@ -132,7 +132,6 @@ def generate_trace_bundle(trace_path, parser):
   for fname in os.listdir(os.getcwd()):
     if fname.startswith("linddata."):
       os.remove(fname)
-  """
 
 
 

@@ -95,10 +95,8 @@ def generate_fs(actions):
       if path not in seen_paths:
         # if the syscall was successful, copy file/dir into the lind fs.
         if result != (-1, 'ENOENT'):
-          if os.path.isfile(path):
-            _cp_file_into_lind(path)
-          else:
-            _cp_dir_into_lind(path)
+          path = _copy_path_into_lind(path)
+          
           
           # remember this path was seen and added to the lind fs.
           seen_paths[path] = True
@@ -123,10 +121,7 @@ def generate_fs(actions):
         # if we got an exists error, the file must have been there
         # already.
         if result == (-1, 'EEXIST'):
-          if os.path.isfile(path2):
-            _cp_file_into_lind(path2)
-          else:
-            _cp_dir_into_lind(path2)
+          path2 = _copy_path_into_lind(path2)
           
           # remember this path was seen and added to the lind fs.
           seen_paths[path2] = True
@@ -136,13 +131,13 @@ def generate_fs(actions):
           seen_paths[path2] = False
 
     """
-      Can add support for symlink here.
+      Can add support for symlink here. A bit more tricky due to return part.
     """
   
   if DEBUG:
     print seen_paths
 
-  # all trace lines are now read. We should confirm the lind fs is as expected
+  # all trace lines are now read. We should confirm that lind fs is as expected.
   all_lind_paths = list_all_lind_paths()
 
   for seen_path in seen_paths:
@@ -156,14 +151,37 @@ def generate_fs(actions):
       if abs_seen_path not in all_lind_paths:
         raise Exception("Expected file '" + abs_seen_path + 
                         "' not found in Lind fs")
-      else:
-        all_lind_paths.remove(abs_seen_path)
     else:
       # file should not be in lind fs.
       if abs_seen_path in all_lind_paths:
         raise Exception("Unexpected file '" + abs_seen_path + "' in Lind fs")
+  
 
+"""
+Check if the file/dir exists. Check also in the HOME environment variable.
+If it exists copy it to the lind fs. If not raise an exception.
+"""
+def _copy_path_into_lind(path):
+  if not os.path.exists(path):
+    # the file does not exist here.
+    # but maybe it exists relative to the HOME environment variable points to.
+    home_path = os.getenv("HOME")
+    if home_path != None:
+      path = os.path.join(home_path, path)
+      
+      if not os.path.exists(path):
+        raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
+    else:
+      raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
 
+  # path exists! Copy it to the lind fs.
+  if os.path.isfile(path):
+    _cp_file_into_lind(path)
+  else:
+    _cp_dir_into_lind(path)
+
+  return path
+  
 
 
 
@@ -301,7 +319,7 @@ def _cp_dir_into_lind(fullfilename, rootpath='.', createmissingdirs=True):
   posixfn = os.path.join(rootpath, fullfilename)
 
   if not os.path.exists(posixfn):
-    raise IOError("Cannot locate file on POSIX FS: '" + posixfn + "'")
+    raise IOError("Cannot locate dire on POSIX FS: '" + posixfn + "'")
 
   if os.path.isfile(posixfn):
     raise IOError("POSIX FS path is not a directory: '" + posixfn + "'")

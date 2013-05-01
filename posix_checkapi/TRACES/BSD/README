@@ -14,7 +14,8 @@ it like this:
 
   dtrace_bsd.d -o <output_name.dtrace> -c "<command with arguments>"
 
-Please note the quotes around the command and arguments.
+Please note the quotes around the command and arguments. Also note that dtrace
+can only run with ROOT priviledges under BSD.
 
 When trying to run the d script the following error might come up:
 

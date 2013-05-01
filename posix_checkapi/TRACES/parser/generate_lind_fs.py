@@ -41,7 +41,28 @@ This is the only public function of this module. It takes as argument a tuple of
 trace actions and generates a lind fs based on the information it can gather 
 from these actions and the posix fs.
 """
-def generate_fs(actions):
+def generate_fs(actions, trace_path):
+  # read the trace and examine the execve syscall to see if the HOME environment
+  # variable is set to somewhere else. This usually happens when running 
+  # benchmarks. The reason to do this is because actions referring to files 
+  # using relative paths, might refere to these files relative to the HOME
+  # variable defined in the execve syscall.
+  fh = open(trace_path, "r")
+  # the execve syscall is the first action of the trace file
+  execve_line = fh.readline()
+  fh.close()
+  
+  execve_home_path = None
+  if execve_line.find("execve(") != -1:
+    execve_parts = execve_line.split(", ")
+    # the definition of the HOME variable in the execve syscall has this format:
+    # "HOME=/home/savvas/tests/"
+    for part in execve_parts:
+      if part.startswith("\"HOME="):
+        part = part.strip("\"")
+        assert(part.startswith("HOME="))
+        execve_home_path = part[part.find("HOME=")+5:]
+
   # load an initial lind file system.
   lind_test_server._blank_fs_init()
 
@@ -56,7 +77,7 @@ def generate_fs(actions):
   # arguments.
   syscalls_with_path = ['open', 'creat', 'statfs', 'access', 'stat', 
                         'link', 'unlink', 'chdir', 'rmdir', 'mkdir']
-
+  
   for action in actions:
     # the general format of an action is the following:
     # (syscall_name, (arguments tuple), (return tuple))
@@ -95,7 +116,7 @@ def generate_fs(actions):
       if path not in seen_paths:
         # if the syscall was successful, copy file/dir into the lind fs.
         if result != (-1, 'ENOENT'):
-          path = _copy_path_into_lind(path)
+          path = _copy_path_into_lind(path, execve_home_path)
           
           
           # remember this path was seen and added to the lind fs.
@@ -121,7 +142,7 @@ def generate_fs(actions):
         # if we got an exists error, the file must have been there
         # already.
         if result == (-1, 'EEXIST'):
-          path2 = _copy_path_into_lind(path2)
+          path2 = _copy_path_into_lind(path2, execve_home_path)
           
           # remember this path was seen and added to the lind fs.
           seen_paths[path2] = True
@@ -158,16 +179,16 @@ def generate_fs(actions):
   
 
 """
-Check if the file/dir exists. Check also in the HOME environment variable.
+Check if the file/dir exists. Check also in the HOME environment variable as it
+is defined in the execve syscall.
 If it exists copy it to the lind fs. If not raise an exception.
 """
-def _copy_path_into_lind(path):
+def _copy_path_into_lind(path, execve_home_path):
   if not os.path.exists(path):
-    # the file does not exist here.
-    # but maybe it exists relative to the HOME environment variable points to.
-    home_path = os.getenv("HOME")
-    if home_path != None:
-      path = os.path.join(home_path, path)
+    # the file does not exist here. but maybe it exists relative to where the 
+    # HOME environment variable points to.
+    if execve_home_path != None:
+      path = os.path.join(execve_home_path, path)
       
       if not os.path.exists(path):
         raise IOError("Cannot locate file on POSIX FS: '" + path + "'")

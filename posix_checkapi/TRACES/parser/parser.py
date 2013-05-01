@@ -10,15 +10,21 @@
 
 <Purpose>
   This is the posix parser used to parse traces and generate the initial file
-  system state. The parser supports traces gathered using strace and truss as
-  shown below:
+  system state. The parser supports traces gathered using strace truss and 
+  dtrace as shown below:
   
     strace -v -f -s1024 -o output_filename command
+    
     truss -f -rall -wall -vall -o output_filename command
+    
+    dtrace_bsd.d -o output_filename -c "command"
 
-  You can refer to parser_strace_calls.py and parser_truss_calls.py for more
-  information on how to gather traces for this parser. Additional information is
-  also provided in the README files for each OS.
+    dtrace_osx.d -o output_filename -c "command"
+
+  strace is used to gather traces on Linux systems. truss is used to gather
+  traces on Solaris and dtrace is used to gather traces on BSD and OSX systems.
+  Additional information on how to gather traces in each of these operating 
+  systems is provided in the README file under each OS's directory.
 
   The initial file system state is represented as a Lind FS. The latter is made 
   up of a lind.metadata file and a set of linddata.# files. Once these files are
@@ -77,7 +83,7 @@ def generate_trace_bundle(trace_path, parser):
       print action
 
   # generate the initial file system needed by the model.
-  generate_lind_fs.generate_fs(actions)
+  generate_lind_fs.generate_fs(actions, trace_path)
   
   # pickle the trace
   pickle_name = "actions.pickle"
@@ -141,23 +147,29 @@ if __name__ == "__main__":
   if len(sys.argv) < 2 or len(sys.argv) > 3:
     raise Exception("Incorrect number of command line arguments.\n" + 
                     "Usage: python " + sys.argv[0] + 
-                    " trace_file [parser (strace/truss)]")
+                    " trace_file [parser (strace/truss/dtrace)]")
   
   trace_path = sys.argv[1]
 
   if len(sys.argv) == 3:
     # the parser was given explicitly as the third command line argument.
     parser = sys.argv[2]
-    if parser not in ["strace", "truss"]:
-      raise Exception("Parser can be either strace of truss.")
+    if parser not in ["strace", "truss", "dtrace"]:
+      raise Exception("Parser can be either strace, truss or dtrace.")
   else:
     # parser was not given. try to infer from the file extension.
     if trace_path.endswith(".strace"):
       parser = "strace"
     elif trace_path.endswith(".truss"):
       parser = "truss"
+    elif trace_path.endswith(".dtrace"):
+      parser = "dtrace"
     else:
       raise Exception("Could not infer parser from the file extension")
+  
+  # dtrace traces are parsed the exact same way as strace traces.
+  if parser == "dtrace":
+    parser = "strace"
 
   assert(parser in ["strace", "truss"])
   generate_trace_bundle(trace_path, parser)

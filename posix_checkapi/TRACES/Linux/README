@@ -31,9 +31,11 @@ C.Parsing traces
 ================
 A parser is provided
 python parser.py <trace_file>
+export LIND_PATH="`pwd`"
 
 
 D.Combined trace gathering and parsing
 ======================================
-A very simple script is given 
+A very simple script is given. It's a safe way to ensure strace was executed
+with the righr arguments.
 strace_and_parse.sh <trace_output_name> <program name> [program arguments]

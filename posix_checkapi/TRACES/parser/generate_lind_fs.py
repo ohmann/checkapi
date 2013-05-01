@@ -92,8 +92,7 @@ def generate_fs(actions, trace_path):
     #                  (-1, 'ENOENT'))
     # ('mkdir_syscall', ('syscalls_dir', ['S_IRWXU', 'S_IRWXG', 
     #        'S_IXOTH', 'S_IROTH']), (-1, 'EEXIST'))
-    syscall_name = action[0]
-    result = action[2]
+    syscall_name, syscall_parameters, syscall_result = action
 
     if DEBUG:
       print "Trace:", action
@@ -106,8 +105,19 @@ def generate_fs(actions, trace_path):
     # remove the _syscall part from the syscall name
     syscall_name = syscall_name[:syscall_name.find("_syscall")]
 
-
     if syscall_name in syscalls_with_path:
+      # check if the system call is open and whether it includes the O_CREAT 
+      # flag.
+      o_creat = False
+      if syscall_name == "open":
+        open_flags = action[1][1]
+        if "O_CREAT" in open_flags:
+          o_creat = True
+      
+      # if the system call is creat, again set o_creat to True
+      if syscall_name == "creat":
+        o_creat = True
+
       # get the file path from the action
       path = action[1][0]
 
@@ -115,23 +125,15 @@ def generate_fs(actions, trace_path):
       # earliest syscall pertaining to a path.
       if path not in seen_paths:
         # if the syscall was successful, copy file/dir into the lind fs.
-        if result != (-1, 'ENOENT'):
-          path = _copy_path_into_lind(path, execve_home_path)
+        if syscall_result != (-1, 'ENOENT'):
+          path, path_added = _copy_path_into_lind(path, execve_home_path, o_creat)
           
-          
-          # remember this path was seen and added to the lind fs.
-          seen_paths[path] = True
+          # remember this path was seen and whether it was added to the lind fs.
+          seen_paths[path] = path_added
         
         else:
           # remember this path was seen but not added to the lind fs.
           seen_paths[path] = False
-
-    """ This case is covered in the above.
-    elif syscall_name == "mkdir":
-      # if failure the directory must have been there already.
-      if result == (-1, 'EEXIST'):
-        _cp_dir_into_lind(path, fs_location)
-    """
 
     # the syscall contains a second path.
     if syscall_name == 'link':
@@ -141,11 +143,11 @@ def generate_fs(actions, trace_path):
       if path2 not in seen_paths:
         # if we got an exists error, the file must have been there
         # already.
-        if result == (-1, 'EEXIST'):
-          path2 = _copy_path_into_lind(path2, execve_home_path)
+        if syscall_result == (-1, 'EEXIST'):
+          path2, path_added = _copy_path_into_lind(path2, execve_home_path, o_creat)
           
-          # remember this path was seen and added to the lind fs.
-          seen_paths[path2] = True
+          # remember this path was seen and whether it was added to the lind fs.
+          seen_paths[path] = path_added
         
         else:
           # remember this path was seen but not added to the lind fs.
@@ -183,7 +185,7 @@ Check if the file/dir exists. Check also in the HOME environment variable as it
 is defined in the execve syscall.
 If it exists copy it to the lind fs. If not raise an exception.
 """
-def _copy_path_into_lind(path, execve_home_path):
+def _copy_path_into_lind(path, execve_home_path, o_creat):
   if not os.path.exists(path):
     # the file does not exist here. but maybe it exists relative to where the 
     # HOME environment variable points to.
@@ -191,8 +193,16 @@ def _copy_path_into_lind(path, execve_home_path):
       path = os.path.join(execve_home_path, path)
       
       if not os.path.exists(path):
+        # if the O_CREAT flag was set in the system call, allow the program to 
+        # proceed even if the file does not exist.
+        if o_creat:
+          return path, False
         raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
     else:
+      # if the O_CREAT flag was set in the system call, allow the program to 
+      # proceed even if the file does not exist.
+      if o_creat:
+        return path, False
       raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
 
   # path exists! Copy it to the lind fs.
@@ -201,7 +211,7 @@ def _copy_path_into_lind(path, execve_home_path):
   else:
     _cp_dir_into_lind(path)
 
-  return path
+  return path, True
   
 
 

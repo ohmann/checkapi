@@ -154,6 +154,29 @@ class Str():
     val = val.replace("\\0", "\0")
     return val
 
+class SockPath():
+  """Parses path from a sockaddr."""
+  def __init__(self, label_left=None, label_right=None, output=False):
+    self.label_left = label_left
+    self.label_right = label_right
+    self.output = output
+ 
+  def parse(self, val=None):
+    if val == None:
+      return Unknown('SockPath', val)
+    # if the value starts with 0x it was not dereferenced.
+    if self.label_left != None and val.startswith('0x'):
+      return Unknown('SockPath', val)
+    # remove lables
+    val = _remove_labels(val, self.label_left, self.label_right)
+
+    if val == "NULL":
+      return val
+
+    if val.startswith("path="):
+      return val[5:]
+
+    raise Exception("Unexpected format of SockPath")
 
 class Mode():
   """Parses mode_t. Translates number to list of flags."""
@@ -454,7 +477,7 @@ HANDLED_SYSCALLS_INFO = {
   # int socket(int domain, int type, int protocol);
   # 
   # Example strace output:
-  # 19176 socket(PF_INET, SOCK_STREAM,accept IPPROTO_IP) = 3
+  # 19176 socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
   # 19294 socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP) = 3
   "socket": {
     'args': (ZeroOrListOfFlags(), ZeroOrListOfFlags(), 
@@ -856,6 +879,14 @@ HANDLED_SYSCALLS_INFO = {
     'args': (Int(), ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+
+  """
+  TODO: 
+  Deal with this case first:
+  14041 recvmsg(8,  <unfinished ...>
+    14039 getpid({msg_name(0)=NULL, msg_iov(1)=[{"l\2\1\1\f\0\0\0\1\0\0\0=\0\0\0", 16}], 
+      msg_controllen=0, msg_flags=MSG_CMSG_CLOEXEC}, MSG_CMSG_CLOEXEC) = 16
+  
   # ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
   # 
   # Example strace output:
@@ -877,6 +908,16 @@ HANDLED_SYSCALLS_INFO = {
              ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+  """
+
+  """
+  TODO: 
+  Deal with this case first:
+    14040 sendmsg(8, {msg_name(0)=NULL, msg_iov(1)=[{"\0", 1}], 
+      msg_controllen=24, {cmsg_len=24, cmsg_level=SOL_SOCKET, 
+      cmsg_type=SCM_CREDENTIALS{pid=14037, uid=1000, gid=1000}}, 
+      msg_flags=0}, MSG_NOSIGNAL)           = 1
+
   # ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags);
   # 
   # Example strace output:
@@ -898,6 +939,7 @@ HANDLED_SYSCALLS_INFO = {
              ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+  """
   
   # int ioctl(int d, int request, ...);
   # 
@@ -919,16 +961,24 @@ HANDLED_SYSCALLS_INFO = {
   "select": {
     'args': (Int(), FdSet(), FdSet(), FdSet(), TimeVal()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
-  # int poll(struct pollfd *fds, nfds_t nfds, int timeout);
-  #
-  # poll([{fd=3, events=POLLOUT}], 1, 5000) = 1 ([{fd=3, 
-  #           revents=POLLOUT}])
-  "poll": {
-    'args': (Int(label_left="[{fd="), Str(label_left="events="), Int(), Int()),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   }
 }
+"""
+TODO:
+  deal with the second example.
+
+# int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+#
+# poll([{fd=3, events=POLLOUT}], 1, 5000) = 1 ([{fd=3, 
+#           revents=POLLOUT}])
+# 
+# 14041 poll([{fd=7, events=POLLIN}, {fd=8, events=POLLIN}, 
+#            {fd=10, events=POLLIN}], 3, -1) = 1 ([{fd=7, revents=POLLIN}])
+"poll": {
+  'args': (Int(label_left="[{fd="), Str(label_left="events=", label_right="}]"), Int(), Int()),
+  'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+}
+"""
 
 
 #####################

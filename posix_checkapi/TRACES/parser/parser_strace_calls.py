@@ -54,6 +54,10 @@ from parser_helper_calls import *
 
 DEBUG = False
 
+# This dictionary is used to keep track of which syscalls are skipped
+# while parsing, and how may times each syscall was skipped.
+SKIPPED_SYSCALLS = {}
+
 ###########
 # STRUCTS #
 ###########
@@ -138,8 +142,24 @@ def parse_trace(fh):
       # format: syscall_name(...
       syscall_name = line[:line.find('(')]
 
+    # handle any 'syscall64' the exact same way as 'syscall'
+    # eg fstat64 will be treated as if it was fstat
+    if syscall_name.endswith('64'):
+      syscall_name = syscall_name[:syscall_name.rfind('64')]
+    
+    if syscall_name not in HANDLED_SYSCALLS_INFO:
+      # Keep track of how many times each syscall was skipped. These information 
+      # can be printed every time the parser is used to help identify which are
+      # the most important and most # frequently used syscalls. Subsequently, the
+      # parser can be extended to handle these.
+      if(syscall_name in SKIPPED_SYSCALLS):
+        SKIPPED_SYSCALLS[syscall_name] += 1
+      else:
+        SKIPPED_SYSCALLS[syscall_name] = 1
+      continue
+
     # Get the parameters.
-    parameterChunk = line[line.find('(')+1:line.rfind('=')].strip()
+    parameterChunk = line[line.find('(')+1:line.rfind('= ')].strip()
     # Remove right bracket and split.
     parameters = parameterChunk[:-1].split(", ")
     
@@ -157,7 +177,7 @@ def parse_trace(fh):
     
     # system calls statfs64 or fstatfs64, sometimes include an 
     # unnecessary numeric value as their second parameter. Remove it.
-    if syscall_name.startswith("statfs64") or syscall_name.startswith("fstatfs64"):
+    if syscall_name.startswith("statfs") or syscall_name.startswith("fstatfs"):
       # 22480 statfs64("/selinux", 84, {f_type="EXT2_SUPER_MAGIC", 
       # f_bsize=4096, f_blocks=4553183, f_bfree=741326, f_bavail=510030, 
       # f_files=1158720, f_ffree=509885, f_fsid={-1853641883, 
@@ -281,3 +301,14 @@ def _resumeUnfinishedSyscall(line, unfinished_syscalls):
 
 
 
+if __name__ == "__main__":
+  import sys
+
+  if len(sys.argv) != 2:
+    raise Exception("Give trace file")
+
+  actions = parse_trace(open(sys.argv[1], "r"))
+  
+  for action in actions:
+    print action
+    print

@@ -63,7 +63,23 @@ C. Generates a trace bundle.
        parsed trace file and the Lind fs data and metadata files.
     c. Removes original trace file, serialized file and Lind fs files.
 """ 
-def generate_trace_bundle(trace_path, parser):
+def generate_trace_bundle(trace_path, parser=None):
+  if parser == None:
+    # parser was not given. try to infer from the file extension.
+    if trace_path.endswith(".strace"):
+      parser = "strace"
+    elif trace_path.endswith(".truss"):
+      parser = "truss"
+    elif trace_path.endswith(".dtrace"):
+      parser = "dtrace"
+    else:
+      raise Exception("Could not infer parser from the file extension")
+  
+  # dtrace traces are parsed the exact same way as strace traces.
+  if parser == "dtrace":
+    parser = "strace"
+
+  assert(parser in ["strace", "truss"])
 
   fh = open(trace_path, "r")
   
@@ -150,26 +166,9 @@ if __name__ == "__main__":
                     " trace_file [parser (strace/truss/dtrace)]")
   
   trace_path = sys.argv[1]
-
-  if len(sys.argv) == 3:
-    # the parser was given explicitly as the third command line argument.
-    parser = sys.argv[2]
-    if parser not in ["strace", "truss", "dtrace"]:
-      raise Exception("Parser can be either strace, truss or dtrace.")
-  else:
-    # parser was not given. try to infer from the file extension.
-    if trace_path.endswith(".strace"):
-      parser = "strace"
-    elif trace_path.endswith(".truss"):
-      parser = "truss"
-    elif trace_path.endswith(".dtrace"):
-      parser = "dtrace"
-    else:
-      raise Exception("Could not infer parser from the file extension")
   
-  # dtrace traces are parsed the exact same way as strace traces.
-  if parser == "dtrace":
-    parser = "strace"
-
-  assert(parser in ["strace", "truss"])
-  generate_trace_bundle(trace_path, parser)
+  # if the parser was given explicitly as a third argument, use it
+  if len(sys.argv) == 3:
+    generate_trace_bundle(trace_path, sys.argv[2])
+  else:
+    generate_trace_bundle(trace_path)

@@ -106,6 +106,9 @@ def generate_fs(actions, trace_path):
     syscall_name = syscall_name[:syscall_name.find("_syscall")]
 
     if syscall_name in syscalls_with_path:
+
+      # TODO: I should consider O_CREAT O_EXECL and O_TRUNC flags.
+
       # check if the system call is open and whether it includes the O_CREAT 
       # flag.
       o_creat = False
@@ -196,12 +199,14 @@ def _copy_path_into_lind(path, execve_home_path, o_creat):
         # if the O_CREAT flag was set in the system call, allow the program to 
         # proceed even if the file does not exist.
         if o_creat:
+          print "[warning] path with O_CREAT not found."
           return path, False
         raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
     else:
       # if the O_CREAT flag was set in the system call, allow the program to 
       # proceed even if the file does not exist.
       if o_creat:
+        print "[warning] path with O_CREAT not found."
         return path, False
       raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
 

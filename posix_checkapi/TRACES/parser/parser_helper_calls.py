@@ -1,8 +1,5 @@
 from parser_intermediate_representation import *
 
-# This dictionary is used to keep track of which syscalls are skipped
-# while parsing, and how may times each syscall was skipped.
-SKIPPED_SYSCALLS = {}
 # this error is used to indicate that a system call found in the
 # trace file is not handled by the parser.
 UNIMPLEMENTED_ERROR = -1
@@ -25,23 +22,7 @@ Parsing proceeds in 4 steps.
      value list to construct the Intermediate Representation.
 """
 def parse_syscall(syscall_name, args, result):
-  # handle any 'syscall64' the exact same way as 'syscall'
-  # eg fstat64 will be treated as if it was fstat
-  if syscall_name.endswith('64'):
-    syscall_name = syscall_name[:syscall_name.rfind('64')]
-  # same for syscall4
-  if syscall_name.endswith('4'):
-    syscall_name = syscall_name[:syscall_name.rfind('4')]
-
   if syscall_name not in HANDLED_SYSCALLS_INFO:
-    # Keep track of how many times each syscall was skipped. These information 
-    # can be printed every time the parser is used to help identify which are
-    # the most important and most # frequently used syscalls. Subsequently, the
-    # parser can be extended to handle these.
-    if(syscall_name in SKIPPED_SYSCALLS):
-      SKIPPED_SYSCALLS[syscall_name]=SKIPPED_SYSCALLS[syscall_name]+1
-    else:
-      SKIPPED_SYSCALLS[syscall_name] = 1
     return UNIMPLEMENTED_ERROR
 
   ##########################
@@ -142,15 +123,26 @@ def parse_syscall(syscall_name, args, result):
         missing_arg_type = expected_args[index + missing_index]
         args_list[index + missing_index] = missing_arg_type.parse()
     
-    # if the family is AF_NETLINK, adjust the expected types.
-    # The default types after a SockFamily are SockPort and SockIP
+    # adjust the expected arguments for sockaddr according to the sock_family
+    # The default expected values after a SockFamily are port and ip
     if(isinstance(expected_arg_type, ZeroOrListOfFlags) and 
        expected_arg_type.label_left == "sa_family=" and not
-       isinstance(args_list[index], Unknown) and 
-       "AF_NETLINK" in args_list[index]):
-      expected_args[index+1] = Int(label_left="pid=", output=True)
-      expected_args[index+2] = Int(label_left="groups=", 
-                                   label_right="}", output=True)
+       isinstance(args_list[index], Unknown)):
+
+      # if the family is AF_NETLINK, we need pid and groups.
+      if "AF_NETLINK" in args_list[index]:
+        expected_args[index+1] = Int(label_left="pid=", output=True)
+        expected_args[index+2] = Int(label_left="groups=", 
+                                     label_right="}", output=True)
+
+      # if the family is AF_FILE, we need path.
+      # 14037 connect(4, {sa_family=AF_FILE, path="/var/run/nscd/socket"}, 110) 
+      #                               = -1 ENOENT (No such file or directory)
+      if "AF_FILE" in args_list[index]:
+        # set port to path instead and remove second expected arg
+        expected_args[index+1] = SockPath(label_right="}", output=True)
+        del(expected_args[index+2])
+
     
     index += 1
 

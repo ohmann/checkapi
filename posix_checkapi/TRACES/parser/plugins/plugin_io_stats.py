@@ -21,8 +21,16 @@ import parser_strace_calls
 
 stats = {"reads":0, "read_buf":0, "read_data":0, "read_errs":0, 
          "writes":0, "write_buf":0, "write_data":0, "write_errs":0}
+
+MAX = 10000
 read_err_labels = {}
+read_sizes = {100:0, 1000:0, MAX:0}
+read_over = 0
+
 write_err_labels = {}
+write_sizes = {100:0, 1000:0, MAX:0}
+write_over = 0
+
 
 file_paths = []
 syscall_count = {"read":0, "write":0}
@@ -41,14 +49,21 @@ def print_io_stats():
     <Returns>
       None
   """
-  print "                 READ"
-  print "========================================="
-  print "- read syscalls issued:          ", syscall_count["read"]
+  print "I/O System call count:"
+  for s in syscall_count:
+    print "%10s: %d" %(s, syscall_count[s])
+  print
+
   if syscall_count["read"] > 0:
-    print "- average read buffer per read: ", (stats["read_buf"] / syscall_count["read"])
-    print "- average read data per read:   ", (stats["read_data"] / syscall_count["read"])
-    print
-    print "Read errors frequency:"
+    print "- average buffer size per read syscall: ", (stats["read_buf"] / syscall_count["read"])
+    print "- average data read per read syscall:   ", (stats["read_data"] / syscall_count["read"])
+    
+    print "Number of reads per size:"
+    for size in sorted(read_sizes):
+      print "<" + str(size) + "b:" + str(read_sizes[size]) + ",",
+    print ">=" + str(MAX) + "b:" + str(read_over)
+
+    print "Number of read errors:"
     if len(read_err_labels) == 0:
       print "    None"
     else:
@@ -56,26 +71,23 @@ def print_io_stats():
         print "    ", err, ": ", read_err_labels[err]
 
   print
-  print "                 WRITE"
-  print "========================================="
-  print "- write syscalls issued:          ", syscall_count["write"]
   if syscall_count["write"] > 0:
-    print "- average write buffer per write: ", (stats["write_buf"] / syscall_count["write"])
-    print "- average write data per write:   ", (stats["write_data"] / syscall_count["write"])
-    print
-    print "Read errors frequency:"
+    print "- average buffer size per write syscall:  ", (stats["write_buf"] / syscall_count["write"])
+    print "- average data written per write syscall: ", (stats["write_data"] / syscall_count["write"])
+    
+    print "Number of writes per size:"
+    for size in sorted(write_sizes):
+      print "<" + str(size) + "b:" + str(write_sizes[size]) + ",",
+    print ">=" + str(MAX) + "b:" + str(write_over)
+
+    print "Number of write errors:"
     if len(write_err_labels) == 0:
       print "    None"
     else:
       for err in write_err_labels:
-        print "    ", err, ": ", read_err_labels[err]
+        print "    ", err, ": ", write_err_labels[err]
   
   print
-  print "I/O System call count:"
-  for s in syscall_count:
-    print "    %10s: %d" %(s, syscall_count[s])
-  print
-
   print "File paths:"
   for f in file_paths:
     print "    ", f
@@ -106,7 +118,19 @@ def io_stat(actions):
       if action[2][0] != -1:
         syscall_count["read"] += 1
         stats["read_buf"] += action[1][1]
-        stats["read_data"] += action[2][0]
+        read_size = action[2][0]
+        stats["read_data"] += read_size
+
+        added = False
+        for size in sorted(read_sizes):
+          if read_size < size:
+            read_sizes[size] += 1
+            added = True
+            break
+
+        if not added:
+          read_over += 1
+
       else:
         stats["read_errs"] += 1
         err_label = action[2][1]
@@ -120,7 +144,19 @@ def io_stat(actions):
       if action[2][0] != -1:
         syscall_count["write"] += 1
         stats["write_buf"] += action[1][2]
-        stats["write_data"] += action[2][0]
+        write_size = action[2][0]
+        stats["write_data"] += write_size
+
+        added = False
+        for size in sorted(write_sizes):
+          if write_size < size:
+            write_sizes[size] += 1
+            added = True
+            break
+
+        if not added:
+          write_over += 1
+
       else:
         stats["write_errs"] += 1
         err_label = action[2][1]

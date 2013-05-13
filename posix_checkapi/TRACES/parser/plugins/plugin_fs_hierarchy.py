@@ -42,6 +42,7 @@ def print_fs_hierarchy(hierarchy, depth, path):
   children = []
   if path in hierarchy:
     children = hierarchy[path]
+    children.sort()
   
   for child in children:
     print_fs_hierarchy(hierarchy, depth+1, child)

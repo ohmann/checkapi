@@ -41,38 +41,33 @@ def print_net_stats():
     <Returns>
       None
   """
-  print "                 SEND"
-  print "========================================="
-  print "- sends issued:                 ", stats["sends"]
+  print "- Total number of send syscalls:                 ", stats["sends"]
   if stats["sends"] > 0:
-    print "- average sent buffer per send: ", (stats["send_buf"] / stats["sends"])
-    print "- average sent data per send:   ", (stats["send_data"] / stats["sends"])
+    print "- average buffer size per send syscall: ", (stats["send_buf"] / stats["sends"])
+    print "- average data sent per send syscall:   ", (stats["send_data"] / stats["sends"])
     print
-    print "Send families frequency:"
+    print "Number of socket families used:"
     for fam in send_families:
       print "    ", fam, ":", send_families[fam]
     print
-    print "Send errors frequency:"
+    print "Number of send errors:"
     if len(send_err_labels) == 0:
       print "    None"
     else:
-      for err in [send_err_labels]:
+      for err in send_err_labels:
         print "    ", err, ": ", send_err_labels[err]
 
   print
-  print
-  print "                 RECEIVE"
-  print "========================================="
-  print "- recvs issued:                     ", stats["recvs"]
+  print "- Total number of recv syscalls:                     ", stats["recvs"]
   if stats["recvs"] > 0:
-    print "- average received buffer per recv: ", (stats["recv_buf"] / stats["recvs"])
-    print "- average received data per recv:   ", (stats["recv_data"] / stats["recvs"])
+    print "- average buffer size per recv syscall: ", (stats["recv_buf"] / stats["recvs"])
+    print "- average data received per recv syscall:   ", (stats["recv_data"] / stats["recvs"])
     print
-    print "Receive families frequency:"
+    print "Number of socket families used:"
     for fam in recv_families:
       print "    ", fam, ":", recv_families[fam]
     print
-    print "Received errors frequency:"
+    print "Number of recv errors:"
     if len(recv_err_labels) == 0:
       print "    None"
     else:

@@ -32,16 +32,15 @@ def print_tracked_actions(tracked_actions):
       None
 
   """
-  dangerous = ["chmod", "link", "symlink", "unlink"]
+  
   for ta in tracked_actions:
-    for item in ta:
+    action_list = tracked_actions[ta]
+    for item in action_list:
       # add indentation in all tracked actions except the open one.
       if not item.startswith("OPEN"):
         print "    ",
-      if item.split()[0].lower() in dangerous:
-        print "**" + item
-      else:
-        print item
+      print item
+    print
     print
 
 
@@ -67,10 +66,10 @@ def track_path(actions, path=None):
 
   # this list will contain nested lists inside it with each nested list being a
   # tracked activity for a file
-  tracked_actions = []
+  tracked_actions = {}
   
-  # maps fd to the item in the tracked_actions list.
-  fd_to_item = {}
+  # maps fd to the file.
+  fd_to_file = {}
 
   for action in actions:
     # get the name of the syscall and remove the "_syscall" part at the end.
@@ -99,12 +98,12 @@ def track_path(actions, path=None):
       fd = action[2][0]
 
       # create a new entry in tracked ections
-      tracked_actions.append([])
-      fd_to_item[fd] = len(tracked_actions) -1
+      tracked_actions[pathname] = []
+      fd_to_file[fd] = pathname
 
       # track this action
       flags = action[1][1]
-      tracked_actions[fd_to_item[fd]].append("OPEN \"" + 
+      tracked_actions[pathname].append("OPEN \"" + 
                       pathname + "\" flags: " + "|".join(flags))
 
 
@@ -116,7 +115,7 @@ def track_path(actions, path=None):
 
       fd = action[1][0]
       
-      if fd not in fd_to_item:
+      if fd not in fd_to_file:
         continue
 
       # if close was unsuccessful do not proceed
@@ -124,22 +123,45 @@ def track_path(actions, path=None):
         continue
       
       # track this action
-      tracked_actions[fd_to_item[fd]].append("CLOSE FILE")
+      tracked_actions[fd_to_file[fd]].append("CLOSE FILE")
 
-      del fd_to_item[fd]
+      del fd_to_file[fd]
+
+    elif action_name in ['creat', 'statfs', 'access', 'stat', 'link', 'unlink', 
+                         'chdir', 'rmdir', 'mkdir', 'symlink']:
+      path1 = action[1][0]
+      
+      item = ''
+      dangerous = ["chmod", "link", "symlink", "unlink"]
+      if action_name in dangerous:
+        item = "**"
+        action_name = action_name.upper()
+
+      # track this action
+      item += action_name + "\n         arguments: " + \
+               str(action[1]).strip("()") + "\n         return: " + \
+               str(action[2][0]) + ", " + str(action[2][1]).strip("(),")
+      
+      if path1 not in tracked_actions:
+        tracked_actions[path1] = []
+      tracked_actions[path1].append(item)
+
 
     elif action_name in ["fstatfs", "fstat", "lseek", "read", "write", "dup",
                          "dup2", "dup3", "getdents", "fcntl"]:
       fd = action[1][0]
 
-      if fd not in fd_to_item:
+      if fd not in fd_to_file:
         continue
-      
+
+      if action_name == "read":
+        action_name = "**READ"
+        
       # track this action
       item = action_name + "\n         arguments: " + \
                str(action[1]).strip("()") + "\n         return: " + \
                str(action[2][0]) + ", " + str(action[2][1]).strip("(),")
-      tracked_actions[fd_to_item[fd]].append(item)
+      tracked_actions[fd_to_file[fd]].append(item)
 
 
   return tracked_actions

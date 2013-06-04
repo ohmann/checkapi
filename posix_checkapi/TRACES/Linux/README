@@ -9,26 +9,68 @@ D.Combined trace gathering and parsing
 
 A.Gathering traces in Linux
 ===========================
-Traces in Linux can be gathered using strace. The expected way of using strace 
-to gather traces that can be parsed by our parser is:
 
-strace -v -f -s1024 -o output_filename command
+Traces in Linux can be gathered using the strace utility (man strace). The
+expected options to use with strace to gather traces that can be parsed by the
+parser provided in this project is the following:
 
--v print structure values unabbreviated.
--f trace child processes
+    strace -v -f -s1024 -o output_filename command
+
+Options:
+-v print structure values unabbreviated (verbose).
+-f follow and trace child processes
 -s1024 allow string arguments in system calls up to 1024 characters. If this 
-       option is skipped, strace will truncate strings exceeding 32 characters.
+option is skipped, strace will truncate strings exceeding 32 characters.
 
 
 B.Gathering simple test traces
 ==============================
 A C program is provided under the syscalls directory which can be used to 
 explicitly run certain system calls. This program can be used in combination 
-with strace to gather simple traces of specific system calls.
+with strace to gather simple traces of specific system calls. Running the 
+syscall program.
+
+    make
+    ./syscalls help           # prints usage information.
+    ./syscalls list           # lists all system calls supported by this program.
+    ./syscalls syscall_name   # executes the system call indicated by syscall_name.
+
+Usually the indicated system call will be executed more than once, with
+different options each time, in order to provide more information when traced.
+
+Example using the syscalls program and the strace utility to generate a trace
+file of a specific system call:
+
+    make
+    strace -v -f -s1024 -o open.strace ./syscalls open
+
+In this example we use strace to trace the system calls involved when running
+the command "./syscalls open". This will generate a file called "open.strace"
+which will contain several traced system calls, one in each line. Towards the 
+end of this file there should be two lines similar to the following ones:
+
+    3579  open("syscalls.txt", O_RDONLY|O_CREAT, 0664) = 3
+    3579  open("syscalls2.txt", O_RDWR|O_CREAT|O_APPEND, 0664) = 4
+
+These two lines are examples of the strace output format, when tracing the open
+system call.
+
+Similrly to tracing the "syscall" program, strace can be used to trace any
+application. For example:
+    
+    strace -v -f -s1024 -o cat.strace cat > test.txt
+    strace -v -f -s1024 -o firefox.strace firefox www.google.com
 
 
 C.Parsing traces
 ================
+
+Once a trace is gathered and stored in a trace file using a tracing utility such
+as "strace", it can then be parsed. The POSIX Omni Tracer (POT) is provided,
+able to parse trace files coming from different tracing utilities in different
+operating systems
+
+
 A parser is provided
 python parser.py <trace_file>
 export LIND_PATH="`pwd`"

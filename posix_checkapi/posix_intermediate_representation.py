@@ -75,12 +75,6 @@ class Unknown():
     return self.__repr__()
 
 
-# This dictionary is used to keep track of which syscalls are skipped
-# while parsing, and how may times each syscall was skipped.
-SKIPPED_SYSCALLS = {}
-# this error is used to indicate that a system call found in the
-# trace file is not handled by the parser.
-UNIMPLEMENTED_ERROR = -1
 
 #####################################################
 # Classes that define the expected format, the type #
@@ -110,8 +104,8 @@ class Int():
     # if the value starts with 0x it was not dereferenced.
     if val.startswith('0x'):
       return Unknown('Int', val)
-    # remove lables
     
+    # remove lables
     val = _remove_labels(val, self.label_left, self.label_right)
     if val == "":
       return Unknown('Int', val)
@@ -119,10 +113,7 @@ class Int():
     # dereferenced numbers are wrapped in []
     if val.startswith('[') and val.endswith(']'):
       val = val[1:-1]
-    # some numbers are followed by a comment inside /* */
-    # eg shutdown syscall.
-    if val.find('/*') != -1 and val.find('*/') != -1:
-      val = val[:val.find('/*')].strip()
+      
     try:
       val = int(val)
     except ValueError:
@@ -163,6 +154,29 @@ class Str():
     val = val.replace("\\0", "\0")
     return val
 
+class SockPath():
+  """Parses path from a sockaddr."""
+  def __init__(self, label_left=None, label_right=None, output=False):
+    self.label_left = label_left
+    self.label_right = label_right
+    self.output = output
+ 
+  def parse(self, val=None):
+    if val == None:
+      return Unknown('SockPath', val)
+    # if the value starts with 0x it was not dereferenced.
+    if self.label_left != None and val.startswith('0x'):
+      return Unknown('SockPath', val)
+    # remove lables
+    val = _remove_labels(val, self.label_left, self.label_right)
+
+    if val == "NULL":
+      return val
+
+    if val.startswith("path="):
+      return val[5:]
+
+    raise Exception("Unexpected format of SockPath")
 
 class Mode():
   """Parses mode_t. Translates number to list of flags."""
@@ -295,13 +309,10 @@ class FFsid():
   def parse(self, val=None):
     if val == None or val == "" or val.startswith('0x'):
       return Unknown('FFsid', val)
-    if val.find("f_fsid={") == -1 or val.find("}") == -1:
+    if val.startswith("f_fsid="):
+      val = val[val.find("f_fsid=")+7:]
+    else:
       raise Exception("Unexpected format when parsing FFsid", val)
-    val = val[val.find("f_fsid=")+7:]
-    val = val.replace("{", "")
-    val = val.replace("}", "")
-    val = val.replace(",", "")
-    val = map(int, val.split())
     return val
 
 
@@ -379,17 +390,42 @@ current argument is used to return a value rather than to pass a
 value, and hence the argument should be moved in the return part of
 the intermediate representation.
 """
+
+""" 
+TODO:
+
+Add support for:
+  - writev
+  - sendfile
+"""
 HANDLED_SYSCALLS_INFO = {
-  # int socket(int domain, int type, int protocol);
+  # int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
   # 
   # Example strace output:
-  # 19176 socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
-  # 19294 socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP) = 3
-  "socket": {
-    'args': (ZeroOrListOfFlags(), ZeroOrListOfFlags(), 
-             ZeroOrListOfFlags()),
+  # 19176 accept(3, {sa_family=AF_INET, sin_port=htons(42572),
+  #              sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+  "accept": {
+    'args': (Int(), 
+             ZeroOrListOfFlags(label_left="sa_family=", output=True), 
+             Int(label_left="sin_port=htons(", label_right=")", 
+                 output=True),
+             Str(label_left="sin_addr=inet_addr(", label_right=")", 
+                 output=True), 
+             Int(output=True)),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+
+  # int access(const char *pathname, int mode);
+  # 
+  # Example strace output:
+  # 19178 access("syscalls.txt", F_OK) = 0
+  # 19178 access("syscalls.txt", R_OK|W_OK) = 0
+  # 19178 access("syscalls.txt", X_OK) = -1 EACCES (Permission denied)
+  "access": {
+    'args': (Str(), ZeroOrListOfFlags()),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+
   # int bind(int sockfd, const struct sockaddr *addr, 
   #          socklen_t addrlen);
   # 
@@ -406,6 +442,49 @@ HANDLED_SYSCALLS_INFO = {
             Int()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+  
+  # int chdir(const char *path);
+  # 
+  # Example strace output:
+  # 19217 chdir(".") = 0
+  "chdir": {
+    'args': (Str(),),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+
+  # int clone(int (*fn)(void *), void *child_stack, int flags, 
+  #           void *arg, ... /* pid_t *ptid, struct user_desc *tls, 
+  #           pid_t *ctid */ );
+  # 
+  # Example strace output:
+  # 7122 clone(child_stack=0xb7507464, 
+  #            flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|
+  #                  CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|
+  #                  CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, 
+  #            parent_tidptr=0xb7507ba8, {entry_number:6, 
+  #            base_addr:0xb7507b40, limit:1048575, seg_32bit:1, 
+  #            contents:0, read_exec_only:0, limit_in_pages:1, 
+  #            seg_not_present:0, useable:1}, 
+  #            child_tidptr=0xb7507ba8) = 7123
+  # 
+  "clone": {
+    'args': (Str(label_left="child_stack="), 
+             ZeroOrListOfFlags(label_left="flags="),
+             SkipRemaining()),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+
+  # int socket(int domain, int type, int protocol);
+  # 
+  # Example strace output:
+  # 19176 socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
+  # 19294 socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP) = 3
+  "socket": {
+    'args': (ZeroOrListOfFlags(), ZeroOrListOfFlags(), 
+             ZeroOrListOfFlags()),
+    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+  },
+  
   # int connect(int sockfd, const struct sockaddr *addr, 
   #             socklen_t addrlen);
   # 
@@ -510,21 +589,7 @@ HANDLED_SYSCALLS_INFO = {
     'args': (Int(), Int()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
-  # int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-  # 
-  # Example strace output:
-  # 19176 accept(3, {sa_family=AF_INET, sin_port=htons(42572),
-  #              sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
-  "accept": {
-    'args': (Int(), 
-             ZeroOrListOfFlags(label_left="sa_family=", output=True), 
-             Int(label_left="sin_port=htons(", label_right=")", 
-                 output=True),
-             Str(label_left="sin_addr=inet_addr(", label_right=")", 
-                 output=True), 
-             Int(output=True)),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
+
   # int getsockopt(int sockfd, int level, int optname, void *optval, 
   #                socklen_t *optlen);
   # 
@@ -552,7 +617,7 @@ HANDLED_SYSCALLS_INFO = {
   # 19316 shutdown(5, 0 /* receive */) = 0
   # 19316 shutdown(5, 2 /* send and receive */) = 0
   "shutdown": {
-    'args': (Int(), Int()),
+    'args': (Int(), ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
   # int close(int fd);
@@ -605,24 +670,8 @@ HANDLED_SYSCALLS_INFO = {
              Int(label_left="f_frsize=", label_right="}", output=True)),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
-  # int access(const char *pathname, int mode);
-  # 
-  # Example strace output:
-  # 19178 access("syscalls.txt", F_OK) = 0
-  # 19178 access("syscalls.txt", R_OK|W_OK) = 0
-  # 19178 access("syscalls.txt", X_OK) = -1 EACCES (Permission denied)
-  "access": {
-    'args': (Str(), ZeroOrListOfFlags()),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
-  # int chdir(const char *path);
-  # 
-  # Example strace output:
-  # 19217 chdir(".") = 0
-  "chdir": {
-    'args': (Str(),),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
+  
+  
   # int mkdir(const char *pathname, mode_t mode);
   # 
   # Example strace output:
@@ -679,6 +728,14 @@ HANDLED_SYSCALLS_INFO = {
   #    st_ctime=2013/03/06-00:17:54}) = 0
   # 19321 stat64("hopefully_no_such_filename_exists.txt", 
   #              0xbf8c7d50) = -1 ENOENT (No such file or directory)
+  #
+  # Example truss output:
+  # 2303: stat64("/savvas/syscalls", 0x08047130)    = 0
+  # 2303:     d=0x00780000 i=299777 m=0100755 l=1  u=0     g=0     sz=59236
+  # 2303:   at = Apr 25 22:54:48 EDT 2013  [ 1366944888.736170000 ]
+  # 2303:   mt = Apr 25 21:43:45 EDT 2013  [ 1366940625.857272000 ]
+  # 2303:   ct = Apr 25 21:43:45 EDT 2013  [ 1366940625.857272000 ]
+  # 2303:     bsz=8192  blks=116   fs=ufs
   "stat": {
     'args': (Str(), StDev(output=True), 
              Int(label_left="st_ino=", output=True), 
@@ -813,13 +870,23 @@ HANDLED_SYSCALLS_INFO = {
   },
   # int fcntl(int fd, int cmd, ... /* arg */ );
   # 
+  # TODO: add support for third parameter of fcntl
+  #
   # Example strace output:
   # 19239 fcntl64(3, F_GETFL) = 0 (flags O_RDONLY)
   # 19239 fcntl64(4, F_GETFL) = 0x402 (flags O_RDWR|O_APPEND)
   "fcntl": {
-    'args': (Int(), ZeroOrListOfFlags(), ZeroOrListOfFlags()),
+    'args': (Int(), ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+
+  """
+  TODO: 
+  Deal with this case first:
+  14041 recvmsg(8,  <unfinished ...>
+    14039 getpid({msg_name(0)=NULL, msg_iov(1)=[{"l\2\1\1\f\0\0\0\1\0\0\0=\0\0\0", 16}], 
+      msg_controllen=0, msg_flags=MSG_CMSG_CLOEXEC}, MSG_CMSG_CLOEXEC) = 16
+  
   # ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
   # 
   # Example strace output:
@@ -841,6 +908,16 @@ HANDLED_SYSCALLS_INFO = {
              ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
+  """
+
+  """
+  TODO: 
+  Deal with this case first:
+    14040 sendmsg(8, {msg_name(0)=NULL, msg_iov(1)=[{"\0", 1}], 
+      msg_controllen=24, {cmsg_len=24, cmsg_level=SOL_SOCKET, 
+      cmsg_type=SCM_CREDENTIALS{pid=14037, uid=1000, gid=1000}}, 
+      msg_flags=0}, MSG_NOSIGNAL)           = 1
+
   # ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags);
   # 
   # Example strace output:
@@ -862,27 +939,8 @@ HANDLED_SYSCALLS_INFO = {
              ZeroOrListOfFlags()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   },
-  # int clone(int (*fn)(void *), void *child_stack, int flags, 
-  #           void *arg, ... /* pid_t *ptid, struct user_desc *tls, 
-  #           pid_t *ctid */ );
-  # 
-  # Example strace output:
-  # 7122 clone(child_stack=0xb7507464, 
-  #            flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|
-  #                  CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|
-  #                  CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, 
-  #            parent_tidptr=0xb7507ba8, {entry_number:6, 
-  #            base_addr:0xb7507b40, limit:1048575, seg_32bit:1, 
-  #            contents:0, read_exec_only:0, limit_in_pages:1, 
-  #            seg_not_present:0, useable:1}, 
-  #            child_tidptr=0xb7507ba8) = 7123
-  # 
-  "clone": {
-    'args': (Str(label_left="child_stack="), 
-             ZeroOrListOfFlags(label_left="flags="),
-             SkipRemaining()),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
+  """
+  
   # int ioctl(int d, int request, ...);
   # 
   # ioctl(0, SNDCTL_TMR_TIMEBASE or TCGETS, {c_iflags=0x6d02, 
@@ -903,224 +961,24 @@ HANDLED_SYSCALLS_INFO = {
   "select": {
     'args': (Int(), FdSet(), FdSet(), FdSet(), TimeVal()),
     'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
-  },
-  # int poll(struct pollfd *fds, nfds_t nfds, int timeout);
-  #
-  # poll([{fd=3, events=POLLOUT}], 1, 5000) = 1 ([{fd=3, 
-  #           revents=POLLOUT}])
-  "poll": {
-    'args': (Int(), FdSet(), FdSet(), FdSet(), TimeVal()),
-    'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
   }
 }
-
-
-
 """
-Parses a single trace given the syscall name, the arguments and the
-return value of that trace.
+TODO:
+  deal with the second example.
 
-Parsing proceeds in 4 steps.
-  1. Initialization: Get the expected type of arguments and return
-     values, according to the name of the syscall. Initialize a list
-     for the arguments and a list for the return values and set all
-     values to the Unknown object.
-  2. Parsing: For each expected argument and each expected return
-     value, check if the given value is of the expected format and
-     parse it. In case of an unexpected format, raise an exception.
-  3. Rearranging: Move some items from the arguments list to the
-     return value list. This happens because some arguments are used
-     to return values rather than to pass values to the system call.
-  4. Form IR: Combines the system call name, the argument list and
-     the return value list to construct the Intermediate
-     Representation.
+# int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+#
+# poll([{fd=3, events=POLLOUT}], 1, 5000) = 1 ([{fd=3, 
+#           revents=POLLOUT}])
+# 
+# 14041 poll([{fd=7, events=POLLIN}, {fd=8, events=POLLIN}, 
+#            {fd=10, events=POLLIN}], 3, -1) = 1 ([{fd=7, revents=POLLIN}])
+"poll": {
+  'args': (Int(label_left="[{fd="), Str(label_left="events=", label_right="}]"), Int(), Int()),
+  'return': (IntOrQuestionOrListOfFlags(), NoneOrStr())
+}
 """
-def parse_trace(syscall_name, args, result):
-  # handle any 'syscall64' the exact same way as 'syscall'
-  # eg fstat64 will be treated as if it was fstat
-  if syscall_name.endswith('64'):
-    syscall_name = syscall_name[:syscall_name.rfind('64')]
-  # same for syscall4
-  if syscall_name.endswith('4'):
-    syscall_name = syscall_name[:syscall_name.rfind('4')]
-
-  if syscall_name not in HANDLED_SYSCALLS_INFO:
-    # Keep track of how many times each syscall was skipped.
-    # These information can be printed every time the parser is used
-    # to help identify which are the most important and most
-    # frequently used syscalls. Subsequently, the parser can be
-    # extended to handle these.
-    if(syscall_name in SKIPPED_SYSCALLS):
-      SKIPPED_SYSCALLS[syscall_name]=SKIPPED_SYSCALLS[syscall_name]+1
-    else:
-      SKIPPED_SYSCALLS[syscall_name] = 1
-    return UNIMPLEMENTED_ERROR
-
-  ##########################
-  # 1. Initialization step #
-  ##########################
-  # get the expected arguments from the intermediate representation.
-  expected_args = list(HANDLED_SYSCALLS_INFO[syscall_name]['args'])
-  # get the expected return values from the intermediate
-  # representation.
-  expected_return=list(HANDLED_SYSCALLS_INFO[syscall_name]['return'])
-  # Initialize all arguments to Unknown()
-  args_list = []
-  for arg_index in range(len(expected_args)):
-    args_list.append(expected_args[arg_index].parse())
-  # Initialize all return values to Unknown()
-  return_list = []
-  for return_index in range(len(expected_return)):
-    return_list.append(expected_return[return_index].parse())
-  
-  ###################
-  # 2. Parsing step #
-  ###################
-  # Parse the individual arguments of the syscall.
-  # Length of args can change. If the syscall contains a string
-  # argument and the string contained ", " the parser would have
-  # wrongly split the string.
-  index = 0
-  offset = 0
-  while index < len(args):
-    # Do we have more than the expected arguments?
-    if index >= len(expected_args):
-      raise Exception("Too many arguments found while parsing.")
-    
-    # get the expected type for the current argument.
-    # What is offset?
-    # If the syscall returned an error the value of structure
-    # variables will not be returned. Instead, where we expect the
-    # first value of the structure we get the address of the
-    # structure and the remaining values are simply not listed. Using
-    # offset we can skip these expected arguments since they are not
-    # provided.
-    expected_arg_type = expected_args[index + offset]
-    
-    # Skip all remaining arguments?
-    # this type is used to indicate that the remaining arguments
-    # should be skipped. This is useful in cases where a system call
-    # is partly supported.
-    # Consequently, the value of the remaining arguments will be the
-    # one given to them in the initialization step.
-    if isinstance(expected_arg_type, SkipRemaining):
-      break
-
-    # Did the argument contain ", "? A few types can contain a ", "
-    # string, in which case the parser would have wrongly split these
-    # in two arguments.
-    if(isinstance(expected_arg_type, FFsid) or 
-       isinstance(expected_arg_type, StDev) or
-       isinstance(expected_arg_type, StSizeOrRdev) or
-       isinstance(expected_arg_type, TimeVal)):
-      if len(args) > len(expected_args):
-        args[index] += ", " + args[index+1]
-        args.pop(index+1)
-    
-    args_list[index+offset] = expected_arg_type.parse(args[index])
-    # Did the syscall return an error?
-    # Deal with the fact that some structure values may not be
-    # provided. We can detect when this happens by checking if the
-    # returned "parsed" value of some expected types is Unknown.
-    # How do we deal with this? The values of the expected arguments
-    # are set to Unknown and the offset variable is set appropriately
-    # so that in the next iteration we parse the correct argument
-    # type.
-    # Firstly set the offset which indicates how many values after
-    # the current value are missing.
-    # Then for each missing value, get its expected type. The final 
-    # value will in any case be an Unknown object but getting the 
-    # expected type helps in constructing a more informative Unknown
-    # object. Specifically we can run the parse function of this
-    # type with no arguments which will return an Unknown object
-    # with its expected_type and its given_value variables set
-    # appropriately.
-    if args_list[index+offset] == Unknown():
-      # set the offset value according to what the current type is.
-      if(isinstance(expected_arg_type, ZeroOrListOfFlags) and 
-         expected_arg_type.label_left == "sa_family="):
-        if syscall_name == "recvmsg" or syscall_name == "sendmsg":
-          # six additional structure values follow SockFamily in
-          # recvmsg and in sendmsg. Hence six values are missing and
-          # the offset should be set to six.
-          offset = 6
-        else:
-          # two additional structure values follow SockFamily. Hence
-          # two values are missing and the offset should be set to two.
-          offset = 2
-      elif(isinstance(expected_arg_type, Str) and 
-         expected_arg_type.label_left == "f_type="):
-        offset = 9
-      elif isinstance(expected_arg_type, StDev):
-        offset = 11
-      # For each missing argument, set its value to Unknown.
-      for missing_index in range(1, offset+1):
-        missing_arg_type = expected_args[index + missing_index]
-        args_list[index + missing_index] = missing_arg_type.parse()
-    
-    # if the family is AF_NETLINK, adjust the expected types.
-    # The default types after a SockFamily are SockPort and SockIP
-    if(isinstance(expected_arg_type, ZeroOrListOfFlags) and 
-       expected_arg_type.label_left == "sa_family=" and not
-       isinstance(args_list[index], Unknown) and 
-       "AF_NETLINK" in args_list[index]):
-      expected_args[index+1] = Int(label_left="pid=", output=True)
-      expected_args[index+2] = Int(label_left="groups=", 
-                                   label_right="}", output=True)
-    
-    index += 1
-
-  # parse the return values of the syscall
-  for index in range(len(result)):
-    # Do we have more than the expected return values?
-    if index >= len(expected_return):
-      raise Exception("Too many return values found while parsing.")
-    expected_return_type = expected_return[index]
-    return_list[index] = expected_return_type.parse(result[index])
-  
-  #######################
-  # 3. Rearranging step #
-  #######################
-  # Some arguments are used to return a value rather than to pass
-  # a value to the syscall. These arguments are moved to the return
-  # part of the syscall. How do we know if a given argument should be
-  # moved to the return part? Each expected argument type has a
-  # variable called output, which if true, indicates just that.
-  return_tuple = ()
-  # add the expected return values to the return tuple.
-  for return_index in range(len(expected_return)):
-    return_tuple = return_tuple + (return_list[return_index],)
-  
-  args_tuple = ()
-  args_return_tuple = () # arguments to move in return tuple.
-  # if the expected argument is an "output" argument, append it to
-  # the return tuple, else append it in the arguments tuple.
-  for arg_index in range(len(expected_args)):
-    if expected_args[arg_index].output:
-      args_return_tuple = args_return_tuple + (args_list[arg_index],)
-    else:
-      args_tuple = args_tuple + (args_list[arg_index],)
-  
-  # if the system call returned an error, indicated by a -1, then
-  # skip the args_return_tuple
-  if return_tuple[0] != -1 and len(args_return_tuple) != 0:
-    # if the return_tuple is of format (value1, None) then replace
-    # None with the args_return_tuple. Otherwise if the second
-    # argument of the return value is not None, raise an Exception.
-    if len(return_tuple) == 2 and return_tuple[1] == None:
-      return_tuple = (return_tuple[0], args_return_tuple)
-    else:
-      raise Exception("Trying to add more return values in a " + 
-                      "system call which already has two return " + 
-                      "values. " + return_tuple)
-  
-  ###################
-  # 4. Form IR step #
-  ###################
-  # form the intermediate representation.
-  trace = (syscall_name+'_syscall', args_tuple, return_tuple)
-  return trace
-
 
 
 #####################

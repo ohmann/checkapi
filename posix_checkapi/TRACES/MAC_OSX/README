@@ -1,0 +1,31 @@
+Contents
+========
+A.Gathering traces in Mac OS X
+B.Gathering simple test traces
+C.Parsing traces
+
+
+
+A.Gathering traces in mac OS X
+==============================
+A d script is provided, which can be used to gather traces on OSX systems. Use
+it like this:
+
+    dtrace_osx.d -o <output_name.dtrace> -c "<command with arguments>"
+
+Please note the quotes around the command and arguments. Also note that dtrace
+can only run with ROOT priviledges under OSX.
+
+
+B.Gathering simple test traces
+==============================
+A C program is provided under the syscalls directory which can be used to 
+explicitly run certain system calls. This program can be used in combination 
+with the dtrace script to gather simple traces of specific system calls.
+
+
+C.Parsing traces
+================
+A parser is provided:
+    
+    python parser.py <trace_file>

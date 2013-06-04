@@ -3,7 +3,6 @@ Contents
 A.Gathering traces in Linux
 B.Gathering simple test traces
 C.Parsing traces
-D.Combined trace gathering and parsing
 
 
 
@@ -64,20 +63,18 @@ application. For example:
 
 C.Parsing traces
 ================
-
 Once a trace is gathered and stored in a trace file using a tracing utility such
 as "strace", it can then be parsed. The POSIX Omni Tracer (POT) is provided,
 able to parse trace files coming from different tracing utilities in different
-operating systems
+operating systems, such as strace, truss and dtrace.
+Using the POT parser:
 
+    export REPY_PATH="`pwd`"         # required to generate the lind file system
+    python parser.py <trace_file> [trace_type]
 
-A parser is provided
-python parser.py <trace_file>
-export LIND_PATH="`pwd`"
-
-
-D.Combined trace gathering and parsing
-======================================
-A very simple script is given. It's a safe way to ensure strace was executed
-with the righr arguments.
-strace_and_parse.sh <trace_output_name> <program name> [program arguments]
+Arguments:
+- trace_file is the file containing the output of the tracing utility, in this
+case the strace output.
+- trace_type is an optional second argument that indicates which tool was used 
+to generate the trace_file, for example strace. This argument is only needed if 
+the type of the trace_file cannot be automaitically inferred.

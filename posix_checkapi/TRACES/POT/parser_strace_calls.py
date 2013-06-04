@@ -93,7 +93,7 @@ def parse_trace(fh):
 
   # this list will hold all pending (i.e unfinished) syscalls
   unfinished_syscalls = []
-  
+
   # process each line
   for line in fh:
     line = line.strip()
@@ -309,6 +309,8 @@ if __name__ == "__main__":
 
   actions = parse_trace(open(sys.argv[1], "r"))
   
+  """
   for action in actions:
     print action
     print
+  """

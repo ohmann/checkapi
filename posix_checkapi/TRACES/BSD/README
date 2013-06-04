@@ -12,7 +12,7 @@ A.Gathering traces in BSD
 A d script is provided, which can be used to gather traces on BSD systems. Use
 it like this:
 
-  dtrace_bsd.d -o <output_name.dtrace> -c "<command with arguments>"
+    dtrace_bsd.d -o <output_name.dtrace> -c "<command with arguments>"
 
 Please note the quotes around the command and arguments. Also note that dtrace
 can only run with ROOT priviledges under BSD.
@@ -35,8 +35,9 @@ with the dtrace script to gather simple traces of specific system calls.
 
 C.Parsing traces
 ================
-A parser is provided
-python parser.py <trace_file>
+A parser is provided:
+    
+    python parser.py <trace_file>
 
 
 D.Setting up DTrace on BSD
@@ -62,7 +63,7 @@ followed here:
   10.Run make install clean
   11.Go to /usr/ports/sysutils/DTraceToolkit.
   12.Run make install clean
-  13.Run kldload dtraceall. YOu will probably have to do this every time you
+  13.Run kldload dtraceall. You will probably have to do this every time you
      start your system
   14.You should now be able to run dtrace on your system.
 
@@ -72,4 +73,3 @@ Information on how to set up DTrace on BSD can be found here:
   http://www.freebsd.org/doc/en/books/handbook/dtrace-enable.html
 Inormation on how to customize the BSD kernel can be found here:
   http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html
-

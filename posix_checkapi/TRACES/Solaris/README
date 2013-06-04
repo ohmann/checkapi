@@ -6,12 +6,14 @@ A.Gathering traces in Solaris
 
 A.Gathering traces in Solaris
 =============================
-Traces in Solaris can be gathered using truss. The expected way of using truss 
-to gather traces that can be parsed by our parser is:
+Traces in Solaris can be gathered using truss. The expected options to use with 
+truss to gather traces that can be parsed by the parser provided in this 
+project is the following:
 
-truss -f -rall -wall -vall -o output_filename command
+    truss -f -rall -wall -vall -o output_filename command
 
--f trace child processes
--rall shows full contents of I/O buffer for the read syscall
--wall shows full contents of I/O buffer for the write syscall
--vall display contents of structures (instead of there address)
+Options:
+-f follow and trace child processes.
+-rall shows full contents of I/O buffer for the read syscall.
+-wall shows full contents of I/O buffer for the write syscall.
+-vall display contents of structures (instead of their address)

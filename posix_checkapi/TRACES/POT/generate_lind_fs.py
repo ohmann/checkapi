@@ -36,12 +36,17 @@ from lind_fs_constants import *
 
 DEBUG = False
 
+
 """
 This is the only public function of this module. It takes as argument a tuple of
-trace actions and generates a lind fs based on the information it can gather 
+trace actions and generates a lind fs based on the information it can gather
 from these actions and the posix fs.
 """
 def generate_fs(actions, trace_path):
+  # Relative paths found in actions are related to this HOME_PATH. It is initially
+  # set to an empty string which ultimately translates to the current directory.
+  home_path = ''
+
   # read the trace and examine the execve syscall to see if the HOME environment
   # variable is set to somewhere else. This usually happens when running 
   # benchmarks. The reason to do this is because actions referring to files 
@@ -52,31 +57,51 @@ def generate_fs(actions, trace_path):
   execve_line = fh.readline()
   fh.close()
   
-  execve_home_path = None
+  # If the 'HOME' variable is defined in the execve line, the HOME_PATH
+  # variable will be set to the path of 'HOME'.
   if execve_line.find("execve(") != -1:
     execve_parts = execve_line.split(", ")
-    # the definition of the HOME variable in the execve syscall has this format:
-    # "HOME=/home/savvas/tests/"
+    # the parameter of the HOME variable in the execve syscall has this format:
+    # "HOME=/home/savvas/tests/" including the double quotes.
     for part in execve_parts:
       if part.startswith("\"HOME="):
         part = part.strip("\"")
         assert(part.startswith("HOME="))
-        execve_home_path = part[part.find("HOME=")+5:]
+        home_path = part[part.find("HOME=")+5:]
 
   # load an initial lind file system.
   lind_test_server._blank_fs_init()
 
-  # Keep track of all the file paths dealt with and make a note of
-  # whether the file was added to the lind fs or not.
-  # Example: {"filename.txt":True, "filename2.txt":False} where True
-  # indicates the file was added into the lind fs and False means the
-  # file was seen but wasn't added to the lind fs.
+  # Keep track of all the file paths dealt with and make a note of whether the
+  # file was added to the lind fs or not. Example: {"filename.txt":True,
+  # "filename2.txt":False} where True indicates the file was added into the lind
+  # fs and False means the file was seen but wasn't added to the lind fs. We
+  # keep track of all the paths met so far for two reasons. Firstly, we want to
+  # construct the INITIAL file system state, so we only deal with the first
+  # occurence of each path. For example consider the following sequence of 
+  # traced system calls example:
+  #
+  #   11443 open("test.txt", O_RDONLY) = -1 ENOENT (No such file or directory)
+  #     ...
+  #   11443 open("test.txt", O_RDONLY) = 3
+  #
+  # In this example when the "test.txt" path is met for the first time, the file
+  # does not exist (indicated by: -1 ENOENT). Subsequently, the "test.txt" path
+  # is met again and in this case the file does exist. In this case we do NOT
+  # want to include the "test.txt" file in the lind fs, because the initial file
+  # system state did not include this file, even though the file is eventually
+  # created.
+  #
+  # The second reason we keep track of all the paths met and whether they were 
+  # added in the lind fs is to confirm whether the lind fs was constructed 
+  # successfully.
   seen_paths = {}
 
-  # a list of system calls that include a filepath in their 
-  # arguments.
-  syscalls_with_path = ['open', 'creat', 'statfs', 'access', 'stat', 
-                        'link', 'unlink', 'chdir', 'rmdir', 'mkdir']
+  # a list of system calls that include a filepath in their arguments. We only
+  # care about these system calls so only the actions representing of these
+  # system calls will be examined.
+  syscalls_with_path = ['open', 'creat', 'statfs', 'access', 'stat', 'link', 
+                        'unlink', 'chdir', 'rmdir', 'mkdir']
   
   for action in actions:
     # the general format of an action is the following:
@@ -87,7 +112,7 @@ def generate_fs(actions, trace_path):
     #    ['S_IWUSR', 'S_IRUSR', 'S_IWGRP', 'S_IRGRP', 'S_IROTH']), 
     #            (3, None))
     #
-    # Example unsuccessful syscall action:
+    # Example unsuccessful syscall actions:
     # ('access_syscall', ('/etc/ld.so.nohwcap', ['F_OK']), 
     #                  (-1, 'ENOENT'))
     # ('mkdir_syscall', ('syscalls_dir', ['S_IRWXU', 'S_IRWXG', 
@@ -95,7 +120,7 @@ def generate_fs(actions, trace_path):
     syscall_name, syscall_parameters, syscall_result = action
 
     if DEBUG:
-      print "Trace:", action
+      print "Action:", action
 
     # each syscall name should end with _syscall
     if not syscall_name.endswith("_syscall"):
@@ -109,27 +134,32 @@ def generate_fs(actions, trace_path):
 
       # TODO: I should consider O_CREAT O_EXECL and O_TRUNC flags.
 
-      # check if the system call is open and whether it includes the O_CREAT 
-      # flag.
+      # check if the system call is open and whether it includes the O_CREAT
+      # flag. If it does, set the o_creat flag to True, otherwise set it to
+      # False. The o_creat flag will be used when trying to add a file, to
+      # indicate how to handle the case the actual file is missing.
+      # Specifically, when trying to add a file into the lind fs that does not
+      # exist in the local fs, an exception will be raised, unless the o_creat
+      # flag is set to True, in which case a warning will be printed instead.
       o_creat = False
       if syscall_name == "open":
         open_flags = action[1][1]
         if "O_CREAT" in open_flags:
           o_creat = True
       
-      # if the system call is creat, again set o_creat to True
+      # Similarly, if the system call is creat, set the o_creat flag to True
       if syscall_name == "creat":
         o_creat = True
 
       # get the file path from the action
       path = action[1][0]
 
-      # We want the initial file system state. So deal only with the
-      # earliest syscall pertaining to a path.
+      # We want the initial file system state. So deal only with the earliest
+      # syscall pertaining to a path.      
       if path not in seen_paths:
         # if the syscall was successful, copy file/dir into the lind fs.
         if syscall_result != (-1, 'ENOENT'):
-          path, path_added = _copy_path_into_lind(path, execve_home_path, o_creat)
+          path, path_added = _copy_path_into_lind(path, home_path, o_creat)
           
           # remember this path was seen and whether it was added to the lind fs.
           seen_paths[path] = path_added
@@ -138,39 +168,62 @@ def generate_fs(actions, trace_path):
           # remember this path was seen but not added to the lind fs.
           seen_paths[path] = False
 
-    # the syscall contains a second path.
-    if syscall_name == 'link':
-      # ('link_syscall', ('syscalls.txt', 'syscalls.link'), (0, None))
-      path2 = action[1][1]
+      # the link syscall contains a second path.
+      if syscall_name == 'link':
+        # ('link_syscall', ('syscalls.txt', 'syscalls.link'), (0, None))
+        path2 = action[1][1]
 
-      if path2 not in seen_paths:
-        # if we got an exists error, the file must have been there
-        # already.
-        if syscall_result == (-1, 'EEXIST'):
-          path2, path_added = _copy_path_into_lind(path2, execve_home_path, o_creat)
+        if path2 not in seen_paths:
+          # if we got an exists error, the file must have been there
+          # already, so we add it in the lind fs.
+          if syscall_result == (-1, 'EEXIST'):
+            path2, path_added = _copy_path_into_lind(path2, home_path, o_creat)
+            
+            # remember this path was seen and whether it was added to the lind fs.
+            seen_paths[path2] = path_added
           
-          # remember this path was seen and whether it was added to the lind fs.
-          seen_paths[path] = path_added
-        
-        else:
-          # remember this path was seen but not added to the lind fs.
-          seen_paths[path2] = False
+          else:
+            # remember this path was seen but not added to the lind fs.
+            seen_paths[path2] = False
 
-    """
-      Can add support for symlink here. A bit more tricky due to return part.
-    """
+      """
+        TODO: Can add support for symlink here. Slightly more tricky due to 
+        return part and error messages.
+      """
+
+      # change the home directory and the lind current directory so that future 
+      # references to relative paths will be handled correctly.
+      if syscall_name == 'chdir':
+        home_path = os.path.join(home_path, path)
+        home_path = os.path.normpath(home_path)
+        lind_test_server.chdir_syscall(home_path)
+
+      
   
   if DEBUG:
+    print
+    print "Seen Paths"
     print seen_paths
 
-  # all trace lines are now read. We should confirm that lind fs is as expected.
+  # all actions are now read. Let's confirm that lind fs is as expected.
   all_lind_paths = list_all_lind_paths()
 
+  if DEBUG:
+    print
+    print "Lind Paths"
+    print all_lind_paths
+
   for seen_path in seen_paths:
-    # convert to absolute path.
+    # convert to lind absolute path.
     abs_seen_path = seen_path
     if not abs_seen_path.startswith("/"):
       abs_seen_path = "/" + abs_seen_path
+
+    abs_seen_path = os.path.normpath(abs_seen_path)
+
+    # skip the root
+    if abs_seen_path == "/":
+      continue
 
     if seen_paths[seen_path]:
       # the file should be in lind fs.
@@ -181,34 +234,24 @@ def generate_fs(actions, trace_path):
       # file should not be in lind fs.
       if abs_seen_path in all_lind_paths:
         raise Exception("Unexpected file '" + abs_seen_path + "' in Lind fs")
-  
+
 
 """
-Check if the file/dir exists. Check also in the HOME environment variable as it
-is defined in the execve syscall.
-If it exists copy it to the lind fs. If not raise an exception.
+Check if the file/dir exists. If it exists copy it to the lind fs. If not raise 
+an exception.
 """
-def _copy_path_into_lind(path, execve_home_path, o_creat):
+def _copy_path_into_lind(path, home_path, o_creat):
+  path = os.path.join(home_path, path)
+  path = os.path.normpath(path)
+
   if not os.path.exists(path):
-    # the file does not exist here. but maybe it exists relative to where the 
-    # HOME environment variable points to.
-    if execve_home_path != None:
-      path = os.path.join(execve_home_path, path)
-      
-      if not os.path.exists(path):
-        # if the O_CREAT flag was set in the system call, allow the program to 
-        # proceed even if the file does not exist.
-        if o_creat:
-          print "[warning] path with O_CREAT not found."
-          return path, False
-        raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
-    else:
-      # if the O_CREAT flag was set in the system call, allow the program to 
-      # proceed even if the file does not exist.
-      if o_creat:
-        print "[warning] path with O_CREAT not found."
-        return path, False
-      raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
+    # if the O_CREAT flag was set in the system call or if we are dealing with 
+    # the creat syscall, allow the program to proceed even if the file does not
+    # exist.
+    if o_creat:
+      print "[warning] path with O_CREAT not found."
+      return path, False
+    raise IOError("Cannot locate file on POSIX FS: '" + path + "'")
 
   # path exists! Copy it to the lind fs.
   if os.path.isfile(path):

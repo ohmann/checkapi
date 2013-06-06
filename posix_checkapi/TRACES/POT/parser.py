@@ -10,16 +10,16 @@
 
 <Purpose>
   This is the posix parser used to parse traces and generate the initial file
-  system state. The parser supports traces gathered using strace truss and 
+  system state. The parser supports traces gathered using strace, truss and 
   dtrace as shown below:
   
-    strace -v -f -s1024 -o output_filename command
-    
-    truss -f -rall -wall -vall -o output_filename command
-    
-    dtrace_bsd.d -o output_filename -c "command"
+      strace -v -f -s1024 -o output_filename command
+      
+      truss -f -rall -wall -vall -o output_filename command
+      
+      dtrace_bsd.d -o output_filename -c "command"
 
-    dtrace_osx.d -o output_filename -c "command"
+      dtrace_osx.d -o output_filename -c "command"
 
   strace is used to gather traces on Linux systems. truss is used to gather
   traces on Solaris and dtrace is used to gather traces on BSD and OSX systems.
@@ -44,7 +44,7 @@ import generate_lind_fs
 import parser_truss_calls
 import parser_strace_calls
 
-DEBUG = True
+DEBUG = False
 
 """
 Given a path to a trace file, this function performs the following operations:

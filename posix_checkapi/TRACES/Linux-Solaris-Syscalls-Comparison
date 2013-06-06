@@ -3,8 +3,8 @@
              ========================================
 
 Description:
-- For each system call, we provide a trace example for Linux and Solaris and
-the Linux IR action followed by the Solaris IR action.
+- For each system call, we provide a trace example for Linux (first) and Solaris 
+(second) followed by the Linux IR action followed by the Solaris IR action.
 
 
 ACCEPT:

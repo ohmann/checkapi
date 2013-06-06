@@ -1,6 +1,6 @@
 """
 <Program>
-  posix_intermediate_representation.py
+  parser_intermediate_representation.py
 
 <Started>
   February 2013

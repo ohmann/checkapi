@@ -6,7 +6,7 @@ C.Parsing traces
 
 
 
-A.Gathering traces in mac OS X
+A.Gathering traces in Mac OS X
 ==============================
 A d script is provided, which can be used to gather traces on OSX systems. Use
 it like this:

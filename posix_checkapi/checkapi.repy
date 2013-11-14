@@ -24,7 +24,7 @@
 # Display debugging information during execution.
 DEBUG = False
 """
-  
+
 # Systolic verification constant, keep only N levels of state at any given time.
 SYSTOLIC_LEVELS = 32
 

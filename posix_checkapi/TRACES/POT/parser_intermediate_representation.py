@@ -1068,10 +1068,10 @@ def _modeToListOfFlags(mode):
   return list_of_flags
 
 
-if __name__ == "__main__":
-  print "Supported Syscalls"
-  print "------------------"
-  count = 1
-  for syscall in sorted(HANDLED_SYSCALLS_INFO.keys()):
-    print str(count) + ": " + syscall
-    count += 1
+#if __name__ == "__main__":
+  #print "Supported Syscalls"
+  #print "------------------"
+  #count = 1
+  #for syscall in sorted(HANDLED_SYSCALLS_INFO.keys()):
+    #print str(count) + ": " + syscall
+    #count += 1

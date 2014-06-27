@@ -38,10 +38,10 @@ nanny._resources_consumed_dict = {'messport':set(), 'connport':set(), 'cpu':0,
 '''
 
 # EG:
-dy_import_module_symbols("lind_fs_constants")
-dy_import_module_symbols("fs_net_handler")
-dy_import_module_symbols("serialize")
-dy_import_module_symbols("parser_intermediate_representation")
+dy_import_module_symbols("lind_fs_constants.py")
+dy_import_module_symbols("fs_net_handler.repy")
+dy_import_module_symbols("serialize.repy")
+dy_import_module_symbols("parser_intermediate_representation.py")
 
 """
   Author: Justin Cappos

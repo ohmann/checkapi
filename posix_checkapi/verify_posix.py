@@ -380,6 +380,9 @@ if __name__ == "__main__":
     raise Exception("Too few command line arguments. Usage: " +
                     sys.argv[0] + " <trace bundle> <error file>")
   
+  # add working directory to the path for module imports
+  sys.path.append(os.path.dirname(__file__))
+  
   # unbundle the trace bundle to get the traces.
   bundle_name = sys.argv[1]
   traces = _unbundle_trace(bundle_name)

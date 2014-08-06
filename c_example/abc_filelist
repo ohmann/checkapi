@@ -1,0 +1,5 @@
+workingdir = /somedir/
+/somedir/ 0755
+./abc.ERR 0644 0
+/somedir/api/ 0755
+api/abc.log 0644 321

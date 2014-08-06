@@ -2,12 +2,14 @@
 Python wrapper for abccrypto_model.c
 """
 
+import os
 from ctypes import *
 from framework.checkapi_oracle_setter_getter import *
 from framework.checkapi_exceptions import *
 from framework.checkapi_files import *
 
-abccrypto = CDLL('/home/ohmann/dev/checkapi/c_example/model/abccrypto_model.so')
+cwd = os.path.dirname(__file__)
+abccrypto = CDLL(cwd + '/abccrypto_model.so')
 
 # C function wrappers for CheckAPI python functions
 oraclegetter_py = CFUNCTYPE(c_int, c_char_p)(oracle_getter)

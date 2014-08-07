@@ -2,7 +2,10 @@
 Parse and translate traces from a C API into the intermediate representation, as
 it is defined in parser_c_intermediate_representation.py. Produces a list of all
 parsed trace actions, each action in the form:
-  ('funcname', [arg1, arg2, ...], [return1, return2])
+  ('funcname', [arg1, arg2, ...], [return1, return2], is_direct)
+
+Node: is_direct indicates a direct call from the API user, not a nested call by
+another API call.
 
 Example usage:
   from parsing.parser_c import parse_trace
@@ -39,13 +42,16 @@ def parse_trace(fh):
     # Each iteration parses one action
     while True:
 
-      # Process return type and func name
+      # Process return type, func name, and whether the func was called directly
+      # by the API user
       #
-      # Example trace line:
-      # === int file_open
+      # Example trace lines:
+      # === int file_write direct
+      # === int file_open nested
       line = fh.next()
       line_num += 1
-      (func_rettype, func_name) = parse_func_declaration(line, line_num)
+      (func_rettype, func_name, is_direct) = parse_func_declaration(line,
+        line_num)
 
       # For the func found above, get all arguments, return arguments, and
       # the return value
@@ -85,12 +91,12 @@ def parse_trace(fh):
           arg_list.append(arg)
 
       if glob.debug:
-        print "[parser] %s args: %s return: %s" % (func_name, arg_list,
-          ret_list)
+        print "[parser] %s args: %s return: %s is_direct: %s" % (func_name,
+          arg_list, ret_list, str(is_direct))
 
       # Verify the complete action
       try:
-        action = verify_action(func_name, arg_list, ret_list)
+        action = verify_action(func_name, arg_list, ret_list, is_direct)
 
       # Check for unimplemented functions
       except UnimplementedError:
@@ -110,31 +116,35 @@ def parse_trace(fh):
 
 def parse_func_declaration(line, line_num):
   """
-  Process return type and func name
+  Process return type, func name, and whether the func was called directly by
+  the API user
 
-  Example trace line:
-  === int file_open
+  Example trace lines:
+  === int file_write direct
+  === int file_open nested
   """
   # Split line on whitespace
   split_error = False
   try:
-    (tag, rettype_str, func_name) = line.split()
+    (tag, rettype_str, func_name, direct_str) = line.split()
   except:
     split_error = True
 
+  # Conversions for func return type and direct call flag
+  rettype_flags = {"int": int}
+  direct_flags = {"direct": True,
+                  "nested": False}
+
   # Check for malformed line
   if split_error or tag != "===":
-    raise ParseError("Log line %d, expected '=== rettype funcname', found:\n%s"
-      % (line_num, line))
+    raise ParseError("Log line %d, expected '=== rettype funcname "
+      "[direct/nested]', found:\n%s" % (line_num, line))
 
-  # Parse func return type
-  if rettype_str == "int":
-    rettype = int
-  else:
-    raise ParseError("Log line %d, invalid ret type %s" % (line_num,
-      rettype_str))
+  # Parse direct flag and func return type
+  rettype = rettype_flags[rettype_str]
+  is_direct = direct_flags[direct_str]
 
-  return (rettype, func_name)
+  return (rettype, func_name, is_direct)
 
 
 
@@ -175,7 +185,7 @@ def parse_arg_or_ret(line, line_num):
 
 
 
-def verify_action(func_name, args, ret):
+def verify_action(func_name, args, ret, is_direct):
   """
   For an action, verify that it has the correct number and type of args and
   return values. Return the packed action
@@ -204,4 +214,4 @@ def verify_action(func_name, args, ret):
   for i in range(len(expected_ret)):
     expected_ret[i].check(ret[i])
 
-  return (func_name, args, ret)
+  return (func_name, args, ret, is_direct)

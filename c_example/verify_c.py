@@ -36,7 +36,7 @@ def verify_trace(trace):
     line_num += 1
 
     # Unpack the action
-    func_name, func_args, impl_ret = action
+    func_name, func_args, impl_ret, is_direct = action
 
     # Get the function based on the name in the action
     if func_name in func_map:
@@ -53,6 +53,14 @@ def verify_trace(trace):
     if func_name in oracle_required_funcs:
       # TODO: support all ret args too, not just ret value
       oracle_setter(impl_ret[-1])
+
+    # Nested calls from another API function (not directly from the API user)
+    # will also be nested calls made within the model, so don't explicitly call
+    # them here
+    if not is_direct:
+      if glob.debug:
+        print "    %d  Skipping nested call to %s" % (line_num, func_name)
+      continue
 
     # Execute the function using the model
     model_ret = func(*func_args)

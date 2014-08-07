@@ -1,7 +1,10 @@
 """
 Definitions and helpers for converting traces into a consistent intermediate
 representation. Each action in this format is of the form:
-  ('funcname', [arg1, arg2, ...], [return1, return2])
+  ('funcname', [arg1, arg2, ...], [return1, return2], is_direct)
+
+Node: is_direct indicates a direct call from the API user, not a nested call by
+another API call.
 
 First, a set of classes defines how to parse each specific type of argument.
 Second, a map defines the expected arguments and return values of each supported

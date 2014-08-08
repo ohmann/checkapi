@@ -30,11 +30,16 @@ int get_new_random_(void) {
 }
 
 // CHECKAPI SHIM FOR LOGGING
-int get_new_random(void) {
+int get_new_random_log(int is_direct) {
   int ret = get_new_random_();
-  write_type_and_func("int", "get_new_random");
+  write_type_and_func("int", "get_new_random", is_direct);
   write_return_int(ret);
   return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
+int get_new_random(void) {
+  return get_new_random_log(DIRECT);
 }
 
 /*
@@ -54,12 +59,17 @@ int get_prior_random_(int index) {
 }
 
 // CHECKAPI SHIM FOR LOGGING
-int get_prior_random(int index) {
+int get_prior_random_log(int index, int is_direct) {
   int ret = get_prior_random_(index);
-  write_type_and_func("int", "get_prior_random");
+  write_type_and_func("int", "get_prior_random", is_direct);
   write_int(index);
   write_return_int(ret);
   return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
+int get_prior_random(int index) {
+  return get_prior_random_log(index, DIRECT);
 }
 
 /*
@@ -77,14 +87,19 @@ int file_open_(int *fd, char *filename, int flags) {
 }
 
 // CHECKAPI SHIM FOR LOGGING
-int file_open(int *fd, char *filename, int flags) {
+int file_open_log(int *fd, char *filename, int flags, int is_direct) {
   int ret = file_open_(fd, filename, flags);
-  write_type_and_func("int", "file_open");
+  write_type_and_func("int", "file_open", is_direct);
   write_int_ret_arg(*fd);
   write_string(filename);
   write_int(flags);
   write_return_int(ret);
   return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
+int file_open(int *fd, char *filename, int flags) {
+  return file_open_log(fd, filename, flags, DIRECT);
 }
 
 /*

@@ -14,9 +14,10 @@ void open_log() {
   }
 }
 
-void write_type_and_func(char *type, char *func) {
+void write_type_and_func(char *type, char *func, int is_direct) {
   open_log();
-  fprintf(out, "=== %s %s\n", type, func);
+  char *directflag = (is_direct == DIRECT ? "direct" : "nested");
+  fprintf(out, "=== %s %s %s\n", type, func, directflag);
 }
 
 void write_int(int i) {

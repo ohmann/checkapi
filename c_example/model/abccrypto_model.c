@@ -7,9 +7,12 @@ int prev_index = 0;
 /*
  * Returns a random int between 0-255
  */
-int get_new_random(int (oracle_getter)(char*)) {
+int get_new_random(int (oracle_get_id)(void), int (oracle_getter)(int, char*)) {
+  // Get id for oracle data
+  int oracle_id = (*oracle_get_id)();
+
   // Get random int
-  int num = (*oracle_getter)("^<RANGE 0, 255>$");
+  int num = (*oracle_getter)(oracle_id, "^<RANGE 0, 255>$");
 
   // Store random int for later calls to get_prior_random(), and return
   previous[prev_index++] = num;

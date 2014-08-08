@@ -12,11 +12,12 @@ cwd = os.path.dirname(__file__)
 abccrypto = CDLL(cwd + '/abccrypto_model.so')
 
 # C function wrappers for CheckAPI python functions
-oraclegetter_py = CFUNCTYPE(c_int, c_char_p)(oracle_getter)
+oraclegetid_py = CFUNCTYPE(c_int)(oracle_get_id)
+oraclegetter_py = CFUNCTYPE(c_int, c_int, c_char_p)(oracle_getter)
 fsopen_py = CFUNCTYPE(c_int, c_char_p, c_int)(fs_open)
 
 def get_new_random_model():
-  result = abccrypto.get_new_random(oraclegetter_py)
+  result = abccrypto.get_new_random(oraclegetid_py, oraclegetter_py)
   return [result]
 
 def get_prior_random_model(index):

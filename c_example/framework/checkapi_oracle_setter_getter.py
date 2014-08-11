@@ -66,8 +66,8 @@ def _assert_value_okay(cond_regex, value):
   # Process standard regex
   elif special_regex == "":
     # Check value against standard regex
-    if not re.search(leftover_regex, value):
-      raise ModelConformanceFailure("Value '%s' does not match regex ''" %
+    if not re.search(leftover_regex, str(value)):
+      raise ModelConformanceFailure("Value '%s' does not match regex '%s'" %
         (str(value), str(cond_regex)))
 
   # Malformed regex

@@ -52,8 +52,22 @@ class filestate():
     Create a new fd (i.e., when opening a file). Return the new fd's id
     """
     newfd = openfd(self.nextid, inodeid)
+    self.fds[self.nextid] = newfd
     self.nextid += 1
     return newfd.id
+
+
+  def remove_fd(self, fd_id):
+    """
+    Remove an existing fd. Return the removed fd's id or else -1 if the
+    specified fd doesn't exist
+    """
+    try:
+      del(self.fds[fd_id])
+    except KeyError:
+      raise DoesNotExistError("Fd %d does not exist in the open files state" %
+        fd_id)
+    return fd_id
 
 
 
@@ -73,7 +87,6 @@ def fs_readinfilelist(filelist):
   Read in from a file the list of "files" that should exist in this virtual file
   system
   """
-
   for line in filelist:
     # Split on whitespace
     tokens = line.strip().split()
@@ -109,7 +122,6 @@ def fs_open(path, flag, mode=default_file_mode):
   Open a file, potentially creating it. Return the new fd's id or else -1 if
   file can not be opened (or potentially created)
   """
-
   # Check if file should be created if it doesn't exist
   O_CREAT = 64
   create = flag & 64
@@ -126,12 +138,25 @@ def fs_open(path, flag, mode=default_file_mode):
 
   # Call the virtual fs to open the file
   try:
-    inodeid = filesys.open_file(path)
+    myinode = filesys.open_file(path)
   except DoesNotExistError:
     return -1
 
   # Add an fd for this file to the open files state
-  return fstate.create_fd(inodeid)
+  return fstate.create_fd(myinode.id)
+
+
+
+def fs_close(fd_id):
+  """
+  Close a file. Return 0 on success or -1 on error
+  """
+  # Call the virtual fs to close the file
+  try:
+    fstate.remove_fd(fd_id)
+  except DoesNotExistError:
+    return -1
+  return 0
 
 
 
@@ -145,9 +170,14 @@ def fs_mkdir(path):
 
 def fs_unlink(path):
   """
-  Delete a file
+  Delete a file. Return 0 on success or -1 if file does not exist
   """
-  return -1
+  # Call the virtual fs to delete the file
+  try:
+    filesys.del_file(path)
+  except DoesNotExistError:
+    return -1
+  return 0
 
 
 

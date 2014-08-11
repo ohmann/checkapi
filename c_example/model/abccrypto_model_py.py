@@ -15,9 +15,14 @@ abccrypto = CDLL(cwd + '/abccrypto_model.so')
 oraclegetid_py = CFUNCTYPE(c_int)(oracle_get_id)
 oraclegetter_py = CFUNCTYPE(c_int, c_int, c_char_p)(oracle_getter)
 fsopen_py = CFUNCTYPE(c_int, c_char_p, c_int)(fs_open)
+fsunlink_py = CFUNCTYPE(c_int, c_char_p)(fs_unlink)
+
+def set_py_functions_model():
+  abccrypto.set_py_functions(oraclegetid_py, oraclegetter_py, fsopen_py,
+    fsunlink_py)
 
 def get_new_random_model():
-  result = abccrypto.get_new_random(oraclegetid_py, oraclegetter_py)
+  result = abccrypto.get_new_random()
   return [result]
 
 def get_prior_random_model(index):
@@ -26,9 +31,9 @@ def get_prior_random_model(index):
 
 def file_open_model(fd, filename, flags):
   fd_c = c_int(fd)
-  result = abccrypto.file_open(byref(fd_c), c_char_p(filename), flags, fsopen_py)
+  result = abccrypto.file_open(byref(fd_c), c_char_p(filename), flags)
   return [fd_c.value, result]
 
-def file_write_model(fd, data, nbytes):
-  result = abccrypto.file_write(fd, c_char_p(data), pointer(c_int(nbytes)))
-  return [nbytes, result]
+def file_unlink_model(filename):
+  result = abccrypto.file_unlink(c_char_p(filename))
+  return [result]

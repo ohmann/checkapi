@@ -256,6 +256,29 @@ class filesystem():
     return self.pathtoinode[path]
 
 
+
+  def del_file(self, path):
+    """
+    Delete a file. Return nothing
+    """
+    # Create standard file path
+    path = get_std_abs_path(path)
+
+    # Get the inode
+    try:
+      myinode = self.pathtoinode[path]
+    except KeyError:
+      raise DoesNotExistError("File at path '%s' does not exist" % path)
+
+    # Delete the path
+    newlinkcount = myinode.del_path()
+    del(self.pathtoinode[path])
+
+    # Delete the inode if this is the last path referring to it
+    if newlinkcount < 1:
+      del(self.idtoinode[myinode.id])
+
+
   def get_dir_contents(self, dir):
     """
     Retrieve the contents of a directory. Return two maps, both of the form

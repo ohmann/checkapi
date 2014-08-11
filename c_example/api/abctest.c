@@ -13,11 +13,18 @@ int main(void) {
   printf("(10) = %d\n", get_prior_random(10));
 
   int fd;
-  char *files[] = {"./abc.ERR", "aaa", "api/abc.log"};
-  int flags[] = {O_CREAT, O_RDWR, O_RDWR};
-  for (i = 0; i < sizeof(files) / sizeof(char*); i++) {
-    int ret = file_open(&fd, files[i], flags[i]);
-    printf("file_open(%s, %d) = %d, %d\n", files[i], flags[i], ret, fd);
+  char *fileso[] = {"./abc.ERR", "aaa", "aaa", "api/abc.log"};
+  int flags[] = {O_CREAT, O_RDWR, O_CREAT, O_RDWR};
+  for (i = 0; i < sizeof(fileso) / sizeof(char*); i++) {
+    int ret = file_open(&fd, fileso[i], flags[i]);
+    printf("file_open(%s, %d) = %d, %d\n", fileso[i], flags[i], ret, fd);
+  }
+
+
+  char *filesu[] = {"aaa", "aaa", "bbb"};
+  for (i = 0; i < sizeof(filesu) / sizeof(char*); i++) {
+    int ret = file_unlink(filesu[i]);
+    printf("file_unlink(%s) = %d\n", filesu[i], ret);
   }
   return 0;
 }

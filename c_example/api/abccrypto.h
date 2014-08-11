@@ -10,9 +10,12 @@ int get_new_random(void);
 int get_prior_random(int index);
 
 /*
+ * Opens a file, placing the file descriptor in fd. On success, returns 0. On
+ * failure, returns -1.
  */
 int file_open(int *fd, char *filename, int flags);
 
 /*
+ * Deletes a file by path. Returns 0 on success and -1 on failure.
  */
-int file_write(int fd, char *data, int *nbytes);
+int file_unlink(char *filename);

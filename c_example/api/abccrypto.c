@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "abctrace.h"
 
 // Previously retrieved random ints
@@ -77,7 +78,7 @@ int get_prior_random(int index) {
  * failure, returns -1.
  */
 int file_open_(int *fd, char *filename, int flags) {
-  int file = open(filename, flags);
+  int file = open(filename, flags, 0777);
   if (file < 0) {
     *fd = -999;
     return -1;
@@ -103,7 +104,26 @@ int file_open(int *fd, char *filename, int flags) {
 }
 
 /*
+ * Deletes a file by path. Returns 0 on success and -2 on failure.
  */
-int file_write(int fd, char *data, int *nbytes) {
-  return 0;
+int file_unlink_(char *filename) {
+  int fd;
+  if (file_open_log(&fd, filename, O_RDWR, NESTED) < 0) {
+    return -2;
+  }
+  return unlink(filename);
+}
+
+// CHECKAPI SHIM FOR LOGGING
+int file_unlink_log(char *filename, int is_direct) {
+  int ret = file_unlink_(filename);
+  write_type_and_func("int", "file_unlink", is_direct);
+  write_string(filename);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
+int file_unlink(char *filename) {
+  return file_unlink_log(filename, DIRECT);
 }

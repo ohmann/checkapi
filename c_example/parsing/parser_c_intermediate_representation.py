@@ -66,17 +66,17 @@ HANDLED_FUNCS_INFO = {
     'return': (Int(),)
   },
 
-  # int file_open([int *fd], char *filename)
+  # int file_open([int *fd], char *filename, int flags)
   #
   "file_open": {
     'args': (Int(), Str(), Int()),
     'return': (Int(), Int())
   },
 
-  # int file_write(int fd, char *data, [int *nbytes])
+  # int file_unlink(char *filename)
   #
-  "file_write": {
-    'args': (Int(), Str(), Int()),
-    'return': (Int(), Int())
+  "file_unlink": {
+    'args': (Str(),),
+    'return': (Int(),)
   }
 }

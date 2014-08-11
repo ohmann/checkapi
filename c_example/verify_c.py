@@ -9,11 +9,12 @@ import framework.checkapi_globals as glob
 from framework.checkapi_exceptions import *
 
 # Function name -> model function
-func_map = {"get_new_random":get_new_random_model,
-            "get_prior_random":get_prior_random_model,
-            "file_open":file_open_model}
+func_map = {"get_new_random": get_new_random_model,
+            "get_prior_random": get_prior_random_model,
+            "file_open": file_open_model,
+            "file_unlink": file_unlink_model}
 
-oracle_required_funcs = ["get_new_random"]
+oracle_required_funcs = ["get_new_random", "file_open", "file_unlink"]
 
 # Functions that have a file descriptor as their first arg or first return
 fd_arg_calls = []
@@ -59,7 +60,7 @@ def verify_trace(trace):
     # them here
     if not is_direct:
       if glob.debug:
-        print "    %d  Skipping nested call to %s" % (line_num, func_name)
+        print "%d       Skipping nested call to %s" % (line_num, func_name)
       continue
 
     # Execute the function using the model
@@ -196,6 +197,10 @@ if __name__ == "__main__":
   # already exist in the model's emulated file system
   filelist_file = open(args.filelist, "r")
   fs_readinfilelist(filelist_file)
+
+  # Give the C model pointers to all the python functions it might need to call
+  # during verification
+  set_py_functions_model()
 
   # Run CheckAPI
   errors = verify_trace(traces)

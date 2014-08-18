@@ -189,7 +189,7 @@ APR_DECLARE(apr_status_t) apr_file_mktemp(apr_file_t **fp, char *template, apr_i
 #else
     fd = mkstemp(template);
 #endif
-    
+
     if (fd == -1) {
         return errno;
     }

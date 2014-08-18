@@ -45,7 +45,7 @@ static apr_status_t pipeblock(apr_file_t *thepipe)
       fd_flags &= ~O_NDELAY;
 #  elif defined(O_FNDELAY)
       fd_flags &= ~O_FNDELAY;
-#  else 
+#  else
       /* XXXX: this breaks things, but an alternative isn't obvious...*/
       return APR_ENOTIMPL;
 #  endif
@@ -61,8 +61,8 @@ static apr_status_t pipeblock(apr_file_t *thepipe)
       }
 #  else /* "classic" BeOS doesn't support this at all */
       return APR_ENOTIMPL;
-#  endif 
- 
+#  endif
+
 #endif /* !BEOS_BLOCKING */
 
     thepipe->blocking = BLK_ON;
@@ -87,7 +87,7 @@ static apr_status_t pipenonblock(apr_file_t *thepipe)
       if (fcntl(thepipe->filedes, F_SETFL, fd_flags) == -1) {
           return errno;
       }
-    
+
 #else /* BEOS_BLOCKING */
 
 #  if BEOS_BONE /* This only works on BONE 0-6 */
@@ -139,7 +139,7 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
                                              apr_pool_t *pool)
 {
     int *dafile = thefile;
-    
+
     (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
     (*file)->pool = pool;
     (*file)->eof_hit = 0;
@@ -183,7 +183,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
     if (pipe(filedes) == -1) {
         return errno;
     }
-    
+
     (*in) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
     (*in)->pool = pool;
     (*in)->filedes = filedes[0];
@@ -222,8 +222,8 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_create_ex(apr_file_t **in, 
-                                                  apr_file_t **out, 
+APR_DECLARE(apr_status_t) apr_file_pipe_create_ex(apr_file_t **in,
+                                                  apr_file_t **out,
                                                   apr_int32_t blocking,
                                                   apr_pool_t *pool)
 {
@@ -249,7 +249,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create_ex(apr_file_t **in,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename, 
+APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename,
                                                     apr_fileperms_t perm, apr_pool_t *pool)
 {
     mode_t mode = apr_unix_perms2mode(perm);
@@ -258,7 +258,7 @@ APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename,
         return errno;
     }
     return APR_SUCCESS;
-} 
+}
 
-    
+
 

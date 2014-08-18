@@ -20,7 +20,7 @@
 #include "apr_thread_mutex.h"
 #include "apr_arch_inherit.h"
 
-static apr_status_t file_dup(apr_file_t **new_file, 
+static apr_status_t file_dup(apr_file_t **new_file,
                              apr_file_t *old_file, apr_pool_t *p,
                              int which_dup)
 {
@@ -61,7 +61,7 @@ static apr_status_t file_dup(apr_file_t **new_file,
 
     if (rv == -1)
         return errno;
-    
+
     if (which_dup == 1) {
         (*new_file) = (apr_file_t *)apr_pcalloc(p, sizeof(apr_file_t));
         (*new_file)->pool = p;
@@ -90,13 +90,13 @@ static apr_status_t file_dup(apr_file_t **new_file,
     }
 
     /* this is the way dup() works */
-    (*new_file)->blocking = old_file->blocking; 
+    (*new_file)->blocking = old_file->blocking;
 
     /* make sure unget behavior is consistent */
     (*new_file)->ungetchar = old_file->ungetchar;
 
-    /* apr_file_dup2() retains the original cleanup, reflecting 
-     * the existing inherit and nocleanup flags.  This means, 
+    /* apr_file_dup2() retains the original cleanup, reflecting
+     * the existing inherit and nocleanup flags.  This means,
      * that apr_file_dup2() cannot be called against an apr_file_t
      * already closed with apr_file_close, because the expected
      * cleanup was already killed.
@@ -107,14 +107,14 @@ static apr_status_t file_dup(apr_file_t **new_file,
 
     /* apr_file_dup() retains all old_file flags with the exceptions
      * of APR_INHERIT and APR_FOPEN_NOCLEANUP.
-     * The user must call apr_file_inherit_set() on the dupped 
+     * The user must call apr_file_inherit_set() on the dupped
      * apr_file_t when desired.
      */
     (*new_file)->flags = old_file->flags
                        & ~(APR_INHERIT | APR_FOPEN_NOCLEANUP);
 
     apr_pool_cleanup_register((*new_file)->pool, (void *)(*new_file),
-                              apr_unix_file_cleanup, 
+                              apr_unix_file_cleanup,
                               apr_unix_child_file_cleanup);
 #ifndef WAITIO_USES_POLL
     /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
@@ -164,7 +164,7 @@ APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,
         (*new_file)->fname = apr_pstrdup(p, old_file->fname);
     }
     if (!(old_file->flags & APR_FOPEN_NOCLEANUP)) {
-        apr_pool_cleanup_register(p, (void *)(*new_file), 
+        apr_pool_cleanup_register(p, (void *)(*new_file),
                                   apr_unix_file_cleanup,
                                   ((*new_file)->flags & APR_INHERIT)
                                      ? apr_pool_cleanup_null

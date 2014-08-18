@@ -87,10 +87,10 @@ apr_status_t apr_unix_child_file_cleanup(void *thefile)
     return file_cleanup(thefile, 1);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, 
-                                        const char *fname, 
-                                        apr_int32_t flag, 
-                                        apr_fileperms_t perm, 
+APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
+                                        const char *fname,
+                                        apr_int32_t flag,
+                                        apr_fileperms_t perm,
                                         apr_pool_t *pool)
 {
     apr_os_file_t fd;
@@ -110,7 +110,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
         oflags = O_WRONLY;
     }
     else {
-        return APR_EACCES; 
+        return APR_EACCES;
     }
 
     if (flag & APR_FOPEN_CREATE) {
@@ -121,7 +121,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
     }
     if ((flag & APR_FOPEN_EXCL) && !(flag & APR_FOPEN_CREATE)) {
         return APR_EACCES;
-    }   
+    }
 
     if (flag & APR_FOPEN_APPEND) {
         oflags |= O_APPEND;
@@ -150,7 +150,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
         oflags |= O_CLOEXEC;
 }
 #endif
- 
+
 #if APR_HAS_LARGE_FILES && defined(_LARGEFILE64_SOURCE)
     oflags |= O_LARGEFILE;
 #elif defined(O_LARGEFILE)
@@ -174,7 +174,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
     }
     else {
         fd = open(fname, oflags, apr_unix_perms2mode(perm));
-    } 
+    }
     if (fd < 0) {
        return errno;
     }
@@ -243,8 +243,8 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
     (*new)->pollset = NULL;
 #endif
     if (!(flag & APR_FOPEN_NOCLEANUP)) {
-        apr_pool_cleanup_register((*new)->pool, (void *)(*new), 
-                                  apr_unix_file_cleanup, 
+        apr_pool_cleanup_register((*new)->pool, (void *)(*new),
+                                  apr_unix_file_cleanup,
                                   apr_unix_child_file_cleanup);
     }
     return APR_SUCCESS;
@@ -265,7 +265,7 @@ APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
     }
 }
 
-APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path, 
+APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path,
                                           const char *to_path,
                                           apr_pool_t *p)
 {
@@ -275,19 +275,19 @@ APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_file_get(apr_os_file_t *thefile, 
+APR_DECLARE(apr_status_t) apr_os_file_get(apr_os_file_t *thefile,
                                           apr_file_t *file)
 {
     *thefile = file->filedes;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file, 
+APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
                                           apr_os_file_t *thefile,
                                           apr_int32_t flags, apr_pool_t *pool)
 {
     int *dafile = thefile;
-    
+
     (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
     (*file)->pool = pool;
     (*file)->eof_hit = 0;
@@ -320,7 +320,7 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
 #endif
     }
     return APR_SUCCESS;
-}    
+}
 
 APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
 {
@@ -328,9 +328,9 @@ APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
         return APR_EOF;
     }
     return APR_SUCCESS;
-}   
+}
 
-APR_DECLARE(apr_status_t) apr_file_open_flags_stderr(apr_file_t **thefile, 
+APR_DECLARE(apr_status_t) apr_file_open_flags_stderr(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool)
 {
@@ -339,7 +339,7 @@ APR_DECLARE(apr_status_t) apr_file_open_flags_stderr(apr_file_t **thefile,
     return apr_os_file_put(thefile, &fd, flags | APR_FOPEN_WRITE, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_flags_stdout(apr_file_t **thefile, 
+APR_DECLARE(apr_status_t) apr_file_open_flags_stdout(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool)
 {
@@ -348,7 +348,7 @@ APR_DECLARE(apr_status_t) apr_file_open_flags_stdout(apr_file_t **thefile,
     return apr_os_file_put(thefile, &fd, flags | APR_FOPEN_WRITE, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_flags_stdin(apr_file_t **thefile, 
+APR_DECLARE(apr_status_t) apr_file_open_flags_stdin(apr_file_t **thefile,
                                                     apr_int32_t flags,
                                                     apr_pool_t *pool)
 {
@@ -357,19 +357,19 @@ APR_DECLARE(apr_status_t) apr_file_open_flags_stdin(apr_file_t **thefile,
     return apr_os_file_put(thefile, &fd, flags | APR_FOPEN_READ, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile, 
+APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile,
                                                apr_pool_t *pool)
 {
     return apr_file_open_flags_stderr(thefile, 0, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile, 
+APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile,
                                                apr_pool_t *pool)
 {
     return apr_file_open_flags_stdout(thefile, 0, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile, 
+APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile,
                                               apr_pool_t *pool)
 {
     return apr_file_open_flags_stdin(thefile, 0, pool);
@@ -406,7 +406,7 @@ APR_DECLARE(apr_status_t) apr_file_inherit_unset(apr_file_t *thefile)
 
 APR_POOL_IMPLEMENT_ACCESSOR(file)
 
-APR_DECLARE(apr_status_t) apr_file_link(const char *from_path, 
+APR_DECLARE(apr_status_t) apr_file_link(const char *from_path,
                                           const char *to_path)
 {
     if (link(from_path, to_path) == -1) {

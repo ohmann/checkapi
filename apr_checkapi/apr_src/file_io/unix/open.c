@@ -291,9 +291,11 @@ APR_DECLARE(apr_status_t) apr_file_open_(apr_file_t **new,
 APR_DECLARE(apr_status_t) apr_file_close_log(apr_file_t *file,
                                              int is_direct)
 {
+  // Filedes is lost after close, so record it here
+  int file_before = (file==NULL ? NULLINT : file->filedes);
   int ret = apr_file_close_(file);
   write_type_and_func("int", "apr_file_close", is_direct);
-  write_int(file==NULL ? NULLINT : file->filedes);
+  write_int(file_before);
   write_return_int(ret);
   return ret;
 }

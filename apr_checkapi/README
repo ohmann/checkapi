@@ -1,0 +1,4 @@
+=== CheckAPI model for Apache Portable Runtime (APR) readme ===
+
+To compile and run everything necessary to generate traces to be later verified
+by CheckAPI, simply run setup.sh, which calls other scripts in this directory.

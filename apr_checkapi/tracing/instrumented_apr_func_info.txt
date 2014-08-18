@@ -1,13 +1,14 @@
-<@=instrumented>  <func name>  <args list as instrumented, ---=skip>
+<@=instrumented>  <func name>  <instrumented args,             <!=never run
+                                 ---=skip, []=in AND out arg>    by APR tests>
 
 @  apr_file_open               (int_ret_arg, string, int, int, ---)
 @  apr_file_close              (int)
 @  apr_file_remove             (string, ---)
-@  apr_file_rename             (string, string, ---)
+@  apr_file_rename             (string, string, ---)                 !
 @  apr_file_link               (string, string)
 @  apr_file_copy               (string, string, int, ---)
 @  apr_file_append             (string, string, int, ---)
-@  apr_file_eof                (int)
+@  apr_file_eof                (int)                                 !
 @  apr_file_open_stderr        (int_ret_arg, ---)
 @  apr_file_open_stdout        (int_ret_arg, ---)
 @  apr_file_open_stdin         (int_ret_arg, ---)
@@ -26,36 +27,36 @@
 @  apr_file_gets               (string_ret_arg, int, int)
 @  apr_file_puts               (string, int)
 @  apr_file_flush              (int)
-@  apr_file_sync               (int)
-@  apr_file_datasync           (int)
+@  apr_file_sync               (int)                                 !
+@  apr_file_datasync           (int)                                 !
 @  apr_file_dup                ([int_ret_arg], int, ---)
 @  apr_file_dup2               ([int_ret_arg], int, ---)
-@  apr_file_setaside           (int_ret_arg, int, ---)
+@  apr_file_setaside           (int_ret_arg, int, ---)               !
 @  apr_file_buffer_set         (int, ---, int)
 @  apr_file_buffer_size_get    (int)
 @  apr_file_seek               (int, int, [int_ret_arg])
 @  apr_file_pipe_create        (int_ret_arg, int_ret_arg, ---)
 @  apr_file_pipe_create_ex     (int_ret_arg, int_ret_arg, int, ---)
-@  apr_file_namedpipe_create   (string, int, ---)
+@  apr_file_namedpipe_create   (string, int, ---)                    !
 @  apr_file_pipe_timeout_get   (int, int_ret_arg)
 @  apr_file_pipe_timeout_set   (int, int)
 @  apr_file_lock               (int, int)
-@  apr_file_unlock             (int)
+@  apr_file_unlock             (int)                                 !
 @  apr_file_name_get           (string_ret_arg, int)
 @  apr_file_data_get           (string_ret_arg, string, int)
 @  apr_file_data_set           (int, string, string, ---)
 -  apr_file_printf             ---
-@  apr_file_perms_set          (string, int)
-@  apr_file_attrs_set          (string, int, int, ---)
-@  apr_file_mtime_set          (string, int, ---)
+@  apr_file_perms_set          (string, int)                         !
+@  apr_file_attrs_set          (string, int, int, ---)               !
+@  apr_file_mtime_set          (string, int, ---)                    !
 @  apr_dir_make                (string, int, ---)
 @  apr_dir_make_recursive      (string, int, ---)
 @  apr_dir_remove              (string, ---)
 @  apr_file_info_get           (int_ret_arg, int_ret_arg, int, int)
-@  apr_file_trunc              (int, int)
-@  apr_file_flags_get          (int)
+@  apr_file_trunc              (int, int)                            !
+@  apr_file_flags_get          (int)                                 !
 -  apr_file_pool_get           ---
-@  apr_file_inherit_set        (int)
+@  apr_file_inherit_set        (int)                                 !
 @  apr_file_inherit_unset      (int)
 @  apr_file_mktemp             (int_ret_arg, string, int, ---)
 @  apr_temp_dir_get            (string_ret_arg, ---)

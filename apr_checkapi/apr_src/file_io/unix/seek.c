@@ -16,6 +16,8 @@
 
 #include "apr_arch_file_io.h"
 
+#include "aprtrace.h"
+
 static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
 {
     apr_off_t newbufpos;
@@ -49,7 +51,31 @@ static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
 }
 
 
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_seek_log(apr_file_t *thefile, apr_seek_where_t where, apr_off_t *offset,
+                                            int is_direct)
+{
+  int offset_before = (offset==NULL ? NULLINT : *offset);
+  int ret = apr_file_seek_(thefile, where, offset);
+  write_type_and_func("int", "apr_file_seek", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_int(where);
+  write_int(offset_before);
+  write_int_ret_arg(*offset);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t where, apr_off_t *offset)
+{
+  return apr_file_seek_log(thefile, where, offset, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_seek_(apr_file_t *thefile, apr_seek_where_t where, apr_off_t *offset)
 {
     apr_off_t rv;
 
@@ -96,7 +122,29 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+apr_status_t apr_file_trunc_log(apr_file_t *fp, apr_off_t offset,
+                                            int is_direct)
+{
+  int ret = apr_file_trunc_(fp, offset);
+  write_type_and_func("int", "apr_file_trunc", is_direct);
+  write_int(fp==NULL ? NULLINT : fp->filedes);
+  write_int(offset);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 apr_status_t apr_file_trunc(apr_file_t *fp, apr_off_t offset)
+{
+  return apr_file_trunc_log(fp, offset, DIRECT);
+}
+
+
+
+apr_status_t apr_file_trunc_(apr_file_t *fp, apr_off_t offset)
 {
     if (fp->buffered) {
         int rc = 0;

@@ -19,6 +19,8 @@
 #include "apr_thread_mutex.h"
 #include "apr_support.h"
 
+#include "aprtrace.h"
+
 /* The only case where we don't use wait_for_io_or_timeout is on
  * pre-BONE BeOS, so this check should be sufficient and simpler */
 #if !defined(BEOS_R5)
@@ -82,7 +84,32 @@ static apr_status_t file_read_buffered(apr_file_t *thefile, void *buf,
     return rv;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_read_log(apr_file_t *thefile, void *buf, apr_size_t *nbytes,
+                                            int is_direct)
+{
+  int nbytes_before = (nbytes==NULL ? NULLINT : *nbytes);
+  int ret = apr_file_read_(thefile, buf, nbytes);
+  write_type_and_func("int", "apr_file_read", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  // skip buf
+  write_int(nbytes_before);
+  write_int_ret_arg(nbytes==NULL ? NULLINT : *nbytes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_read(apr_file_t *thefile, void *buf, apr_size_t *nbytes)
+{
+  return apr_file_read_log(thefile, buf, nbytes, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_read_(apr_file_t *thefile, void *buf, apr_size_t *nbytes)
 {
     apr_ssize_t rv;
     apr_size_t bytes_read;
@@ -144,7 +171,32 @@ APR_DECLARE(apr_status_t) apr_file_read(apr_file_t *thefile, void *buf, apr_size
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_write_log(apr_file_t *thefile, const void *buf, apr_size_t *nbytes,
+                                            int is_direct)
+{
+  int nbytes_before = (nbytes==NULL ? NULLINT : *nbytes);
+  int ret = apr_file_write_(thefile, buf, nbytes);
+  write_type_and_func("int", "apr_file_write", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  // skip buf
+  write_int(nbytes_before);
+  write_int_ret_arg(nbytes==NULL ? NULLINT : *nbytes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, apr_size_t *nbytes)
+{
+  return apr_file_write_log(thefile, buf, nbytes, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_write_(apr_file_t *thefile, const void *buf, apr_size_t *nbytes)
 {
     apr_size_t rv;
 
@@ -223,7 +275,33 @@ APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, a
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_writev_log(apr_file_t *thefile, const struct iovec *vec,
+                                          apr_size_t nvec, apr_size_t *nbytes,
+                                          int is_direct)
+{
+  int ret = apr_file_writev_(thefile, vec, nvec, nbytes);
+  write_type_and_func("int", "apr_file_writev", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  // skip iovec
+  write_int(nvec);
+  write_int_ret_arg(nbytes==NULL ? NULLINT : *nbytes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_writev(apr_file_t *thefile, const struct iovec *vec,
+                                          apr_size_t nvec, apr_size_t *nbytes)
+{
+  return apr_file_writev_log(thefile, vec, nvec, nbytes, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_writev_(apr_file_t *thefile, const struct iovec *vec,
                                           apr_size_t nvec, apr_size_t *nbytes)
 {
 #ifdef HAVE_WRITEV
@@ -281,27 +359,117 @@ APR_DECLARE(apr_status_t) apr_file_writev(apr_file_t *thefile, const struct iove
 #endif
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_putc_(char ch, apr_file_t *thefile);
+APR_DECLARE(apr_status_t) apr_file_putc_log(char ch, apr_file_t *thefile,
+                                            int is_direct)
+{
+  int ret = apr_file_putc_(ch, thefile);
+  write_type_and_func("int", "apr_file_putc", is_direct);
+  write_char(ch);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_putc(char ch, apr_file_t *thefile)
+{
+  return apr_file_putc_log(ch, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_putc_(char ch, apr_file_t *thefile)
 {
     apr_size_t nbytes = 1;
 
     return apr_file_write(thefile, &ch, &nbytes);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_ungetc_(char ch, apr_file_t *thefile);
+APR_DECLARE(apr_status_t) apr_file_ungetc_log(char ch, apr_file_t *thefile,
+                                              int is_direct)
+{
+  int ret = apr_file_ungetc_(ch, thefile);
+  write_type_and_func("int", "apr_file_ungetc", is_direct);
+  write_char(ch);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_ungetc(char ch, apr_file_t *thefile)
+{
+  return apr_file_ungetc_log(ch, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_ungetc_(char ch, apr_file_t *thefile)
 {
     thefile->ungetchar = (unsigned char)ch;
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_getc_log(char *ch, apr_file_t *thefile,
+                                            int is_direct)
+{
+  int ret = apr_file_getc_(ch, thefile);
+  write_type_and_func("int", "apr_file_getc", is_direct);
+  write_char_ret_arg(ch==NULL ? NULLINT : *ch);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_getc(char *ch, apr_file_t *thefile)
+{
+  return apr_file_getc_log(ch, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_getc_(char *ch, apr_file_t *thefile)
 {
     apr_size_t nbytes = 1;
 
     return apr_file_read(thefile, ch, &nbytes);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_puts_log(const char *str, apr_file_t *thefile,
+                                            int is_direct)
+{
+  int ret = apr_file_puts_(str, thefile);
+  write_type_and_func("int", "apr_file_puts", is_direct);
+  write_string(str);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_puts(const char *str, apr_file_t *thefile)
+{
+  return apr_file_puts_log(str, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_puts_(const char *str, apr_file_t *thefile)
 {
     return apr_file_write_full(thefile, str, strlen(str), NULL);
 }
@@ -331,7 +499,28 @@ apr_status_t apr_file_flush_locked(apr_file_t *thefile)
     return rv;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_flush_log(apr_file_t *thefile,
+                                             int is_direct)
+{
+  int ret = apr_file_flush_(thefile);
+  write_type_and_func("int", "apr_file_flush", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_flush(apr_file_t *thefile)
+{
+  return apr_file_flush_log(thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_flush_(apr_file_t *thefile)
 {
     apr_status_t rv = APR_SUCCESS;
 
@@ -346,7 +535,28 @@ APR_DECLARE(apr_status_t) apr_file_flush(apr_file_t *thefile)
     return rv;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_sync_log(apr_file_t *thefile,
+                                            int is_direct)
+{
+  int ret = apr_file_sync_(thefile);
+  write_type_and_func("int", "apr_file_sync", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_sync(apr_file_t *thefile)
+{
+  return apr_file_sync_log(thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_sync_(apr_file_t *thefile)
 {
     apr_status_t rv = APR_SUCCESS;
 
@@ -370,7 +580,28 @@ APR_DECLARE(apr_status_t) apr_file_sync(apr_file_t *thefile)
     return rv;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_datasync_log(apr_file_t *thefile,
+                                                int is_direct)
+{
+  int ret = apr_file_datasync_(thefile);
+  write_type_and_func("int", "apr_file_datasync", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_datasync(apr_file_t *thefile)
+{
+  return apr_file_datasync_log(thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_datasync_(apr_file_t *thefile)
 {
     apr_status_t rv = APR_SUCCESS;
 
@@ -398,7 +629,30 @@ APR_DECLARE(apr_status_t) apr_file_datasync(apr_file_t *thefile)
     return rv;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_gets_log(char *str, int len, apr_file_t *thefile,
+                                            int is_direct)
+{
+  int ret = apr_file_gets_(str, len, thefile);
+  write_type_and_func("int", "apr_file_gets", is_direct);
+  write_string_ret_arg(str);
+  write_int(len);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_gets(char *str, int len, apr_file_t *thefile)
+{
+  return apr_file_gets_log(str, len, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_gets_(char *str, int len, apr_file_t *thefile)
 {
     apr_status_t rv = APR_SUCCESS; /* get rid of gcc warning */
     apr_size_t nbytes;
@@ -496,6 +750,9 @@ static int file_printf_flush(apr_vformatter_buff_t *buff)
     data->vbuff.curpos = data->buf;
     return 0;
 }
+
+// CHECKAPI note: skipping printf due to the complexity of logging the variable
+// argument list
 
 APR_DECLARE_NONSTD(int) apr_file_printf(apr_file_t *fptr,
                                         const char *format, ...)

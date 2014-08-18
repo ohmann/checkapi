@@ -20,6 +20,8 @@
 #include "apr_thread_mutex.h"
 #include "apr_arch_inherit.h"
 
+#include "aprtrace.h"
+
 static apr_status_t file_dup(apr_file_t **new_file,
                              apr_file_t *old_file, apr_pool_t *p,
                              int which_dup)
@@ -125,19 +127,100 @@ static apr_status_t file_dup(apr_file_t **new_file,
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_dup_log(apr_file_t **new_file,
+                                       apr_file_t *old_file, apr_pool_t *p,
+                                       int is_direct)
+{
+  int new_file_before = (new_file==NULL || *new_file==NULL ? NULLINT : (*new_file)->filedes);
+  int ret = apr_file_dup_(new_file, old_file, p);
+  write_type_and_func("int", "apr_file_dup", is_direct);
+  write_int(new_file_before);
+  write_int_ret_arg(new_file==NULL || *new_file==NULL ? NULLINT : (*new_file)->filedes);
+  write_int(old_file==NULL ? NULLINT : old_file->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_dup(apr_file_t **new_file,
+                                       apr_file_t *old_file, apr_pool_t *p)
+{
+  return apr_file_dup_log(new_file, old_file, p, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_dup_(apr_file_t **new_file,
                                        apr_file_t *old_file, apr_pool_t *p)
 {
     return file_dup(new_file, old_file, p, 1);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_dup2_log(apr_file_t *new_file,
+                                        apr_file_t *old_file, apr_pool_t *p,
+                                        int is_direct)
+{
+  int new_file_before = (new_file==NULL ? NULLINT : new_file->filedes);
+  int ret = apr_file_dup2_(new_file, old_file, p);
+  write_type_and_func("int", "apr_file_dup2", is_direct);
+  write_int(new_file_before);
+  write_int_ret_arg(new_file==NULL ? NULLINT : new_file->filedes);
+  write_int(old_file==NULL ? NULLINT : old_file->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_dup2(apr_file_t *new_file,
+                                        apr_file_t *old_file, apr_pool_t *p)
+{
+  return apr_file_dup2_log(new_file, old_file, p, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_dup2_(apr_file_t *new_file,
                                         apr_file_t *old_file, apr_pool_t *p)
 {
     return file_dup(&new_file, old_file, p, 2);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_setaside_log(apr_file_t **new_file,
+                                            apr_file_t *old_file,
+                                            apr_pool_t *p,
+                                            int is_direct)
+{
+  int ret = apr_file_setaside_(new_file, old_file, p);
+  write_type_and_func("int", "apr_file_setaside", is_direct);
+  write_int_ret_arg(new_file==NULL || *new_file==NULL ? NULLINT : (*new_file)->filedes);
+  write_int(old_file==NULL ? NULLINT : old_file->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,
+                                            apr_file_t *old_file,
+                                            apr_pool_t *p)
+{
+  return apr_file_setaside_log(new_file, old_file, p, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_setaside_(apr_file_t **new_file,
                                             apr_file_t *old_file,
                                             apr_pool_t *p)
 {

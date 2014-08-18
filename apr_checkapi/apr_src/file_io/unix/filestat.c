@@ -20,6 +20,8 @@
 #include "apr_strings.h"
 #include "apr_errno.h"
 
+#include "aprtrace.h"
+
 #ifdef HAVE_UTIME
 #include <utime.h>
 #endif
@@ -148,7 +150,36 @@ apr_status_t apr_file_info_get_locked(apr_finfo_t *finfo, apr_int32_t wanted,
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_info_get_log(apr_finfo_t *finfo,
+                                            apr_int32_t wanted,
+                                            apr_file_t *thefile,
+                                            int is_direct)
+{
+  int ret = apr_file_info_get_(finfo, wanted, thefile);
+  write_type_and_func("int", "apr_file_info_get", is_direct);
+  // The model will only check inode and size
+  write_int_ret_arg(finfo==NULL ? NULLINT : finfo->inode);
+  write_int_ret_arg(finfo==NULL ? NULLINT : finfo->size);
+  write_int(wanted);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo,
+                                            apr_int32_t wanted,
+                                            apr_file_t *thefile)
+{
+  return apr_file_info_get_log(finfo, wanted, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_info_get_(apr_finfo_t *finfo,
                                             apr_int32_t wanted,
                                             apr_file_t *thefile)
 {
@@ -171,7 +202,31 @@ APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo,
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_perms_set_log(const char *fname,
+                                             apr_fileperms_t perms,
+                                             int is_direct)
+{
+  int ret = apr_file_perms_set_(fname, perms);
+  write_type_and_func("int", "apr_file_perms_set", is_direct);
+  write_string(fname);
+  write_int(perms);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_perms_set(const char *fname,
+                                             apr_fileperms_t perms)
+{
+  return apr_file_perms_set_log(fname, perms, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_perms_set_(const char *fname,
                                              apr_fileperms_t perms)
 {
     mode_t mode = apr_unix_perms2mode(perms);
@@ -181,7 +236,37 @@ APR_DECLARE(apr_status_t) apr_file_perms_set(const char *fname,
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_attrs_set_log(const char *fname,
+                                             apr_fileattrs_t attributes,
+                                             apr_fileattrs_t attr_mask,
+                                             apr_pool_t *pool,
+                                             int is_direct)
+{
+  int ret = apr_file_attrs_set_(fname, attributes, attr_mask, pool);
+  write_type_and_func("int", "apr_file_attrs_set", is_direct);
+  write_string(fname);
+  write_int(attributes);
+  write_int(attr_mask);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
+                                             apr_fileattrs_t attributes,
+                                             apr_fileattrs_t attr_mask,
+                                             apr_pool_t *pool)
+{
+  return apr_file_attrs_set_log(fname, attributes, attr_mask, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_attrs_set_(const char *fname,
                                              apr_fileattrs_t attributes,
                                              apr_fileattrs_t attr_mask,
                                              apr_pool_t *pool)
@@ -237,7 +322,33 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
 }
 
 
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_mtime_set_log(const char *fname,
+                                              apr_time_t mtime,
+                                              apr_pool_t *pool,
+                                              int is_direct)
+{
+  int ret = apr_file_mtime_set_(fname, mtime, pool);
+  write_type_and_func("int", "apr_file_mtime_set", is_direct);
+  write_string(fname);
+  write_int(mtime);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
+                                              apr_time_t mtime,
+                                              apr_pool_t *pool)
+{
+  return apr_file_mtime_set_log(fname, mtime, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_mtime_set_(const char *fname,
                                               apr_time_t mtime,
                                               apr_pool_t *pool)
 {

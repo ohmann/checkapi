@@ -53,6 +53,8 @@
 #include "apr_portable.h" /* for apr_os_file_put() */
 #include "apr_arch_inherit.h"
 
+#include "aprtrace.h"
+
 #ifndef HAVE_MKSTEMP
 
 #if defined(SVR4) || defined(WIN32) || defined(NETWARE)
@@ -173,7 +175,31 @@ static int gettemp(char *path, apr_file_t **doopen, apr_int32_t flags, apr_pool_
 #endif
 #endif /* !defined(HAVE_MKSTEMP) */
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_mktemp_log(apr_file_t **fp, char *template, apr_int32_t flags, apr_pool_t *p,
+                                              int is_direct)
+{
+  int ret = apr_file_mktemp_(fp, template, flags, p);
+  write_type_and_func("int", "apr_file_mktemp", is_direct);
+  write_int_ret_arg(fp==NULL || *fp==NULL ? NULLINT : (*fp)->filedes);
+  write_string(template);
+  write_int(flags);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_mktemp(apr_file_t **fp, char *template, apr_int32_t flags, apr_pool_t *p)
+{
+  return apr_file_mktemp_log(fp, template, flags, p, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_mktemp_(apr_file_t **fp, char *template, apr_int32_t flags, apr_pool_t *p)
 {
 #ifdef HAVE_MKSTEMP
     int fd;

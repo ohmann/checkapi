@@ -16,8 +16,38 @@
 
 #include "apr_file_io.h"
 
+#include "aprtrace.h"
+#include "apr_arch_file_io.h"   // Required for apr_file_t defn for tracing
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_read_full_log(apr_file_t *thefile, void *buf,
+                                             apr_size_t nbytes,
+                                             apr_size_t *bytes_read,
+                                             int is_direct)
+{
+  int ret = apr_file_read_full_(thefile, buf, nbytes, bytes_read);
+  write_type_and_func("int", "apr_file_read_full", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  // skip buf
+  write_int(nbytes);
+  write_int_ret_arg(bytes_read==NULL ? NULLINT : *bytes_read);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_read_full(apr_file_t *thefile, void *buf,
+                                             apr_size_t nbytes,
+                                             apr_size_t *bytes_read)
+{
+  return apr_file_read_full_log(thefile, buf, nbytes, bytes_read, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_read_full_(apr_file_t *thefile, void *buf,
                                              apr_size_t nbytes,
                                              apr_size_t *bytes_read)
 {
@@ -39,7 +69,37 @@ APR_DECLARE(apr_status_t) apr_file_read_full(apr_file_t *thefile, void *buf,
     return status;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_write_full_log(apr_file_t *thefile,
+                                              const void *buf,
+                                              apr_size_t nbytes,
+                                              apr_size_t *bytes_written,
+                                              int is_direct)
+{
+  int ret = apr_file_write_full_(thefile, buf, nbytes, bytes_written);
+  write_type_and_func("int", "apr_file_write_full", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  // skip buf
+  write_int(nbytes);
+  write_int_ret_arg(bytes_written==NULL ? NULLINT : *bytes_written);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_write_full(apr_file_t *thefile,
+                                              const void *buf,
+                                              apr_size_t nbytes,
+                                              apr_size_t *bytes_written)
+{
+  return apr_file_write_full_log(thefile, buf, nbytes, bytes_written, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_write_full_(apr_file_t *thefile,
                                               const void *buf,
                                               apr_size_t nbytes,
                                               apr_size_t *bytes_written)
@@ -62,7 +122,37 @@ APR_DECLARE(apr_status_t) apr_file_write_full(apr_file_t *thefile,
     return status;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_writev_full_log(apr_file_t *thefile,
+                                               const struct iovec *vec,
+                                               apr_size_t nvec,
+                                               apr_size_t *bytes_written,
+                                               int is_direct)
+{
+  int ret = apr_file_writev_full_(thefile, vec, nvec, bytes_written);
+  write_type_and_func("int", "apr_file_writev_full", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  // skip iovec
+  write_int(nvec);
+  write_int_ret_arg(bytes_written==NULL ? NULLINT : *bytes_written);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_writev_full(apr_file_t *thefile,
+                                               const struct iovec *vec,
+                                               apr_size_t nvec,
+                                               apr_size_t *bytes_written)
+{
+  return apr_file_writev_full_log(thefile, vec, nvec, bytes_written, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_writev_full_(apr_file_t *thefile,
                                                const struct iovec *vec,
                                                apr_size_t nvec,
                                                apr_size_t *bytes_written)

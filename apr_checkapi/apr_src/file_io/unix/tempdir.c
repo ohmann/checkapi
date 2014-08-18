@@ -18,6 +18,8 @@
 #include "apr_strings.h"
 #include "apr_env.h"
 
+#include "aprtrace.h"
+
 
 /* Try to open a temporary file in the temporary dir, write to it,
    and then close it. */
@@ -37,7 +39,30 @@ static int test_tempdir(const char *temp_dir, apr_pool_t *p)
 }
 
 
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_temp_dir_get_log(const char **temp_dir,
+                                           apr_pool_t *p,
+                                           int is_direct)
+{
+  int ret = apr_temp_dir_get_(temp_dir, p);
+  write_type_and_func("int", "apr_temp_dir_get", is_direct);
+  write_string_ret_arg(temp_dir==NULL ? NULLSTR : *temp_dir);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_temp_dir_get(const char **temp_dir,
+                                           apr_pool_t *p)
+{
+  return apr_temp_dir_get_log(temp_dir, p, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_temp_dir_get_(const char **temp_dir,
                                            apr_pool_t *p)
 {
     apr_status_t apr_err;

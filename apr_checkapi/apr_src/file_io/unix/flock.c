@@ -16,6 +16,8 @@
 
 #include "apr_arch_file_io.h"
 
+#include "aprtrace.h"
+
 #if APR_HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -23,7 +25,29 @@
 #include <sys/file.h>
 #endif
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_lock_log(apr_file_t *thefile, int type,
+                                            int is_direct)
+{
+  int ret = apr_file_lock_(thefile, type);
+  write_type_and_func("int", "apr_file_lock", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_int(type);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
+{
+  return apr_file_lock_log(thefile, type, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_lock_(apr_file_t *thefile, int type)
 {
     int rc;
 
@@ -82,7 +106,28 @@ APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_unlock_log(apr_file_t *thefile,
+                                              int is_direct)
+{
+  int ret = apr_file_unlock_(thefile);
+  write_type_and_func("int", "apr_file_unlock", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_unlock(apr_file_t *thefile)
+{
+  return apr_file_unlock_log(thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_unlock_(apr_file_t *thefile)
 {
     int rc;
 

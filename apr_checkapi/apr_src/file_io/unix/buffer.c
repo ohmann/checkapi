@@ -18,7 +18,36 @@
 #include "apr_pools.h"
 #include "apr_thread_mutex.h"
 
+#include "aprtrace.h"
+
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_buffer_set_log(apr_file_t *file,
+                                              char * buffer,
+                                              apr_size_t bufsize,
+                                              int is_direct)
+{
+  int ret = apr_file_buffer_set_(file, buffer, bufsize);
+  write_type_and_func("int", "apr_file_buffer_set", is_direct);
+  write_int(file==NULL ? NULLINT : file->filedes);
+  // skip buffer
+  write_int(bufsize);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_buffer_set(apr_file_t *file,
+                                              char * buffer,
+                                              apr_size_t bufsize)
+{
+  return apr_file_buffer_set_log(file, buffer, bufsize, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_buffer_set_(apr_file_t *file,
                                               char * buffer,
                                               apr_size_t bufsize)
 {
@@ -54,7 +83,29 @@ APR_DECLARE(apr_status_t) apr_file_buffer_set(apr_file_t *file,
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_size_t) apr_file_buffer_size_get_(apr_file_t *file);
+APR_DECLARE(apr_size_t) apr_file_buffer_size_get_log(apr_file_t *file,
+                                                     int is_direct)
+{
+  int ret = apr_file_buffer_size_get_(file);
+  write_type_and_func("int", "apr_file_buffer_size_get", is_direct);
+  write_int(file==NULL ? NULLINT: file->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_size_t) apr_file_buffer_size_get(apr_file_t *file)
+{
+  return apr_file_buffer_size_get_log(file, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_size_t) apr_file_buffer_size_get_(apr_file_t *file)
 {
     return file->bufsize;
 }

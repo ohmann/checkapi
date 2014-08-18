@@ -26,6 +26,8 @@
 #include "fsio.h"
 #endif
 
+#include "aprtrace.h"
+
 static apr_status_t file_cleanup(apr_file_t *file, int is_child)
 {
     apr_status_t rv = APR_SUCCESS;
@@ -87,7 +89,40 @@ apr_status_t apr_unix_child_file_cleanup(void *thefile)
     return file_cleanup(thefile, 1);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_log(apr_file_t **new,
+                                        const char *fname,
+                                        apr_int32_t flag,
+                                        apr_fileperms_t perm,
+                                        apr_pool_t *pool,
+                                        int is_direct)
+{
+  int ret = apr_file_open_(new, fname, flag, perm, pool);
+  write_type_and_func("int", "apr_file_open", is_direct);
+  write_int_ret_arg(new==NULL || *new==NULL ? NULLINT : (*new)->filedes);
+  write_string(fname);
+  write_int(flag);
+  write_int(perm);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
+                                        const char *fname,
+                                        apr_int32_t flag,
+                                        apr_fileperms_t perm,
+                                        apr_pool_t *pool)
+{
+  return apr_file_open_log(new, fname, flag, perm, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_(apr_file_t **new,
                                         const char *fname,
                                         apr_int32_t flag,
                                         apr_fileperms_t perm,
@@ -250,12 +285,55 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_close_log(apr_file_t *file,
+                                             int is_direct)
+{
+  int ret = apr_file_close_(file);
+  write_type_and_func("int", "apr_file_close", is_direct);
+  write_int(file==NULL ? NULLINT : file->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
+{
+  return apr_file_close_log(file, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_close_(apr_file_t *file)
 {
     return apr_pool_cleanup_run(file->pool, file, apr_unix_file_cleanup);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_remove_log(const char *path, apr_pool_t *pool,
+                                              int is_direct)
+{
+  int ret = apr_file_remove_(path, pool);
+  write_type_and_func("int", "apr_file_remove", is_direct);
+  write_string(path);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
+{
+  return apr_file_remove_log(path, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_remove_(const char *path, apr_pool_t *pool)
 {
     if (unlink(path) == 0) {
         return APR_SUCCESS;
@@ -265,7 +343,34 @@ APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_rename_log(const char *from_path,
+                                          const char *to_path,
+                                          apr_pool_t *p,
+                                          int is_direct)
+{
+  int ret = apr_file_rename_(from_path, to_path, p);
+  write_type_and_func("int", "apr_file_rename", is_direct);
+  write_string(from_path);
+  write_string(to_path);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path,
+                                          const char *to_path,
+                                          apr_pool_t *p)
+{
+  return apr_file_rename_log(from_path, to_path, p, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_rename_(const char *from_path,
                                           const char *to_path,
                                           apr_pool_t *p)
 {
@@ -322,7 +427,28 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_eof_log(apr_file_t *fptr,
+                                           int is_direct)
+{
+  int ret = apr_file_eof_(fptr);
+  write_type_and_func("int", "apr_file_eof", is_direct);
+  write_int(fptr==NULL ? NULLINT : fptr->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
+{
+  return apr_file_eof_log(fptr, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_eof_(apr_file_t *fptr)
 {
     if (fptr->eof_hit == 1) {
         return APR_EOF;
@@ -330,7 +456,34 @@ APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_flags_stderr_log(apr_file_t **thefile,
+                                                     apr_int32_t flags,
+                                                     apr_pool_t *pool,
+                                                     int is_direct)
+{
+  int ret = apr_file_open_flags_stderr_(thefile, flags, pool);
+  write_type_and_func("int", "apr_file_open_flags_stderr", is_direct);
+  write_int_ret_arg(thefile==NULL || *thefile==NULL ? NULLINT : (*thefile)->filedes);
+  write_int(flags);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open_flags_stderr(apr_file_t **thefile,
+                                                     apr_int32_t flags,
+                                                     apr_pool_t *pool)
+{
+  return apr_file_open_flags_stderr_log(thefile, flags, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_flags_stderr_(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool)
 {
@@ -339,7 +492,34 @@ APR_DECLARE(apr_status_t) apr_file_open_flags_stderr(apr_file_t **thefile,
     return apr_os_file_put(thefile, &fd, flags | APR_FOPEN_WRITE, pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_flags_stdout_log(apr_file_t **thefile,
+                                                     apr_int32_t flags,
+                                                     apr_pool_t *pool,
+                                                     int is_direct)
+{
+  int ret = apr_file_open_flags_stdout_(thefile, flags, pool);
+  write_type_and_func("int", "apr_file_open_flags_stdout", is_direct);
+  write_int_ret_arg(thefile==NULL || *thefile==NULL ? NULLINT : (*thefile)->filedes);
+  write_int(flags);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open_flags_stdout(apr_file_t **thefile,
+                                                     apr_int32_t flags,
+                                                     apr_pool_t *pool)
+{
+  return apr_file_open_flags_stdout_log(thefile, flags, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_flags_stdout_(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool)
 {
@@ -348,7 +528,34 @@ APR_DECLARE(apr_status_t) apr_file_open_flags_stdout(apr_file_t **thefile,
     return apr_os_file_put(thefile, &fd, flags | APR_FOPEN_WRITE, pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_flags_stdin_log(apr_file_t **thefile,
+                                                     apr_int32_t flags,
+                                                     apr_pool_t *pool,
+                                                     int is_direct)
+{
+  int ret = apr_file_open_flags_stdin_(thefile, flags, pool);
+  write_type_and_func("int", "apr_file_open_flags_stdin", is_direct);
+  write_int_ret_arg(thefile==NULL || *thefile==NULL ? NULLINT : (*thefile)->filedes);
+  write_int(flags);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open_flags_stdin(apr_file_t **thefile,
+                                                     apr_int32_t flags,
+                                                     apr_pool_t *pool)
+{
+  return apr_file_open_flags_stdin_log(thefile, flags, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_flags_stdin_(apr_file_t **thefile,
                                                     apr_int32_t flags,
                                                     apr_pool_t *pool)
 {
@@ -357,30 +564,162 @@ APR_DECLARE(apr_status_t) apr_file_open_flags_stdin(apr_file_t **thefile,
     return apr_os_file_put(thefile, &fd, flags | APR_FOPEN_READ, pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_stderr_log(apr_file_t **thefile,
+                                               apr_pool_t *pool,
+                                               int is_direct)
+{
+  int ret = apr_file_open_stderr_(thefile, pool);
+  write_type_and_func("int", "apr_file_open_stderr", is_direct);
+  write_int_ret_arg(thefile==NULL || *thefile==NULL ? NULLINT : (*thefile)->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile,
+                                               apr_pool_t *pool)
+{
+  return apr_file_open_stderr_log(thefile, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_stderr_(apr_file_t **thefile,
                                                apr_pool_t *pool)
 {
     return apr_file_open_flags_stderr(thefile, 0, pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_stdout_log(apr_file_t **thefile,
+                                               apr_pool_t *pool,
+                                               int is_direct)
+{
+  int ret = apr_file_open_stdout_(thefile, pool);
+  write_type_and_func("int", "apr_file_open_stdout", is_direct);
+  write_int_ret_arg(thefile==NULL || *thefile==NULL ? NULLINT : (*thefile)->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile,
+                                               apr_pool_t *pool)
+{
+  return apr_file_open_stdout_log(thefile, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_stdout_(apr_file_t **thefile,
                                                apr_pool_t *pool)
 {
     return apr_file_open_flags_stdout(thefile, 0, pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_open_stdin_log(apr_file_t **thefile,
+                                               apr_pool_t *pool,
+                                               int is_direct)
+{
+  int ret = apr_file_open_stdin_(thefile, pool);
+  write_type_and_func("int", "apr_file_open_stdin", is_direct);
+  write_int_ret_arg(thefile==NULL || *thefile==NULL ? NULLINT : (*thefile)->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile,
+                                               apr_pool_t *pool)
+{
+  return apr_file_open_stdin_log(thefile, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_open_stdin_(apr_file_t **thefile,
                                               apr_pool_t *pool)
 {
     return apr_file_open_flags_stdin(thefile, 0, pool);
 }
 
-APR_IMPLEMENT_INHERIT_SET(file, flags, pool, apr_unix_file_cleanup)
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_inherit_set_log(apr_file_t *thefile,
+                                                   int is_direct)
+{
+  int ret = apr_file_inherit_set_(thefile);
+  write_type_and_func("int", "apr_file_inherit_set", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
+APR_DECLARE(apr_status_t) apr_file_inherit_set(apr_file_t *thefile)
+{
+  return apr_file_inherit_set_log(thefile, DIRECT);
+}
+
+
+
+// CHECKAPI note: manually expanded macro to greatly reduce logging confusion
+APR_DECLARE(apr_status_t) apr_file_inherit_set_(apr_file_t *thefile)
+{
+    if (thefile->flags & APR_FOPEN_NOCLEANUP)
+        return APR_EINVAL;
+    if (!(thefile->flags & APR_INHERIT)) {
+        int flags = fcntl(thefile->filedes, F_GETFD);
+        if (flags == -1)
+            return errno;
+        flags &= ~(FD_CLOEXEC);
+        if (fcntl(thefile->filedes, F_SETFD, flags) == -1)
+            return errno;
+        thefile->flags |= APR_INHERIT;
+        apr_pool_child_cleanup_set(thefile->pool,
+                                   (void *)thefile,
+                                   apr_unix_file_cleanup, apr_pool_cleanup_null);
+    }
+    return APR_SUCCESS;
+}
+
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_inherit_unset_log(apr_file_t *thefile,
+                                                     int is_direct)
+{
+  int ret = apr_file_inherit_unset_(thefile);
+  write_type_and_func("int", "apr_file_inherit_unset", is_direct);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
+APR_DECLARE(apr_status_t) apr_file_inherit_unset(apr_file_t *thefile)
+{
+  return apr_file_inherit_unset_log(thefile, DIRECT);
+}
+
+
 
 /* We need to do this by hand instead of using APR_IMPLEMENT_INHERIT_UNSET
  * because the macro sets both cleanups to the same function, which is not
  * suitable on Unix (see PR 41119). */
-APR_DECLARE(apr_status_t) apr_file_inherit_unset(apr_file_t *thefile)
+APR_DECLARE(apr_status_t) apr_file_inherit_unset_(apr_file_t *thefile)
 {
     if (thefile->flags & APR_FOPEN_NOCLEANUP) {
         return APR_EINVAL;
@@ -404,9 +743,35 @@ APR_DECLARE(apr_status_t) apr_file_inherit_unset(apr_file_t *thefile)
     return APR_SUCCESS;
 }
 
+// CHECKAPI note: skipping pool_get because the model ignores pools
+
 APR_POOL_IMPLEMENT_ACCESSOR(file)
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_link_log(const char *from_path,
+                                          const char *to_path,
+                                          int is_direct)
+{
+  int ret = apr_file_link_(from_path, to_path);
+  write_type_and_func("int", "apr_file_link", is_direct);
+  write_string(from_path);
+  write_string(to_path);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_link(const char *from_path,
+                                          const char *to_path)
+{
+  return apr_file_link_log(from_path, to_path, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_link_(const char *from_path,
                                           const char *to_path)
 {
     if (link(from_path, to_path) == -1) {

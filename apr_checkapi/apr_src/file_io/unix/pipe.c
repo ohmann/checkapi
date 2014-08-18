@@ -20,6 +20,8 @@
 
 #include "apr_arch_inherit.h"
 
+#include "aprtrace.h"
+
 /* Figure out how to get pipe block/nonblock on BeOS...
  * Basically, BONE7 changed things again so that ioctl didn't work,
  * but now fcntl does, hence we need to do this extra checking.
@@ -105,7 +107,29 @@ static apr_status_t pipenonblock(apr_file_t *thepipe)
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set_log(apr_file_t *thepipe, apr_interval_time_t timeout,
+                                                        int is_direct)
+{
+  int ret = apr_file_pipe_timeout_set_(thepipe, timeout);
+  write_type_and_func("int", "apr_file_pipe_timeout_set", is_direct);
+  write_int(thepipe==NULL ? NULLINT : thepipe->filedes);
+  write_int(timeout);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_interval_time_t timeout)
+{
+  return apr_file_pipe_timeout_set_log(thepipe, timeout, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set_(apr_file_t *thepipe, apr_interval_time_t timeout)
 {
     if (thepipe->is_pipe == 1) {
         thepipe->timeout = timeout;
@@ -124,7 +148,29 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_int
     return APR_EINVAL;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get_log(apr_file_t *thepipe, apr_interval_time_t *timeout,
+                                                        int is_direct)
+{
+  int ret = apr_file_pipe_timeout_get_(thepipe, timeout);
+  write_type_and_func("int", "apr_file_pipe_timeout_get", is_direct);
+  write_int(thepipe==NULL ? NULLINT : thepipe->filedes);
+  write_int_ret_arg(timeout==NULL ? NULLINT : *timeout);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_interval_time_t *timeout)
+{
+  return apr_file_pipe_timeout_get_log(thepipe, timeout, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get_(apr_file_t *thepipe, apr_interval_time_t *timeout)
 {
     if (thepipe->is_pipe == 1) {
         *timeout = thepipe->timeout;
@@ -176,7 +222,30 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put(apr_file_t **file,
     return apr_os_pipe_put_ex(file, thefile, 0, pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_pipe_create_log(apr_file_t **in, apr_file_t **out, apr_pool_t *pool,
+                                                   int is_direct)
+{
+  int ret = apr_file_pipe_create_(in, out, pool);
+  write_type_and_func("int", "apr_file_pipe_create", is_direct);
+  write_int_ret_arg(in==NULL || *in==NULL ? NULLINT : (*in)->filedes);
+  write_int_ret_arg(out==NULL || *out==NULL ? NULLINT : (*out)->filedes);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out, apr_pool_t *pool)
+{
+  return apr_file_pipe_create_log(in, out, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_pipe_create_(apr_file_t **in, apr_file_t **out, apr_pool_t *pool)
 {
     int filedes[2];
 
@@ -222,7 +291,37 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_pipe_create_ex_log(apr_file_t **in,
+                                                  apr_file_t **out,
+                                                  apr_int32_t blocking,
+                                                  apr_pool_t *pool,
+                                                  int is_direct)
+{
+  int ret = apr_file_pipe_create_ex_(in, out, blocking, pool);
+  write_type_and_func("int", "apr_file_pipe_create_ex", is_direct);
+  write_int_ret_arg(in==NULL || *in==NULL ? NULLINT : (*in)->filedes);
+  write_int_ret_arg(out==NULL || *out==NULL ? NULLINT : (*out)->filedes);
+  write_int(blocking);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_pipe_create_ex(apr_file_t **in,
+                                                  apr_file_t **out,
+                                                  apr_int32_t blocking,
+                                                  apr_pool_t *pool)
+{
+  return apr_file_pipe_create_ex_log(in, out, blocking, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_pipe_create_ex_(apr_file_t **in,
                                                   apr_file_t **out,
                                                   apr_int32_t blocking,
                                                   apr_pool_t *pool)
@@ -249,7 +348,32 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create_ex(apr_file_t **in,
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_namedpipe_create_log(const char *filename,
+                                                    apr_fileperms_t perm, apr_pool_t *pool,
+                                                    int is_direct)
+{
+  int ret = apr_file_namedpipe_create_(filename, perm, pool, pool);
+  write_type_and_func("int", "apr_file_namedpipe_create", is_direct);
+  write_string(filename);
+  write_int(perm);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename,
+                                                    apr_fileperms_t perm, apr_pool_t *pool)
+{
+  return apr_file_namedpipe_create_log(filename, perm, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_namedpipe_create_(const char *filename,
                                                     apr_fileperms_t perm, apr_pool_t *pool)
 {
     mode_t mode = apr_unix_perms2mode(perm);

@@ -17,16 +17,63 @@
 #include "apr_strings.h"
 #include "apr_arch_file_io.h"
 
+#include "aprtrace.h"
+
 /* A file to put ALL of the accessor functions for apr_file_t types. */
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_name_get_log(const char **fname,
+                                           apr_file_t *thefile,
+                                           int is_direct)
+{
+  int ret = apr_file_name_get_(fname, thefile);
+  write_type_and_func("int", "apr_file_name_get", is_direct);
+  write_string_ret_arg(fname==NULL ? NULLSTR : *fname);
+  write_int(thefile==NULL ? NULLINT : thefile->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_name_get(const char **fname,
+                                           apr_file_t *thefile)
+{
+  return apr_file_name_get_log(fname, thefile, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_name_get_(const char **fname,
                                            apr_file_t *thefile)
 {
     *fname = thefile->fname;
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_int32_t) apr_file_flags_get_log(apr_file_t *f,
+                                                 int is_direct)
+{
+  int ret = apr_file_flags_get_(f);
+  write_type_and_func("int", "apr_file_flags_get", is_direct);
+  write_int(f==NULL ? NULLINT : f->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_int32_t) apr_file_flags_get(apr_file_t *f)
+{
+  return apr_file_flags_get_log(f, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_int32_t) apr_file_flags_get_(apr_file_t *f)
 {
     return f->flags;
 }
@@ -105,13 +152,66 @@ apr_fileperms_t apr_unix_mode2perms(mode_t mode)
 }
 #endif
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_data_get_log(void **data, const char *key,
+                                           apr_file_t *file,
+                                           int is_direct)
+{
+  int ret = apr_file_data_get_(data, key, file);
+  write_type_and_func("int", "apr_file_data_get", is_direct);
+  write_string_ret_arg(data==NULL ? NULLSTR : *data);
+  write_string(key);
+  write_int(file==NULL ? NULLINT : file->filedes);
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_data_get(void **data, const char *key,
+                                           apr_file_t *file)
+{
+  return apr_file_data_get_log(data, key, file, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_data_get_(void **data, const char *key,
                                            apr_file_t *file)
 {
     return apr_pool_userdata_get(data, key, file->pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_data_set_log(apr_file_t *file, void *data,
+                                           const char *key,
+                                           apr_status_t (*cleanup)(void *),
+                                           int is_direct)
+{
+  int ret = apr_file_data_set_(file, data, key, cleanup);
+  write_type_and_func("int", "apr_file_data_set", is_direct);
+  write_int(file==NULL ? NULLINT : file->filedes);
+  write_string(data);
+  write_string(key);
+  // skip cleanup
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_data_set(apr_file_t *file, void *data,
+                                           const char *key,
+                                           apr_status_t (*cleanup)(void *))
+{
+  return apr_file_data_set_log(file, data, key, cleanup, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_data_set_(apr_file_t *file, void *data,
                                            const char *key,
                                            apr_status_t (*cleanup)(void *))
 {

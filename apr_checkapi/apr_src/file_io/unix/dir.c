@@ -24,6 +24,8 @@
 #include <limits.h>
 #endif
 
+#include "aprtrace.h"
+
 static apr_status_t dir_cleanup(void *thedir)
 {
     apr_dir_t *dir = thedir;
@@ -285,7 +287,32 @@ apr_status_t apr_dir_rewind(apr_dir_t *thedir)
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+apr_status_t apr_dir_make_log(const char *path, apr_fileperms_t perm,
+                          apr_pool_t *pool,
+                          int is_direct)
+{
+  int ret = apr_dir_make_(path, perm, pool);
+  write_type_and_func("int", "apr_dir_make", is_direct);
+  write_string(path);
+  write_int(perm);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 apr_status_t apr_dir_make(const char *path, apr_fileperms_t perm,
+                          apr_pool_t *pool)
+{
+  return apr_dir_make_log(path, perm, pool, DIRECT);
+}
+
+
+
+apr_status_t apr_dir_make_(const char *path, apr_fileperms_t perm,
                           apr_pool_t *pool)
 {
     mode_t mode = apr_unix_perms2mode(perm);
@@ -298,7 +325,32 @@ apr_status_t apr_dir_make(const char *path, apr_fileperms_t perm,
     }
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+apr_status_t apr_dir_make_recursive_log(const char *path, apr_fileperms_t perm,
+                                           apr_pool_t *pool,
+                                           int is_direct)
+{
+  int ret = apr_dir_make_recursive_(path, perm, pool);
+  write_type_and_func("int", "apr_dir_make_recursive", is_direct);
+  write_string(path);
+  write_int(perm);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 apr_status_t apr_dir_make_recursive(const char *path, apr_fileperms_t perm,
+                                           apr_pool_t *pool)
+{
+  return apr_dir_make_recursive_log(path, perm, pool, DIRECT);
+}
+
+
+
+apr_status_t apr_dir_make_recursive_(const char *path, apr_fileperms_t perm,
                                            apr_pool_t *pool)
 {
     apr_status_t apr_err = 0;
@@ -331,7 +383,29 @@ apr_status_t apr_dir_make_recursive(const char *path, apr_fileperms_t perm,
     return apr_err;
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+apr_status_t apr_dir_remove_log(const char *path, apr_pool_t *pool,
+                                int is_direct)
+{
+  int ret = apr_dir_remove_(path, pool);
+  write_type_and_func("int", "apr_dir_remove", is_direct);
+  write_string(path);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 apr_status_t apr_dir_remove(const char *path, apr_pool_t *pool)
+{
+  return apr_dir_remove_log(path, pool, DIRECT);
+}
+
+
+
+apr_status_t apr_dir_remove_(const char *path, apr_pool_t *pool)
 {
     if (rmdir(path) == 0) {
         return APR_SUCCESS;

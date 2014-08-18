@@ -17,6 +17,8 @@
 #include "apr_arch_file_io.h"
 #include "apr_file_io.h"
 
+#include "aprtrace.h"
+
 static apr_status_t apr_file_transfer_contents(const char *from_path,
                                                const char *to_path,
                                                apr_int32_t flags,
@@ -95,7 +97,37 @@ static apr_status_t apr_file_transfer_contents(const char *from_path,
     /* NOTREACHED */
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_copy_log(const char *from_path,
+                                        const char *to_path,
+                                        apr_fileperms_t perms,
+                                        apr_pool_t *pool,
+                                        int is_direct)
+{
+  int ret = apr_file_copy_(from_path, to_path, perms, pool);
+  write_type_and_func("int", "apr_file_copy", is_direct);
+  write_string(from_path);
+  write_string(to_path);
+  write_int(perms);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_copy(const char *from_path,
+                                        const char *to_path,
+                                        apr_fileperms_t perms,
+                                        apr_pool_t *pool)
+{
+  return apr_file_copy_log(from_path, to_path, perms, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_copy_(const char *from_path,
                                         const char *to_path,
                                         apr_fileperms_t perms,
                                         apr_pool_t *pool)
@@ -106,7 +138,37 @@ APR_DECLARE(apr_status_t) apr_file_copy(const char *from_path,
                                       pool);
 }
 
+
+
+// CHECKAPI SHIM FOR LOGGING
+APR_DECLARE(apr_status_t) apr_file_append_log(const char *from_path,
+                                          const char *to_path,
+                                          apr_fileperms_t perms,
+                                          apr_pool_t *pool,
+                                          int is_direct)
+{
+  int ret = apr_file_append_(from_path, to_path, perms, pool);
+  write_type_and_func("int", "apr_file_append", is_direct);
+  write_string(from_path);
+  write_string(to_path);
+  write_int(perms);
+  // skip pool
+  write_return_int(ret);
+  return ret;
+}
+
+// CHECKAPI SHIM FOR LOGGING (direct call)
 APR_DECLARE(apr_status_t) apr_file_append(const char *from_path,
+                                          const char *to_path,
+                                          apr_fileperms_t perms,
+                                          apr_pool_t *pool)
+{
+  return apr_file_append_log(from_path, to_path, perms, pool, DIRECT);
+}
+
+
+
+APR_DECLARE(apr_status_t) apr_file_append_(const char *from_path,
                                           const char *to_path,
                                           apr_fileperms_t perms,
                                           apr_pool_t *pool)

@@ -20,6 +20,8 @@
 
 #include "apr_arch_inherit.h"
 
+#include "checkapicommon.h"
+
 /* Figure out how to get pipe block/nonblock on BeOS...
  * Basically, BONE7 changed things again so that ioctl didn't work,
  * but now fcntl does, hence we need to do this extra checking.

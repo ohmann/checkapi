@@ -24,6 +24,20 @@
 #include "apr_arch_internal_time.h"
 
 
+
+// BEGIN CHECKAPI COMMON MODEL CODE
+#include "checkapicommon.h"
+
+void set_py_functions(int (oracle_get_id)(void),
+                      int (oracle_getter)(int, char*),
+                      int (fs_open)(char*, int),
+                      int (fs_unlink)(char*)) {
+  set_py_functions_common(oracle_get_id, oracle_getter, fs_open, fs_unlink);
+}
+// END CHECKAPI COMMON MODEL CODE
+
+
+
 APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
                                              const char * const * *argv,
                                              const char * const * *env)

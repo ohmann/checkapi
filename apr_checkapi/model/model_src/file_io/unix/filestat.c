@@ -24,6 +24,8 @@
 #include <utime.h>
 #endif
 
+#include "checkapicommon.h"
+
 static apr_filetype_e filetype_from_mode(mode_t mode)
 {
     apr_filetype_e type;

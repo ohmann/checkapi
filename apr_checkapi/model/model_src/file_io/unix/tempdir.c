@@ -18,6 +18,8 @@
 #include "apr_strings.h"
 #include "apr_env.h"
 
+#include "checkapicommon.h"
+
 
 /* Try to open a temporary file in the temporary dir, write to it,
    and then close it. */

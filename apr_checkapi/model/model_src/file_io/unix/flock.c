@@ -23,6 +23,8 @@
 #include <sys/file.h>
 #endif
 
+#include "checkapicommon.h"
+
 APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
 {
     int rc;

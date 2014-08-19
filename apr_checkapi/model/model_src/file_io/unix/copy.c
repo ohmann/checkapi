@@ -17,6 +17,8 @@
 #include "apr_arch_file_io.h"
 #include "apr_file_io.h"
 
+#include "checkapicommon.h"
+
 static apr_status_t apr_file_transfer_contents(const char *from_path,
                                                const char *to_path,
                                                apr_int32_t flags,

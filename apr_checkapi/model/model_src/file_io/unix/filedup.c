@@ -20,6 +20,8 @@
 #include "apr_thread_mutex.h"
 #include "apr_arch_inherit.h"
 
+#include "checkapicommon.h"
+
 static apr_status_t file_dup(apr_file_t **new_file,
                              apr_file_t *old_file, apr_pool_t *p,
                              int which_dup)

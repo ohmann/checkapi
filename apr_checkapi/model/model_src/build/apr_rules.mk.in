@@ -44,7 +44,7 @@ LIBTOOL=@LIBTOOL@
 CFLAGS=@CFLAGS@
 CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
-LIBS=@LIBS@ -L/home/ohmann/dev/checkapi.git/apr_checkapi/tracing -laprtrace
+LIBS=@LIBS@ -L/home/ohmann/dev/checkapi.git/apr_checkapi/model -lcheckapicommon
 DEFS=@DEFS@
 
 # anything added to the standard flags by configure is moved to EXTRA_*

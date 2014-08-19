@@ -16,6 +16,8 @@
 
 #include "apr_file_io.h"
 
+#include "checkapicommon.h"
+
 
 APR_DECLARE(apr_status_t) apr_file_read_full(apr_file_t *thefile, void *buf,
                                              apr_size_t nbytes,

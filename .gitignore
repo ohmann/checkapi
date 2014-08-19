@@ -63,6 +63,7 @@ apr_checkapi/model/model_src/config.status
 apr_checkapi/model/model_src/export_vars.c
 apr_checkapi/model/model_src/exports.c
 apr_checkapi/model/model_src/include/apr.h
+apr_checkapi/model/model_src/include/checkapicommon.h
 apr_checkapi/model/model_src/include/arch/unix/apr_private.h
 apr_checkapi/model/model_src/include/private/
 apr_checkapi/model/model_src/libtool

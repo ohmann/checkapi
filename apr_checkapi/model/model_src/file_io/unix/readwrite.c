@@ -19,6 +19,8 @@
 #include "apr_thread_mutex.h"
 #include "apr_support.h"
 
+#include "checkapicommon.h"
+
 /* The only case where we don't use wait_for_io_or_timeout is on
  * pre-BONE BeOS, so this check should be sufficient and simpler */
 #if !defined(BEOS_R5)

@@ -18,6 +18,8 @@
 #include "apr_pools.h"
 #include "apr_thread_mutex.h"
 
+#include "checkapicommon.h"
+
 APR_DECLARE(apr_status_t) apr_file_buffer_set(apr_file_t *file,
                                               char * buffer,
                                               apr_size_t bufsize)

@@ -17,6 +17,8 @@
 #include "apr_strings.h"
 #include "apr_arch_file_io.h"
 
+#include "checkapicommon.h"
+
 /* A file to put ALL of the accessor functions for apr_file_t types. */
 
 APR_DECLARE(apr_status_t) apr_file_name_get(const char **fname,

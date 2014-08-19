@@ -26,6 +26,8 @@
 #include "fsio.h"
 #endif
 
+#include "checkapicommon.h"
+
 static apr_status_t file_cleanup(apr_file_t *file, int is_child)
 {
     apr_status_t rv = APR_SUCCESS;

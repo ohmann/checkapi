@@ -16,6 +16,8 @@
 
 #include "apr_arch_file_io.h"
 
+#include "checkapicommon.h"
+
 static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
 {
     apr_off_t newbufpos;

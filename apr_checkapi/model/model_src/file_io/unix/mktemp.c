@@ -88,6 +88,8 @@
 #include <time.h>
 #endif
 
+#include "checkapicommon.h"
+
 static const unsigned char padchar[] =
 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 static apr_uint32_t randseed=0;

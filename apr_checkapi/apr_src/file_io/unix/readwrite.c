@@ -355,7 +355,7 @@ APR_DECLARE(apr_status_t) apr_file_writev_(apr_file_t *thefile, const struct iov
      */
 
     *nbytes = vec[0].iov_len;
-    return apr_file_write(thefile, vec[0].iov_base, nbytes);
+    return apr_file_write_log(thefile, vec[0].iov_base, nbytes, NESTED);
 #endif
 }
 
@@ -386,7 +386,7 @@ APR_DECLARE(apr_status_t) apr_file_putc_(char ch, apr_file_t *thefile)
 {
     apr_size_t nbytes = 1;
 
-    return apr_file_write(thefile, &ch, &nbytes);
+    return apr_file_write_log(thefile, &ch, &nbytes, NESTED);
 }
 
 
@@ -444,7 +444,7 @@ APR_DECLARE(apr_status_t) apr_file_getc_(char *ch, apr_file_t *thefile)
 {
     apr_size_t nbytes = 1;
 
-    return apr_file_read(thefile, ch, &nbytes);
+    return apr_file_read_log(thefile, ch, &nbytes, NESTED);
 }
 
 
@@ -471,7 +471,7 @@ APR_DECLARE(apr_status_t) apr_file_puts(const char *str, apr_file_t *thefile)
 
 APR_DECLARE(apr_status_t) apr_file_puts_(const char *str, apr_file_t *thefile)
 {
-    return apr_file_write_full(thefile, str, strlen(str), NULL);
+    return apr_file_write_full_log(thefile, str, strlen(str), NULL, NESTED);
 }
 
 apr_status_t apr_file_flush_locked(apr_file_t *thefile)
@@ -707,7 +707,7 @@ APR_DECLARE(apr_status_t) apr_file_gets_(char *str, int len, apr_file_t *thefile
     else {
         while (str < final) { /* leave room for trailing '\0' */
             nbytes = 1;
-            rv = apr_file_read(thefile, str, &nbytes);
+            rv = apr_file_read_log(thefile, str, &nbytes, NESTED);
             if (rv != APR_SUCCESS) {
                 break;
             }
@@ -742,8 +742,8 @@ static int file_printf_flush(apr_vformatter_buff_t *buff)
 {
     struct apr_file_printf_data *data = (struct apr_file_printf_data *)buff;
 
-    if (apr_file_write_full(data->fptr, data->buf,
-                            data->vbuff.curpos - data->buf, NULL)) {
+    if (apr_file_write_full_log(data->fptr, data->buf,
+                            data->vbuff.curpos - data->buf, NULL, NESTED)) {
         return -1;
     }
 

@@ -31,15 +31,15 @@ static apr_status_t apr_file_transfer_contents(const char *from_path,
     apr_fileperms_t perms;
 
     /* Open source file. */
-    status = apr_file_open(&s, from_path, APR_FOPEN_READ, APR_OS_DEFAULT, pool);
+    status = apr_file_open_log(&s, from_path, APR_FOPEN_READ, APR_OS_DEFAULT, pool, NESTED);
     if (status)
         return status;
 
     /* Maybe get its permissions. */
     if (to_perms == APR_FILE_SOURCE_PERMS) {
-        status = apr_file_info_get(&finfo, APR_FINFO_PROT, s);
+        status = apr_file_info_get_log(&finfo, APR_FINFO_PROT, s, NESTED);
         if (status != APR_SUCCESS && status != APR_INCOMPLETE) {
-            apr_file_close(s);  /* toss any error */
+            apr_file_close_log(s, NESTED);  /* toss any error */
             return status;
         }
         perms = finfo.protection;
@@ -48,9 +48,9 @@ static apr_status_t apr_file_transfer_contents(const char *from_path,
         perms = to_perms;
 
     /* Open dest file. */
-    status = apr_file_open(&d, to_path, flags, perms, pool);
+    status = apr_file_open_log(&d, to_path, flags, perms, pool, NESTED);
     if (status) {
-        apr_file_close(s);  /* toss any error */
+        apr_file_close_log(s, NESTED);  /* toss any error */
         return status;
     }
 
@@ -68,30 +68,30 @@ static apr_status_t apr_file_transfer_contents(const char *from_path,
         apr_status_t write_err;
 
         /* Read 'em. */
-        read_err = apr_file_read(s, buf, &bytes_this_time);
+        read_err = apr_file_read_log(s, buf, &bytes_this_time, NESTED);
         if (read_err && !APR_STATUS_IS_EOF(read_err)) {
-            apr_file_close(s);  /* toss any error */
-            apr_file_close(d);  /* toss any error */
+            apr_file_close_log(s, NESTED);  /* toss any error */
+            apr_file_close_log(d, NESTED);  /* toss any error */
             return read_err;
         }
 
         /* Write 'em. */
-        write_err = apr_file_write_full(d, buf, bytes_this_time, NULL);
+        write_err = apr_file_write_full_log(d, buf, bytes_this_time, NULL, NESTED);
         if (write_err) {
-            apr_file_close(s);  /* toss any error */
-            apr_file_close(d);  /* toss any error */
+            apr_file_close_log(s, NESTED);  /* toss any error */
+            apr_file_close_log(d, NESTED);  /* toss any error */
             return write_err;
         }
 
         if (read_err && APR_STATUS_IS_EOF(read_err)) {
-            status = apr_file_close(s);
+            status = apr_file_close_log(s, NESTED);
             if (status) {
-                apr_file_close(d);  /* toss any error */
+                apr_file_close_log(d, NESTED);  /* toss any error */
                 return status;
             }
 
             /* return the results of this close: an error, or success */
-            return apr_file_close(d);
+            return apr_file_close_log(d, NESTED);
         }
     }
     /* NOTREACHED */

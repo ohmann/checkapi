@@ -23,6 +23,8 @@
 #include "apr_arch_file_io.h"
 #include "apr_portable.h"
 
+#include "aprtrace.h"
+
 /* System headers required for the mmap library */
 #ifdef BEOS
 #include <kernel/OS.h>
@@ -101,7 +103,7 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new,
 
 #ifdef BEOS
     /* XXX: mmap shouldn't really change the seek offset */
-    apr_file_seek(file, APR_SET, &offset);
+    apr_file_seek_log(file, APR_SET, &offset, NESTED);
 
     /* There seems to be some strange interactions that mean our area must
      * be set as READ & WRITE or writev will fail!  Go figure...

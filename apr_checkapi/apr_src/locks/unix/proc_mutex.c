@@ -20,6 +20,8 @@
 #include "apr_arch_file_io.h" /* for apr_mkstemp() */
 #include "apr_hash.h"
 
+#include "aprtrace.h"
+
 APR_DECLARE(apr_status_t) apr_proc_mutex_destroy(apr_proc_mutex_t *mutex)
 {
     return apr_pool_cleanup_run(mutex->pool, mutex, apr_proc_mutex_cleanup);
@@ -536,7 +538,7 @@ static apr_status_t proc_mutex_fcntl_cleanup(void *mutex_)
             return status;
     }
 
-    return apr_file_close(mutex->interproc);
+    return apr_file_close_log(mutex->interproc, NESTED);
 }
 
 static apr_status_t proc_mutex_fcntl_create(apr_proc_mutex_t *new_mutex,
@@ -546,16 +548,16 @@ static apr_status_t proc_mutex_fcntl_create(apr_proc_mutex_t *new_mutex,
 
     if (fname) {
         new_mutex->fname = apr_pstrdup(new_mutex->pool, fname);
-        rv = apr_file_open(&new_mutex->interproc, new_mutex->fname,
+        rv = apr_file_open_log(&new_mutex->interproc, new_mutex->fname,
                            APR_FOPEN_CREATE | APR_FOPEN_WRITE | APR_FOPEN_EXCL,
                            APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD,
-                           new_mutex->pool);
+                           new_mutex->pool, NESTED);
     }
     else {
         new_mutex->fname = apr_pstrdup(new_mutex->pool, "/tmp/aprXXXXXX");
-        rv = apr_file_mktemp(&new_mutex->interproc, new_mutex->fname,
+        rv = apr_file_mktemp_log(&new_mutex->interproc, new_mutex->fname,
                              APR_FOPEN_CREATE | APR_FOPEN_WRITE | APR_FOPEN_EXCL,
-                             new_mutex->pool);
+                             new_mutex->pool, NESTED);
     }
 
     if (rv != APR_SUCCESS) {
@@ -653,7 +655,7 @@ static apr_status_t proc_mutex_flock_cleanup(void *mutex_)
             return status;
     }
     if (mutex->interproc) { /* if it was opened properly */
-        apr_file_close(mutex->interproc);
+        apr_file_close_log(mutex->interproc, NESTED);
     }
     unlink(mutex->fname);
     return APR_SUCCESS;
@@ -666,16 +668,16 @@ static apr_status_t proc_mutex_flock_create(apr_proc_mutex_t *new_mutex,
 
     if (fname) {
         new_mutex->fname = apr_pstrdup(new_mutex->pool, fname);
-        rv = apr_file_open(&new_mutex->interproc, new_mutex->fname,
+        rv = apr_file_open_log(&new_mutex->interproc, new_mutex->fname,
                            APR_FOPEN_CREATE | APR_FOPEN_WRITE | APR_FOPEN_EXCL,
                            APR_UREAD | APR_UWRITE,
-                           new_mutex->pool);
+                           new_mutex->pool, NESTED);
     }
     else {
         new_mutex->fname = apr_pstrdup(new_mutex->pool, "/tmp/aprXXXXXX");
-        rv = apr_file_mktemp(&new_mutex->interproc, new_mutex->fname,
+        rv = apr_file_mktemp_log(&new_mutex->interproc, new_mutex->fname,
                              APR_FOPEN_CREATE | APR_FOPEN_WRITE | APR_FOPEN_EXCL,
-                             new_mutex->pool);
+                             new_mutex->pool, NESTED);
     }
 
     if (rv != APR_SUCCESS) {
@@ -749,8 +751,8 @@ static apr_status_t proc_mutex_flock_child_init(apr_proc_mutex_t **mutex,
         fname = (*mutex)->fname;
     }
     new_mutex->fname = apr_pstrdup(pool, fname);
-    rv = apr_file_open(&new_mutex->interproc, new_mutex->fname,
-                       APR_FOPEN_WRITE, 0, new_mutex->pool);
+    rv = apr_file_open_log(&new_mutex->interproc, new_mutex->fname,
+                       APR_FOPEN_WRITE, 0, new_mutex->pool, NESTED);
     if (rv != APR_SUCCESS) {
         return rv;
     }

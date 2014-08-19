@@ -355,7 +355,7 @@ apr_status_t apr_dir_make_recursive_(const char *path, apr_fileperms_t perm,
 {
     apr_status_t apr_err = 0;
 
-    apr_err = apr_dir_make (path, perm, pool); /* Try to make PATH right out */
+    apr_err = apr_dir_make_log(path, perm, pool, NESTED); /* Try to make PATH right out */
 
     if (apr_err == ENOENT) { /* Missing an intermediate dir */
         char *dir;
@@ -366,10 +366,10 @@ apr_status_t apr_dir_make_recursive_(const char *path, apr_fileperms_t perm,
             return apr_err;
         }
 
-        apr_err = apr_dir_make_recursive(dir, perm, pool);
+        apr_err = apr_dir_make_recursive_log(dir, perm, pool, NESTED);
 
         if (!apr_err)
-            apr_err = apr_dir_make (path, perm, pool);
+            apr_err = apr_dir_make_log(path, perm, pool, NESTED);
     }
 
     /*

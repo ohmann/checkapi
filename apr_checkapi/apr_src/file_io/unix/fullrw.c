@@ -57,7 +57,7 @@ APR_DECLARE(apr_status_t) apr_file_read_full_(apr_file_t *thefile, void *buf,
     do {
 	apr_size_t amt = nbytes;
 
-	status = apr_file_read(thefile, buf, &amt);
+	status = apr_file_read_log(thefile, buf, &amt, NESTED);
 	buf = (char *)buf + amt;
         nbytes -= amt;
         total_read += amt;
@@ -110,7 +110,7 @@ APR_DECLARE(apr_status_t) apr_file_write_full_(apr_file_t *thefile,
     do {
 	apr_size_t amt = nbytes;
 
-	status = apr_file_write(thefile, buf, &amt);
+	status = apr_file_write_log(thefile, buf, &amt, NESTED);
 	buf = (char *)buf + amt;
         nbytes -= amt;
         total_written += amt;
@@ -166,7 +166,7 @@ APR_DECLARE(apr_status_t) apr_file_writev_full_(apr_file_t *thefile,
         total += vec[i].iov_len;
     }
 
-    rv = apr_file_writev(thefile, vec, nvec, &amt);
+    rv = apr_file_writev_log(thefile, vec, nvec, &amt, NESTED);
 
     if (bytes_written != NULL)
         *bytes_written = amt;
@@ -185,13 +185,13 @@ APR_DECLARE(apr_status_t) apr_file_writev_full_(apr_file_t *thefile,
     }
 
     if (amt) {
-        rv = apr_file_write_full(thefile, (const char *)vec[i].iov_base + amt,
-                                 vec[i].iov_len - amt, NULL);
+        rv = apr_file_write_full_log(thefile, (const char *)vec[i].iov_base + amt,
+                                 vec[i].iov_len - amt, NULL, NESTED);
     }
 
     for (; i < nvec && rv == APR_SUCCESS; i++) {
-        rv = apr_file_write_full(thefile, vec[i].iov_base,
-                                 vec[i].iov_len, &amt);
+        rv = apr_file_write_full_log(thefile, vec[i].iov_base,
+                                 vec[i].iov_len, &amt, NESTED);
     }
 
     if (bytes_written != NULL)

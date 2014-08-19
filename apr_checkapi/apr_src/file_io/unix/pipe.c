@@ -328,21 +328,21 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create_ex_(apr_file_t **in,
 {
     apr_status_t status;
 
-    if ((status = apr_file_pipe_create(in, out, pool)) != APR_SUCCESS)
+    if ((status = apr_file_pipe_create_log(in, out, pool, NESTED)) != APR_SUCCESS)
         return status;
 
     switch (blocking) {
         case APR_FULL_BLOCK:
             break;
         case APR_READ_BLOCK:
-            apr_file_pipe_timeout_set(*out, 0);
+            apr_file_pipe_timeout_set_log(*out, 0, NESTED);
             break;
         case APR_WRITE_BLOCK:
-            apr_file_pipe_timeout_set(*in, 0);
+            apr_file_pipe_timeout_set_log(*in, 0, NESTED);
             break;
         default:
-            apr_file_pipe_timeout_set(*out, 0);
-            apr_file_pipe_timeout_set(*in, 0);
+            apr_file_pipe_timeout_set_log(*out, 0, NESTED);
+            apr_file_pipe_timeout_set_log(*in, 0, NESTED);
     }
 
     return APR_SUCCESS;

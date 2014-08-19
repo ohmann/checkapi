@@ -31,6 +31,8 @@
 #include "apr_want.h"
 #include "apr_env.h"
 
+#include "aprtrace.h"
+
 #if APR_HAVE_STDLIB_H
 #include <stdlib.h>     /* for malloc, free and abort */
 #endif
@@ -1408,11 +1410,11 @@ APR_DECLARE(apr_status_t) apr_pool_initialize(void)
      * may attempt to use then then non-NULL but partially set up file
      * object. */
     if (rv == APR_SUCCESS) {
-        apr_file_open(&debug_log, logpath, APR_APPEND|APR_WRITE|APR_CREATE,
-                      APR_OS_DEFAULT, global_pool);
+        apr_file_open_log(&debug_log, logpath, APR_APPEND|APR_WRITE|APR_CREATE,
+                      APR_OS_DEFAULT, global_pool, NESTED);
     }
     else {
-        apr_file_open_stderr(&debug_log, global_pool);
+        apr_file_open_stderr_log(&debug_log, global_pool, NESTED);
     }
 
     /* debug_log is now a file handle. */

@@ -186,7 +186,7 @@ APR_DECLARE(apr_status_t) apr_file_info_get_(apr_finfo_t *finfo,
     struct_stat info;
 
     if (thefile->buffered) {
-        apr_status_t rv = apr_file_flush(thefile);
+        apr_status_t rv = apr_file_flush_log(thefile, NESTED);
         if (rv != APR_SUCCESS)
             return rv;
     }
@@ -318,7 +318,7 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set_(const char *fname,
         }
     }
 
-    return apr_file_perms_set(fname, finfo.protection);
+    return apr_file_perms_set_log(fname, finfo.protection, NESTED);
 }
 
 

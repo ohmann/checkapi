@@ -142,8 +142,8 @@ static int gettemp(char *path, apr_file_t **doopen, apr_int32_t flags, apr_pool_
     }
 
     for (;;) {
-        if ((rv = apr_file_open(doopen, path, flags,
-                                APR_UREAD | APR_UWRITE, p)) == APR_SUCCESS)
+        if ((rv = apr_file_open_log(doopen, path, flags,
+                                APR_UREAD | APR_UWRITE, p, NESTED)) == APR_SUCCESS)
             return APR_SUCCESS;
         if (!APR_STATUS_IS_EEXIST(rv))
             return rv;

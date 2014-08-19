@@ -28,6 +28,8 @@
 #include "apr_arch_poll_private.h"
 #include "apr_arch_inherit.h"
 
+#include "aprtrace.h"
+
 static apr_pollset_method_e pollset_default_method = POLLSET_DEFAULT_METHOD;
 
 #if !APR_FILES_AS_SOCKETS
@@ -72,9 +74,9 @@ static apr_status_t create_wakeup_pipe(apr_pollset_t *pollset)
 {
     apr_status_t rv;
 
-    if ((rv = apr_file_pipe_create(&pollset->wakeup_pipe[0],
+    if ((rv = apr_file_pipe_create_log(&pollset->wakeup_pipe[0],
                                    &pollset->wakeup_pipe[1],
-                                   pollset->pool)) != APR_SUCCESS)
+                                   pollset->pool, NESTED)) != APR_SUCCESS)
         return rv;
 
     pollset->wakeup_pfd.p = pollset->pool;
@@ -114,7 +116,7 @@ void apr_pollset_drain_wakeup_pipe(apr_pollset_t *pollset)
     char rb[512];
     apr_size_t nr = sizeof(rb);
 
-    while (apr_file_read(pollset->wakeup_pipe[0], rb, &nr) == APR_SUCCESS) {
+    while (apr_file_read_log(pollset->wakeup_pipe[0], rb, &nr, NESTED) == APR_SUCCESS) {
         /* Although we write just one byte to the other end of the pipe
          * during wakeup, multiple threads could call the wakeup.
          * So simply drain out from the input side of the pipe all
@@ -135,7 +137,7 @@ static apr_status_t pollset_cleanup(void *p)
         /* Close both sides of the wakeup pipe */
         if (pollset->wakeup_pipe[0]) {
 #if APR_FILES_AS_SOCKETS
-            apr_file_close(pollset->wakeup_pipe[0]);
+            apr_file_close_log(pollset->wakeup_pipe[0], NESTED);
 #else
             apr_file_socket_pipe_close(pollset->wakeup_pipe[0]);
 #endif
@@ -143,7 +145,7 @@ static apr_status_t pollset_cleanup(void *p)
         }
         if (pollset->wakeup_pipe[1]) {
 #if APR_FILES_AS_SOCKETS
-            apr_file_close(pollset->wakeup_pipe[1]);
+            apr_file_close_log(pollset->wakeup_pipe[1], NESTED);
 #else
             apr_file_socket_pipe_close(pollset->wakeup_pipe[1]);
 #endif
@@ -326,7 +328,7 @@ APR_DECLARE(apr_status_t) apr_pollset_destroy(apr_pollset_t * pollset)
 APR_DECLARE(apr_status_t) apr_pollset_wakeup(apr_pollset_t *pollset)
 {
     if (pollset->flags & APR_POLLSET_WAKEABLE)
-        return apr_file_putc(1, pollset->wakeup_pipe[1]);
+        return apr_file_putc_log(1, pollset->wakeup_pipe[1], NESTED);
     else
         return APR_EINIT;
 }

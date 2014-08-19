@@ -22,6 +22,8 @@
 #include "apr_strings.h"
 #include "apr_hash.h"
 
+#include "aprtrace.h"
+
 #if APR_USE_SHMEM_MMAP_SHM
 /*
  *   For portable use, a shared memory object should be identified by a name of
@@ -108,7 +110,7 @@ static apr_status_t shm_cleanup_owner(void *m_)
             return APR_SUCCESS;
         }
         else {
-            return apr_file_remove(m->filename, m->pool);
+            return apr_file_remove_log(m->filename, m->pool, NESTED);
         }
 #elif APR_USE_SHMEM_MMAP_SHM
         if (munmap(m->base, m->realsize) == -1) {
@@ -132,7 +134,7 @@ static apr_status_t shm_cleanup_owner(void *m_)
             return APR_SUCCESS;
         }
         else {
-            return apr_file_remove(m->filename, m->pool);
+            return apr_file_remove_log(m->filename, m->pool, NESTED);
         }
 #else
         return APR_ENOTIMPL;
@@ -176,8 +178,8 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         new_m->filename = NULL;
 
 #if APR_USE_SHMEM_MMAP_ZERO
-        status = apr_file_open(&file, "/dev/zero", APR_READ | APR_WRITE,
-                               APR_OS_DEFAULT, pool);
+        status = apr_file_open_log(&file, "/dev/zero", APR_READ | APR_WRITE,
+                               APR_OS_DEFAULT, pool, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -192,7 +194,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
             return errno;
         }
 
-        status = apr_file_close(file);
+        status = apr_file_close_log(file, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -288,24 +290,24 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
 
 #if APR_USE_SHMEM_MMAP_TMP
         /* FIXME: Is APR_OS_DEFAULT sufficient? */
-        status = apr_file_open(&file, filename,
+        status = apr_file_open_log(&file, filename,
                                APR_READ | APR_WRITE | APR_CREATE | APR_EXCL,
-                               APR_OS_DEFAULT, pool);
+                               APR_OS_DEFAULT, pool, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         status = apr_os_file_get(&tmpfd, file);
         if (status != APR_SUCCESS) {
-            apr_file_close(file); /* ignore errors, we're failing */
-            apr_file_remove(new_m->filename, new_m->pool);
+            apr_file_close_log(file, NESTED); /* ignore errors, we're failing */
+            apr_file_remove_log(new_m->filename, new_m->pool, NESTED);
             return status;
         }
 
-        status = apr_file_trunc(file, new_m->realsize);
+        status = apr_file_trunc_log(file, new_m->realsize, NESTED);
         if (status != APR_SUCCESS && status != APR_ESPIPE) {
-            apr_file_close(file); /* ignore errors, we're failing */
-            apr_file_remove(new_m->filename, new_m->pool);
+            apr_file_close_log(file, NESTED); /* ignore errors, we're failing */
+            apr_file_remove_log(new_m->filename, new_m->pool, NESTED);
             return status;
         }
 
@@ -313,7 +315,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
                            MAP_SHARED, tmpfd, 0);
         /* FIXME: check for errors */
 
-        status = apr_file_close(file);
+        status = apr_file_close_log(file, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -332,7 +334,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
             return status;
         }
 
-        status = apr_file_trunc(file, new_m->realsize);
+        status = apr_file_trunc_log(file, new_m->realsize, NESTED);
         if (status != APR_SUCCESS && status != APR_ESPIPE) {
             shm_unlink(shm_name); /* we're failing, remove the object */
             return status;
@@ -342,7 +344,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
 
         /* FIXME: check for errors */
 
-        status = apr_file_close(file);
+        status = apr_file_close_log(file, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -362,9 +364,9 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         new_m->realsize = reqsize;
 
         /* FIXME: APR_OS_DEFAULT is too permissive, switch to 600 I think. */
-        status = apr_file_open(&file, filename,
+        status = apr_file_open_log(&file, filename,
                                APR_FOPEN_WRITE | APR_FOPEN_CREATE | APR_FOPEN_EXCL,
-                               APR_OS_DEFAULT, pool);
+                               APR_OS_DEFAULT, pool, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -373,42 +375,42 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
          * exist before calling ftok(). */
         shmkey = our_ftok(filename);
         if (shmkey == (key_t)-1) {
-            apr_file_close(file);
+            apr_file_close_log(file, NESTED);
             return errno;
         }
 
         if ((new_m->shmid = shmget(shmkey, new_m->realsize,
                                    SHM_R | SHM_W | IPC_CREAT | IPC_EXCL)) < 0) {
-            apr_file_close(file);
+            apr_file_close_log(file, NESTED);
             return errno;
         }
 
         if ((new_m->base = shmat(new_m->shmid, NULL, 0)) == (void *)-1) {
-            apr_file_close(file);
+            apr_file_close_log(file, NESTED);
             return errno;
         }
         new_m->usable = new_m->base;
 
         if (shmctl(new_m->shmid, IPC_STAT, &shmbuf) == -1) {
-            apr_file_close(file);
+            apr_file_close_log(file, NESTED);
             return errno;
         }
         apr_uid_current(&uid, &gid, pool);
         shmbuf.shm_perm.uid = uid;
         shmbuf.shm_perm.gid = gid;
         if (shmctl(new_m->shmid, IPC_SET, &shmbuf) == -1) {
-            apr_file_close(file);
+            apr_file_close_log(file, NESTED);
             return errno;
         }
 
         nbytes = sizeof(reqsize);
-        status = apr_file_write(file, (const void *)&reqsize,
-                                &nbytes);
+        status = apr_file_write_log(file, (const void *)&reqsize,
+                                &nbytes, NESTED);
         if (status != APR_SUCCESS) {
-            apr_file_close(file);
+            apr_file_close_log(file, NESTED);
             return status;
         }
-        status = apr_file_close(file);
+        status = apr_file_close_log(file, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -444,7 +446,7 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
 #endif
 
 #if APR_USE_SHMEM_MMAP_TMP
-    return apr_file_remove(filename, pool);
+    return apr_file_remove_log(filename, pool, NESTED);
 #elif APR_USE_SHMEM_MMAP_SHM
     const char *shm_name = make_shm_open_safe_name(filename, pool);
     if (shm_unlink(shm_name) == -1) {
@@ -453,8 +455,8 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
     return APR_SUCCESS;
 #elif APR_USE_SHMEM_SHMGET
     /* Presume that the file already exists; just open for writing */
-    status = apr_file_open(&file, filename, APR_FOPEN_WRITE,
-                           APR_OS_DEFAULT, pool);
+    status = apr_file_open_log(&file, filename, APR_FOPEN_WRITE,
+                           APR_OS_DEFAULT, pool, NESTED);
     if (status) {
         return status;
     }
@@ -466,7 +468,7 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
         goto shm_remove_failed;
     }
 
-    apr_file_close(file);
+    apr_file_close_log(file, NESTED);
 
     if ((shmid = shmget(shmkey, 0, SHM_R | SHM_W)) < 0) {
         goto shm_remove_failed;
@@ -478,12 +480,12 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
     if (shmctl(shmid, IPC_RMID, NULL) == -1) {
         goto shm_remove_failed;
     }
-    return apr_file_remove(filename, pool);
+    return apr_file_remove_log(filename, pool, NESTED);
 
 shm_remove_failed:
     status = errno;
     /* ensure the file has been removed anyway. */
-    apr_file_remove(filename, pool);
+    apr_file_remove_log(filename, pool, NESTED);
     return status;
 #else
 
@@ -559,9 +561,9 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
         }
 
 #elif APR_USE_SHMEM_MMAP_TMP
-        status = apr_file_open(&file, filename,
+        status = apr_file_open_log(&file, filename,
                                APR_READ | APR_WRITE,
-                               APR_OS_DEFAULT, pool);
+                               APR_OS_DEFAULT, pool, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -574,16 +576,16 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
 #endif
 
         nbytes = sizeof(new_m->realsize);
-        status = apr_file_read(file, (void *)&(new_m->realsize),
-                               &nbytes);
+        status = apr_file_read_log(file, (void *)&(new_m->realsize),
+                               &nbytes, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         status = apr_os_file_get(&tmpfd, file);
         if (status != APR_SUCCESS) {
-            apr_file_close(file); /* ignore errors, we're failing */
-            apr_file_remove(new_m->filename, new_m->pool);
+            apr_file_close_log(file, NESTED); /* ignore errors, we're failing */
+            apr_file_remove_log(new_m->filename, new_m->pool, NESTED);
             return status;
         }
 
@@ -593,7 +595,7 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
                            MAP_SHARED, tmpfd, 0);
         /* FIXME: check for errors */
 
-        status = apr_file_close(file);
+        status = apr_file_close_log(file, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -615,19 +617,19 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
 
         new_m = apr_palloc(pool, sizeof(apr_shm_t));
 
-        status = apr_file_open(&file, filename,
-                               APR_FOPEN_READ, APR_OS_DEFAULT, pool);
+        status = apr_file_open_log(&file, filename,
+                               APR_FOPEN_READ, APR_OS_DEFAULT, pool, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         nbytes = sizeof(new_m->reqsize);
-        status = apr_file_read(file, (void *)&(new_m->reqsize),
-                               &nbytes);
+        status = apr_file_read_log(file, (void *)&(new_m->reqsize),
+                               &nbytes, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }
-        status = apr_file_close(file);
+        status = apr_file_close_log(file, NESTED);
         if (status != APR_SUCCESS) {
             return status;
         }

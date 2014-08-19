@@ -76,7 +76,7 @@ apr_status_t apr_unix_file_cleanup(void *thefile)
     apr_status_t flush_rv = APR_SUCCESS, rv = APR_SUCCESS;
 
     if (file->buffered) {
-        flush_rv = apr_file_flush(file);
+        flush_rv = apr_file_flush_log(file, NESTED);
     }
 
     rv = file_cleanup(file, 0);
@@ -593,7 +593,7 @@ APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile,
 APR_DECLARE(apr_status_t) apr_file_open_stderr_(apr_file_t **thefile,
                                                apr_pool_t *pool)
 {
-    return apr_file_open_flags_stderr(thefile, 0, pool);
+    return apr_file_open_flags_stderr_log(thefile, 0, pool, NESTED);
 }
 
 
@@ -623,7 +623,7 @@ APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile,
 APR_DECLARE(apr_status_t) apr_file_open_stdout_(apr_file_t **thefile,
                                                apr_pool_t *pool)
 {
-    return apr_file_open_flags_stdout(thefile, 0, pool);
+    return apr_file_open_flags_stdout_log(thefile, 0, pool, NESTED);
 }
 
 
@@ -653,7 +653,7 @@ APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile,
 APR_DECLARE(apr_status_t) apr_file_open_stdin_(apr_file_t **thefile,
                                               apr_pool_t *pool)
 {
-    return apr_file_open_flags_stdin(thefile, 0, pool);
+    return apr_file_open_flags_stdin_log(thefile, 0, pool, NESTED);
 }
 
 

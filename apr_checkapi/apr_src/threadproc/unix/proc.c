@@ -20,6 +20,8 @@
 #include "apr_signal.h"
 #include "apr_random.h"
 
+#include "aprtrace.h"
+
 /* Heavy on no'ops, here's what we want to pass if there is APR_NO_FILE
  * requested for a specific child handle;
  */
@@ -57,9 +59,9 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr,
         else if (in == APR_PARENT_BLOCK)
             in = APR_WRITE_BLOCK;
 
-        if ((rv = apr_file_pipe_create_ex(&attr->child_in, &attr->parent_in,
-                                          in, attr->pool)) == APR_SUCCESS)
-            rv = apr_file_inherit_unset(attr->parent_in);
+        if ((rv = apr_file_pipe_create_ex_log(&attr->child_in, &attr->parent_in,
+                                          in, attr->pool, NESTED)) == APR_SUCCESS)
+            rv = apr_file_inherit_unset_log(attr->parent_in, NESTED);
         if (rv != APR_SUCCESS)
             return rv;
     }
@@ -67,9 +69,9 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr,
         attr->child_in = &no_file;
 
     if ((out != APR_NO_PIPE) && (out != APR_NO_FILE)) {
-        if ((rv = apr_file_pipe_create_ex(&attr->parent_out, &attr->child_out,
-                                          out, attr->pool)) == APR_SUCCESS)
-            rv = apr_file_inherit_unset(attr->parent_out);
+        if ((rv = apr_file_pipe_create_ex_log(&attr->parent_out, &attr->child_out,
+                                          out, attr->pool, NESTED)) == APR_SUCCESS)
+            rv = apr_file_inherit_unset_log(attr->parent_out, NESTED);
         if (rv != APR_SUCCESS)
             return rv;
     }
@@ -77,9 +79,9 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr,
         attr->child_out = &no_file;
 
     if ((err != APR_NO_PIPE) && (err != APR_NO_FILE)) {
-        if ((rv = apr_file_pipe_create_ex(&attr->parent_err, &attr->child_err,
-                                          err, attr->pool)) == APR_SUCCESS)
-            rv = apr_file_inherit_unset(attr->parent_err);
+        if ((rv = apr_file_pipe_create_ex_log(&attr->parent_err, &attr->child_err,
+                                          err, attr->pool, NESTED)) == APR_SUCCESS)
+            rv = apr_file_inherit_unset_log(attr->parent_err, NESTED);
         if (rv != APR_SUCCESS)
             return rv;
     }
@@ -98,26 +100,26 @@ APR_DECLARE(apr_status_t) apr_procattr_child_in_set(apr_procattr_t *attr,
 
     if (attr->child_in == NULL && attr->parent_in == NULL
            && child_in == NULL && parent_in == NULL)
-        if ((rv = apr_file_pipe_create(&attr->child_in, &attr->parent_in,
-                                       attr->pool)) == APR_SUCCESS)
-            rv = apr_file_inherit_unset(attr->parent_in);
+        if ((rv = apr_file_pipe_create_log(&attr->child_in, &attr->parent_in,
+                                       attr->pool, NESTED)) == APR_SUCCESS)
+            rv = apr_file_inherit_unset_log(attr->parent_in, NESTED);
 
     if (child_in != NULL && rv == APR_SUCCESS) {
         if (attr->child_in && (attr->child_in->filedes != -1))
-            rv = apr_file_dup2(attr->child_in, child_in, attr->pool);
+            rv = apr_file_dup2_log(attr->child_in, child_in, attr->pool, NESTED);
         else {
             attr->child_in = NULL;
-            if ((rv = apr_file_dup(&attr->child_in, child_in, attr->pool))
+            if ((rv = apr_file_dup_log(&attr->child_in, child_in, attr->pool, NESTED))
                     == APR_SUCCESS)
-                rv = apr_file_inherit_set(attr->child_in);
+                rv = apr_file_inherit_set_log(attr->child_in, NESTED);
         }
     }
 
     if (parent_in != NULL && rv == APR_SUCCESS) {
         if (attr->parent_in)
-            rv = apr_file_dup2(attr->parent_in, parent_in, attr->pool);
+            rv = apr_file_dup2_log(attr->parent_in, parent_in, attr->pool, NESTED);
         else
-            rv = apr_file_dup(&attr->parent_in, parent_in, attr->pool);
+            rv = apr_file_dup_log(&attr->parent_in, parent_in, attr->pool, NESTED);
     }
 
     return rv;
@@ -132,26 +134,26 @@ APR_DECLARE(apr_status_t) apr_procattr_child_out_set(apr_procattr_t *attr,
 
     if (attr->child_out == NULL && attr->parent_out == NULL
            && child_out == NULL && parent_out == NULL)
-        if ((rv = apr_file_pipe_create(&attr->parent_out, &attr->child_out,
-                                       attr->pool)) == APR_SUCCESS)
-            rv = apr_file_inherit_unset(attr->parent_out);
+        if ((rv = apr_file_pipe_create_log(&attr->parent_out, &attr->child_out,
+                                       attr->pool, NESTED)) == APR_SUCCESS)
+            rv = apr_file_inherit_unset_log(attr->parent_out, NESTED);
 
     if (child_out != NULL && rv == APR_SUCCESS) {
         if (attr->child_out && (attr->child_out->filedes != -1))
-            rv = apr_file_dup2(attr->child_out, child_out, attr->pool);
+            rv = apr_file_dup2_log(attr->child_out, child_out, attr->pool, NESTED);
         else {
             attr->child_out = NULL;
-            if ((rv = apr_file_dup(&attr->child_out, child_out, attr->pool))
+            if ((rv = apr_file_dup_log(&attr->child_out, child_out, attr->pool, NESTED))
                     == APR_SUCCESS)
-                rv = apr_file_inherit_set(attr->child_out);
+                rv = apr_file_inherit_set_log(attr->child_out, NESTED);
         }
     }
 
     if (parent_out != NULL && rv == APR_SUCCESS) {
         if (attr->parent_out)
-            rv = apr_file_dup2(attr->parent_out, parent_out, attr->pool);
+            rv = apr_file_dup2_log(attr->parent_out, parent_out, attr->pool, NESTED);
         else
-            rv = apr_file_dup(&attr->parent_out, parent_out, attr->pool);
+            rv = apr_file_dup_log(&attr->parent_out, parent_out, attr->pool, NESTED);
     }
 
     return rv;
@@ -166,25 +168,25 @@ APR_DECLARE(apr_status_t) apr_procattr_child_err_set(apr_procattr_t *attr,
 
     if (attr->child_err == NULL && attr->parent_err == NULL
            && child_err == NULL && parent_err == NULL)
-        if ((rv = apr_file_pipe_create(&attr->parent_err, &attr->child_err,
-                                      attr->pool)) == APR_SUCCESS)
-            rv = apr_file_inherit_unset(attr->parent_err);
+        if ((rv = apr_file_pipe_create_log(&attr->parent_err, &attr->child_err,
+                                      attr->pool, NESTED)) == APR_SUCCESS)
+            rv = apr_file_inherit_unset_log(attr->parent_err, NESTED);
 
     if (child_err != NULL && rv == APR_SUCCESS) {
         if (attr->child_err && (attr->child_err->filedes != -1))
-            rv = apr_file_dup2(attr->child_err, child_err, attr->pool);
+            rv = apr_file_dup2_log(attr->child_err, child_err, attr->pool, NESTED);
         else {
             attr->child_err = NULL;
-            if ((rv = apr_file_dup(&attr->child_err, child_err, attr->pool))
+            if ((rv = apr_file_dup_log(&attr->child_err, child_err, attr->pool, NESTED))
                     == APR_SUCCESS)
-                rv = apr_file_inherit_set(attr->child_err);
+                rv = apr_file_inherit_set_log(attr->child_err, NESTED);
         }
     }
     if (parent_err != NULL && rv == APR_SUCCESS) {
         if (attr->parent_err)
-            rv = apr_file_dup2(attr->parent_err, parent_err, attr->pool);
+            rv = apr_file_dup2_log(attr->parent_err, parent_err, attr->pool, NESTED);
         else
-            rv = apr_file_dup(&attr->parent_err, parent_err, attr->pool);
+            rv = apr_file_dup_log(&attr->parent_err, parent_err, attr->pool, NESTED);
     }
 
     return rv;
@@ -430,7 +432,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
         else if (attr->child_in &&
                  attr->child_in->filedes != STDIN_FILENO) {
             dup2(attr->child_in->filedes, STDIN_FILENO);
-            apr_file_close(attr->child_in);
+            apr_file_close_log(attr->child_in, NESTED);
         }
 
         if ((attr->child_out) && (attr->child_out->filedes == -1)) {
@@ -439,7 +441,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
         else if (attr->child_out &&
                  attr->child_out->filedes != STDOUT_FILENO) {
             dup2(attr->child_out->filedes, STDOUT_FILENO);
-            apr_file_close(attr->child_out);
+            apr_file_close_log(attr->child_out, NESTED);
         }
 
         if ((attr->child_err) && (attr->child_err->filedes == -1)) {
@@ -448,7 +450,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
         else if (attr->child_err &&
                  attr->child_err->filedes != STDERR_FILENO) {
             dup2(attr->child_err->filedes, STDERR_FILENO);
-            apr_file_close(attr->child_err);
+            apr_file_close_log(attr->child_err, NESTED);
         }
 
         apr_signal(SIGCHLD, SIG_DFL); /* not sure if this is needed or not */
@@ -583,15 +585,15 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
 
     /* Parent process */
     if (attr->child_in && (attr->child_in->filedes != -1)) {
-        apr_file_close(attr->child_in);
+        apr_file_close_log(attr->child_in, NESTED);
     }
 
     if (attr->child_out && (attr->child_out->filedes != -1)) {
-        apr_file_close(attr->child_out);
+        apr_file_close_log(attr->child_out, NESTED);
     }
 
     if (attr->child_err && (attr->child_err->filedes != -1)) {
-        apr_file_close(attr->child_err);
+        apr_file_close_log(attr->child_err, NESTED);
     }
 
     return APR_SUCCESS;

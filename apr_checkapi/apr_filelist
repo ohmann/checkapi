@@ -1,0 +1,4 @@
+workingdir = /somedir/
+/somedir/ 0755
+/somedir/api/ 0755
+api/abc.log 0644 321

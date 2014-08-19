@@ -41,6 +41,11 @@ def parse_trace(fh):
   try:
     # Each iteration parses one action
     while True:
+      # Advance line, and skip if blank
+      line = fh.next()
+      line_num += 1
+      if line.strip() == "":
+        continue
 
       # Process return type, func name, and whether the func was called directly
       # by the API user
@@ -48,8 +53,6 @@ def parse_trace(fh):
       # Example trace lines:
       # === int file_write direct
       # === int file_open nested
-      line = fh.next()
-      line_num += 1
       (func_rettype, func_name, is_direct) = parse_func_declaration(line,
         line_num)
 
@@ -63,8 +66,11 @@ def parse_trace(fh):
       arg_list = []
       ret_list = []
       while True:
+        # Advance line, and skip if blank
         line = fh.next()
         line_num += 1
+        if line.strip() == "":
+          continue
 
         # Parse one line
         (arg, is_retarg, is_ret) = parse_arg_or_ret(line, line_num)

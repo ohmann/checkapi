@@ -106,8 +106,9 @@ def parse_trace(fh):
 
       # Check for unimplemented functions
       except UnimplementedError:
-        print "[WARNING] Function '%s' from trace line %d does not exist in "\
-          "the model" % (func_name, line_num)
+        if glob.debug:
+          print "[WARNING] Function '%s' from trace line %d does not exist in "\
+            "the model" % (func_name, line_num)
 
       # Store action
       else:

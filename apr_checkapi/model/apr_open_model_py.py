@@ -9,7 +9,7 @@ from framework.checkapi_exceptions import *
 from framework.checkapi_files import *
 
 cwd = os.path.dirname(__file__)
-apr_open = CDLL(cwd + '/model_src/file_io/unix/open.so')
+apr_open = CDLL(cwd + '/model_src/.libs/libapr-1.so')
 
 # C function wrappers for CheckAPI python functions
 oraclegetid_py = CFUNCTYPE(c_int)(oracle_get_id)

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python verify_c.py api/abc.log abc_filelist abc.ERR --debug
+python verify_c.py apr.log apr_filelist apr.ERR --debug

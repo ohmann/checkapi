@@ -4,21 +4,18 @@ Main entry point to CheckAPI: verifies function traces against a C API
 
 from parsing.parser_c import *
 from framework.checkapi_oracle_setter_getter import *
-from model.abccrypto_model_py import *
+from model.apr_open_model_py import *
 import framework.checkapi_globals as glob
 from framework.checkapi_exceptions import *
 
 # Function name -> model function
-func_map = {"get_new_random": get_new_random_model,
-            "get_prior_random": get_prior_random_model,
-            "file_open": file_open_model,
-            "file_unlink": file_unlink_model}
+func_map = {"apr_file_open": apr_file_open_model}
 
-oracle_required_funcs = ["get_new_random", "file_open", "file_unlink"]
+oracle_required_funcs = ["apr_file_open"]
 
 # Functions that have a file descriptor as their first arg or first return
 fd_arg_calls = []
-fd_ret_calls = ["file_open"]
+fd_ret_calls = ["apr_file_open"]
 
 # Implementation fd -> model fd
 fd_map = {}

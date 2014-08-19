@@ -52,31 +52,10 @@ order as the implementation's function definition and are stored in 'args' and
 'return' after any return arguments.
 """
 HANDLED_FUNCS_INFO = {
-  # int get_new_random()
+  # int apr_file_open([int *newf], char *fname, int flag, int perm)
   #
-  "get_new_random": {
-    'args': (),
-    'return': (Int(),)
-  },
-
-  # int get_prior_random(int index)
-  #
-  "get_prior_random": {
-    'args': (Int(),),
-    'return': (Int(),)
-  },
-
-  # int file_open([int *fd], char *filename, int flags)
-  #
-  "file_open": {
-    'args': (Int(), Str(), Int()),
+  "apr_file_open": {
+    'args': (Int(), Str(), Int(), Int()),
     'return': (Int(), Int())
-  },
-
-  # int file_unlink(char *filename)
-  #
-  "file_unlink": {
-    'args': (Str(),),
-    'return': (Int(),)
   }
 }

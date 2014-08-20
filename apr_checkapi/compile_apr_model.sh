@@ -8,8 +8,8 @@ cd model
 cp -u checkapicommon.h model_src/include/checkapicommon.h
 
 # Compile static '.a' for CheckAPI common library
-gcc -Wall -c -o checkapicommon.o -fPIC checkapicommon.c
-ar rcs libcheckapicommon.a checkapicommon.o
+#gcc -Wall -c -o checkapicommon.o -fPIC checkapicommon.c
+#ar rcs libcheckapicommon.a checkapicommon.o
 
 cd model_src
 # Make the APR model itself

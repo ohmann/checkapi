@@ -28,11 +28,18 @@
 // BEGIN CHECKAPI COMMON MODEL CODE
 #include "checkapicommon.h"
 
-void set_py_functions(int (oracle_get_id)(void),
-                      int (oracle_getter)(int, char*),
-                      int (fs_open)(char*, int),
-                      int (fs_unlink)(char*)) {
-  set_py_functions_common(oracle_get_id, oracle_getter, fs_open, fs_unlink);
+void set_py_functions(int (oracle_get_id_)(void),
+                      int (oracle_getter_)(int, char*),
+                      int (fs_fcntl2_)(int, int),
+                      int (fs_fcntl3_)(int, int, int),
+                      int (fs_open_)(char*, int, int),
+                      int (fs_unlink_)(char*)) {
+  oracle_get_id = oracle_get_id_;
+  oracle_getter = oracle_getter_;
+  fs_fcntl2 = fs_fcntl2_;
+  fs_fcntl3 = fs_fcntl3_;
+  fs_open = fs_open_;
+  fs_unlink = fs_unlink_;
 }
 // END CHECKAPI COMMON MODEL CODE
 

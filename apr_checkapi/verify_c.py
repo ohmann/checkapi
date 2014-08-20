@@ -4,7 +4,7 @@ Main entry point to CheckAPI: verifies function traces against a C API
 
 from parsing.parser_c import *
 from framework.checkapi_oracle_setter_getter import *
-from model.apr_open_model_py import *
+from model.apr_model_py import *
 import framework.checkapi_globals as glob
 from framework.checkapi_exceptions import *
 

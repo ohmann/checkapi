@@ -23,6 +23,30 @@ class openfd():
     self.inodeid = inodeid
     self.pos = 0
 
+    """
+    OTHER POSSIBLY IMPORTANT ATTRIBUTES, ORIGINALLY SET IN apr_file_open() JUST
+    BEFORE RETURNING
+
+    (*new)->flags = flag;
+    (*new)->filedes = fd;
+
+    (*new)->blocking = BLK_ON;
+    (*new)->buffered = (flag & APR_FOPEN_BUFFERED) > 0;
+
+    if ((*new)->buffered) {
+        (*new)->bufsize = APR_FILE_DEFAULT_BUFSIZE;
+    }
+
+    (*new)->is_pipe = 0;
+    (*new)->timeout = -1;
+    (*new)->ungetchar = -1;
+    (*new)->eof_hit = 0;
+    (*new)->filePtr = 0;
+    (*new)->bufpos = 0;
+    (*new)->dataRead = 0;
+    (*new)->direction = 0;
+    """
+
 
   def seek(self, pos, relative_to=0):
     """

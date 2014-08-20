@@ -89,11 +89,24 @@ apr_status_t apr_unix_child_file_cleanup(void *thefile)
     return file_cleanup(thefile, 1);
 }
 
+
+
+// CHECKAPI DECOY UNTIL ALL CALLS ARE ADJUSTED TO MODEL VERSION
 APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
                                         const char *fname,
                                         apr_int32_t flag,
                                         apr_fileperms_t perm,
                                         apr_pool_t *pool)
+{
+  // Fail here until only the model version below is called internally by other
+  // APR functions
+}
+
+// CHECKAPI MODEL FUNCTION
+APR_DECLARE(apr_status_t) apr_file_open(int *new,
+                                        const char *fname,
+                                        apr_int32_t flag,
+                                        apr_fileperms_t perm)
 {
     apr_os_file_t fd;
     int oflags = 0;
@@ -161,16 +174,6 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
     }
 #endif
 
-#if APR_HAS_THREADS
-    if ((flag & APR_FOPEN_BUFFERED) && (flag & APR_FOPEN_XTHREAD)) {
-        rv = apr_thread_mutex_create(&thlock,
-                                     APR_THREAD_MUTEX_DEFAULT, pool);
-        if (rv) {
-            return rv;
-        }
-    }
-#endif
-
     if (perm == APR_OS_DEFAULT) {
         fd = open(fname, oflags, 0666);
     }
@@ -207,48 +210,8 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
         }
     }
 
-    (*new) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
-    (*new)->pool = pool;
-    (*new)->flags = flag;
-    (*new)->filedes = fd;
+    *new = fd;
 
-    (*new)->fname = apr_pstrdup(pool, fname);
-
-    (*new)->blocking = BLK_ON;
-    (*new)->buffered = (flag & APR_FOPEN_BUFFERED) > 0;
-
-    if ((*new)->buffered) {
-        (*new)->buffer = apr_palloc(pool, APR_FILE_DEFAULT_BUFSIZE);
-        (*new)->bufsize = APR_FILE_DEFAULT_BUFSIZE;
-#if APR_HAS_THREADS
-        if ((*new)->flags & APR_FOPEN_XTHREAD) {
-            (*new)->thlock = thlock;
-        }
-#endif
-    }
-    else {
-        (*new)->buffer = NULL;
-    }
-
-    (*new)->is_pipe = 0;
-    (*new)->timeout = -1;
-    (*new)->ungetchar = -1;
-    (*new)->eof_hit = 0;
-    (*new)->filePtr = 0;
-    (*new)->bufpos = 0;
-    (*new)->dataRead = 0;
-    (*new)->direction = 0;
-#ifndef WAITIO_USES_POLL
-    /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
-     * initialize the pollset if needed.
-     */
-    (*new)->pollset = NULL;
-#endif
-    if (!(flag & APR_FOPEN_NOCLEANUP)) {
-        apr_pool_cleanup_register((*new)->pool, (void *)(*new),
-                                  apr_unix_file_cleanup,
-                                  apr_unix_child_file_cleanup);
-    }
     return APR_SUCCESS;
 }
 

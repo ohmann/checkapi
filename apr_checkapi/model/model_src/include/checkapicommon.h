@@ -1,7 +1,7 @@
 #ifndef CHECKAPICOMMON_H_
 #define CHECKAPICOMMON_H_
 
-// Must parallel defines in ../tracing/aprtrace.h
+// Must parallel defines in aprtrace.h and framework.checkapi_globals.py
 #define NULLINT -9999
 
 // Python oracle and fs functions
@@ -23,7 +23,7 @@ void set_py_functions(int (oracle_get_id_)(void),
                       int (fs_fcntl3_)(int, int, int),
                       int (fs_open_)(char*, int, int),
                       int (fs_unlink_)(char*),
-                      void (*set_errno)(int),
-                      int (*get_errno)(void));
+                      void (*set_errno_)(int),
+                      int (*get_errno_)(void));
 
 #endif

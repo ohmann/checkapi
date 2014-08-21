@@ -4,6 +4,7 @@
 #define DIRECT 1
 #define NESTED 0
 
+// Must parallel defines in checkapicommon.h and framework.checkapi_globals.py
 #define NULLINT -9999
 #define NULLSTR "<NULL>"
 

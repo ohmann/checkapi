@@ -8,6 +8,7 @@ import checkapi_globals as glob
 from checkapi_fs import *
 from framework.checkapi_exceptions import *
 from framework.checkapi_files_constants import *
+from framework.checkapi_errno import *
 from errno import *
 
 
@@ -155,8 +156,7 @@ def fs_fcntl(fd_id, cmd, flag=None):
   try:
     fd = fstate.fds[fd_id]
   except KeyError:
-    # TODO: add custom errno support
-    # ctypes.set_errno(EBADF)
+    set_errno(EBADF)
     return -1
 
   # Return the fd's flags
@@ -178,8 +178,8 @@ def fs_fcntl(fd_id, cmd, flag=None):
 
 def fs_open(path, flag, mode=default_file_mode):
   """
-  Open a file, potentially creating it. Return the new fd's id or else -1 if
-  file can not be opened (or potentially created)
+  Open a file, potentially creating it. On success, the new fd's id is returned.
+  On failure, -1 is returned, and errno is set appropriately
   """
   # If requested, try to create the file
   if flag & O_CREAT:
@@ -188,8 +188,7 @@ def fs_open(path, flag, mode=default_file_mode):
     except AlreadyExistsError:
       # The file can already exist with O_CREAT except with O_EXCL
       if flag & O_EXCL:
-        # TODO: add custom errno support
-        # ctypes.set_errno(EEXIST)
+        set_errno(EEXIST)
         return -1
     except Exception:
       return -1
@@ -198,8 +197,7 @@ def fs_open(path, flag, mode=default_file_mode):
   try:
     myinode = filesys.open_file(path)
   except DoesNotExistError:
-    # TODO: add custom errno support
-    # ctypes.set_errno(ENOENT)
+    set_errno(ENOENT)
     return -1
 
   # Add an fd for this file to the open files state
@@ -209,12 +207,14 @@ def fs_open(path, flag, mode=default_file_mode):
 
 def fs_close(fd_id):
   """
-  Close a file. Return 0 on success or -1 on error
+  Close a file. On success, 0 is returned. On failure, -1 is returned, and errno
+  is set appropriately
   """
   # Call the virtual fs to close the file
   try:
     fstate.remove_fd(fd_id)
   except DoesNotExistError:
+    set_errno(EBADF)
     return -1
   return 0
 
@@ -230,12 +230,14 @@ def fs_mkdir(path):
 
 def fs_unlink(path):
   """
-  Delete a file. Return 0 on success or -1 if file does not exist
+  Delete a file. On success, 0 is returned. On failure, -1 is returned, and
+  errno is set appropriately
   """
   # Call the virtual fs to delete the file
   try:
     filesys.del_file(path)
   except DoesNotExistError:
+    set_errno(ENOENT)
     return -1
   return 0
 

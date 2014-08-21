@@ -141,17 +141,20 @@ def _new_fd_translation(impl_ret, model_ret):
   Record the translation between the fd's returned by the impl and model. Modify
   the model's return tuple, with return fd replaced by the impl's return fd
   """
-  # Check for errors in the function return values, always at [-1]
-  impl_err = impl_ret[-1] < 0
-  model_err = model_ret[-1] < 0
-
-  # Only translate for successful calls
-  if impl_err or model_err:
-    return
+  # Check for non-success in the function return values, always at [-1]
+  impl_err = impl_ret[-1] != 0
+  model_err = model_ret[-1] != 0
 
   # The return fd is always the first return
   impl_fd = impl_ret[0]
   model_fd = model_ret[0]
+
+  # Only translate for successful calls
+  if impl_err or\
+     model_err or\
+     impl_fd == glob.NULLINT or\
+     model_fd == glob.NULLINT:
+    return
 
   # Store translation
   fd_map[impl_fd] = model_fd

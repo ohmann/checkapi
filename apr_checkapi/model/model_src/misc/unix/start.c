@@ -33,13 +33,17 @@ void set_py_functions(int (oracle_get_id_)(void),
                       int (fs_fcntl2_)(int, int),
                       int (fs_fcntl3_)(int, int, int),
                       int (fs_open_)(char*, int, int),
-                      int (fs_unlink_)(char*)) {
+                      int (fs_unlink_)(char*),
+                      void (*set_errno_)(int),
+                      int (*get_errno_)(void)) {
   oracle_get_id = oracle_get_id_;
   oracle_getter = oracle_getter_;
   fs_fcntl2 = fs_fcntl2_;
   fs_fcntl3 = fs_fcntl3_;
   fs_open = fs_open_;
   fs_unlink = fs_unlink_;
+  set_errno = set_errno_;
+  get_errno = get_errno_;
 }
 // END CHECKAPI COMMON MODEL CODE
 

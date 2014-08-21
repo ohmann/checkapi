@@ -173,13 +173,17 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
 #endif
 
     if (perm == APR_OS_DEFAULT) {
+        (*set_errno)(errno);
         fd = (*fs_open)(fname, oflags, 0666);
+        errno = (*get_errno)();
     }
     else {
+        (*set_errno)(errno);
         fd = (*fs_open)(fname, oflags, apr_unix_perms2mode(perm));
+        errno = (*get_errno)();
     }
     if (fd < 0) {
-       return errno;
+        return errno;
     }
     if (!(flag & APR_FOPEN_NOCLEANUP)) {
 #ifdef O_CLOEXEC
@@ -189,14 +193,18 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
         {
             int flags;
 
+            (*set_errno)(errno);
             if ((flags = (*fs_fcntl2)(fd, F_GETFD)) == -1) {
                 //(*fs_close)(fd);
+                errno = (*get_errno)();
                 return errno;
             }
             if ((flags & FD_CLOEXEC) == 0) {
                 flags |= FD_CLOEXEC;
+                (*set_errno)(errno);
                 if ((*fs_fcntl3)(fd, F_SETFD, flags) == -1) {
                     //(*fs_close)(fd);
+                    errno = (*get_errno)();
                     return errno;
                 }
             }

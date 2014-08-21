@@ -11,6 +11,8 @@ int (*fs_fcntl2)(int, int);
 int (*fs_fcntl3)(int, int, int);
 int (*fs_open)(char*, int, int);
 int (*fs_unlink)(char*);
+void (*set_errno)(int);
+int (*get_errno)(void);
 
 /*
  * Get python functions
@@ -20,6 +22,8 @@ void set_py_functions(int (oracle_get_id_)(void),
                       int (fs_fcntl2_)(int, int),
                       int (fs_fcntl3_)(int, int, int),
                       int (fs_open_)(char*, int, int),
-                      int (fs_unlink_)(char*));
+                      int (fs_unlink_)(char*),
+                      void (*set_errno)(int),
+                      int (*get_errno)(void));
 
 #endif

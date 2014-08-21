@@ -7,6 +7,8 @@ files
 import checkapi_globals as glob
 from checkapi_fs import *
 from framework.checkapi_exceptions import *
+from framework.checkapi_files_constants import *
+from errno import *
 
 
 
@@ -46,6 +48,7 @@ class openfd():
     (*new)->dataRead = 0;
     (*new)->direction = 0;
     """
+    self.flags = 0
 
 
   def seek(self, pos, relative_to=0):
@@ -136,8 +139,40 @@ def fs_readinfilelist(filelist):
         filesys.add_file(path, mode, size)
 
   # For debugging, print the full fs tree
-  if glob.debug:
+  if glob.debugverify:
     filesys.print_full_tree()
+
+
+
+def fs_fcntl(fd_id, cmd, flag=None):
+  """
+  Manipulate or acess information about a file descriptor. This subset of fcntl
+  commands are supported:
+  F_GETFD
+  F_SETFD
+  """
+  # Retrieve fd, return -1 if invalid fd_id
+  try:
+    fd = fstate.fds[fd_id]
+  except KeyError:
+    # TODO: add custom errno support
+    # ctypes.set_errno(EBADF)
+    return -1
+
+  # Return the fd's flags
+  if cmd == F_GETFD:
+    return fd.flags
+
+  # Set the fd's flags
+  elif cmd == F_SETFD:
+    if not flag:
+      return -1
+    fd.flags = flag
+    return 0
+
+  # Invalid command
+  else:
+    return -1
 
 
 
@@ -146,17 +181,16 @@ def fs_open(path, flag, mode=default_file_mode):
   Open a file, potentially creating it. Return the new fd's id or else -1 if
   file can not be opened (or potentially created)
   """
-  # Check if file should be created if it doesn't exist
-  O_CREAT = 64
-  create = flag & 64
-
   # If requested, try to create the file
-  if create:
+  if flag & O_CREAT:
     try:
       filesys.add_file(path, mode, 0)
     except AlreadyExistsError:
-      # File may already exist, which is ok with O_CREAT
-      pass
+      # The file can already exist with O_CREAT except with O_EXCL
+      if flag & O_EXCL:
+        # TODO: add custom errno support
+        # ctypes.set_errno(EEXIST)
+        return -1
     except Exception:
       return -1
 
@@ -164,6 +198,8 @@ def fs_open(path, flag, mode=default_file_mode):
   try:
     myinode = filesys.open_file(path)
   except DoesNotExistError:
+    # TODO: add custom errno support
+    # ctypes.set_errno(ENOENT)
     return -1
 
   # Add an fd for this file to the open files state

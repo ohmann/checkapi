@@ -100,20 +100,18 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
 {
   // Fail here until only the model version below is called internally by other
   // APR functions
+  return APR_EBADPATH;
 }
 
 // CHECKAPI MODEL FUNCTION
-APR_DECLARE(apr_status_t) apr_file_open(int *new,
-                                        const char *fname,
+APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
+                                        char *fname,
                                         apr_int32_t flag,
                                         apr_fileperms_t perm)
 {
+    *new = NULLINT;
     apr_os_file_t fd;
     int oflags = 0;
-#if APR_HAS_THREADS
-    apr_thread_mutex_t *thlock;
-    apr_status_t rv;
-#endif
 
     if ((flag & APR_FOPEN_READ) && (flag & APR_FOPEN_WRITE)) {
         oflags = O_RDWR;
@@ -175,10 +173,10 @@ APR_DECLARE(apr_status_t) apr_file_open(int *new,
 #endif
 
     if (perm == APR_OS_DEFAULT) {
-        fd = open(fname, oflags, 0666);
+        fd = (*fs_open)(fname, oflags, 0666);
     }
     else {
-        fd = open(fname, oflags, apr_unix_perms2mode(perm));
+        fd = (*fs_open)(fname, oflags, apr_unix_perms2mode(perm));
     }
     if (fd < 0) {
        return errno;
@@ -191,14 +189,14 @@ APR_DECLARE(apr_status_t) apr_file_open(int *new,
         {
             int flags;
 
-            if ((flags = fcntl(fd, F_GETFD)) == -1) {
-                close(fd);
+            if ((flags = (*fs_fcntl2)(fd, F_GETFD)) == -1) {
+                //(*fs_close)(fd);
                 return errno;
             }
             if ((flags & FD_CLOEXEC) == 0) {
                 flags |= FD_CLOEXEC;
-                if (fcntl(fd, F_SETFD, flags) == -1) {
-                    close(fd);
+                if ((*fs_fcntl3)(fd, F_SETFD, flags) == -1) {
+                    //(*fs_close)(fd);
                     return errno;
                 }
             }

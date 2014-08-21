@@ -22,8 +22,11 @@ def get_std_abs_path(path):
   if not path.startswith("/"):
     path = glob.workingdir + "/" + path
 
-  # Normalize the path ( /A/.//B/../C => /A/C )
-  return os.path.normpath(path)
+  # Normalize the path ( /A/.//B/../C => /A/C ), manually fix any leading '//'
+  path = os.path.normpath(path)
+  if path.startswith("//"):
+    return path[1:]
+  return path
 
 
 

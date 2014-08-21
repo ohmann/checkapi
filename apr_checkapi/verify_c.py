@@ -11,7 +11,7 @@ from framework.checkapi_exceptions import *
 # Function name -> model function
 func_map = {"apr_file_open": apr_file_open_model}
 
-oracle_required_funcs = ["apr_file_open"]
+oracle_required_funcs = []
 
 # Functions that have a file descriptor as their first arg or first return
 fd_arg_calls = []
@@ -56,7 +56,7 @@ def verify_trace(trace):
     # will also be nested calls made within the model, so don't explicitly call
     # them here
     if not is_direct:
-      if glob.debug:
+      if glob.debugverify:
         print "%d       Skipping nested call to %s" % (line_num, func_name)
       continue
 
@@ -76,7 +76,7 @@ def verify_trace(trace):
       result = "%d  ERROR:  %s %s ->  %s" % (line_num, func_name,
                _short_string(func_args), _short_string(str(oracle_exception)))
       # Print error if requested, and store it
-      if glob.debug:
+      if glob.debugverify:
         print result
       errors.append(result)
 
@@ -89,7 +89,7 @@ def verify_trace(trace):
     # No oracle issues, so verify return values
     is_ok = _verify_model_impl_values(func_name, model_ret, impl_ret)
 
-    if glob.debug or not is_ok:
+    if glob.debugverify or not is_ok:
       # Construct and print OK or ERROR message
       prefix = "OK" if is_ok else "ERROR"
       result = "%d  %s:  %s %s ->  model: %s   impl: %s" % (line_num, prefix,
@@ -180,11 +180,14 @@ if __name__ == "__main__":
   parser.add_argument("filelist", help="list of files on the implementation's "
     "file system that should exist within the model's")
   parser.add_argument("errors", help="output file to store any errors")
-  parser.add_argument("--debug", action="store_true", help="print debug "
-    "messages")
+  parser.add_argument("--debugverify", action="store_true", help="print debug "
+    "messages during verification")
+  parser.add_argument("--debugparse", action="store_true", help="print debug "
+    "messages during trace parsing")
   args = parser.parse_args()
 
-  glob.debug = args.debug
+  glob.debugverify = args.debugverify
+  glob.debugparse = args.debugparse
 
   # Get and parse the trace
   trace_file = open(args.traces, "r")

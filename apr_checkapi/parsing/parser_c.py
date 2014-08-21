@@ -96,7 +96,7 @@ def parse_trace(fh):
         else:
           arg_list.append(arg)
 
-      if glob.debug:
+      if glob.debugparse:
         print "[parser] %s args: %s return: %s is_direct: %s" % (func_name,
           arg_list, ret_list, str(is_direct))
 
@@ -106,7 +106,7 @@ def parse_trace(fh):
 
       # Check for unimplemented functions
       except UnimplementedError:
-        if glob.debug:
+        if glob.debugparse:
           print "[WARNING] Function '%s' from trace line %d does not exist in "\
             "the model" % (func_name, line_num)
 

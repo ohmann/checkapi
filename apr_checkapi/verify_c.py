@@ -7,7 +7,72 @@ from framework.checkapi_oracle_setter_getter import *
 from model.apr_model_py import *
 import framework.checkapi_globals as glob
 from framework.checkapi_exceptions import *
-from framework.checkapi_files import fdtrans
+
+
+
+class fdtranslator():
+  """
+  For accessing or updating translations between impl and model fd's
+  """
+
+  def __init__(self):
+    """
+    Initialize fd translation maps
+    """
+    self.impl_model_fds = {}
+    self.model_impl_fds = {}
+
+
+  def implfd_to_modelfd(self, implfd):
+    """
+    Given an impl fd, return the model fd equivalent. If none exists, return the
+    given impl fd
+    """
+    try:
+      return self.impl_model_fds[implfd]
+    except KeyError:
+      return implfd
+
+
+  def modelfd_to_implfd(self, modelfd):
+    """
+    Given a model fd, return the impl fd equivalent. If none exists, return the
+    given model fd
+    """
+    try:
+      return self.model_impl_fds[modelfd]
+    except KeyError:
+      return modelfd
+
+
+  def new_translation(self, impl_ret, model_ret, fd_pos):
+    """
+    If both calls were successful, record the translation between the fd's
+    returned by the impl and model, and return True. If either call was
+    unsuccessful, return False.
+    """
+    # Check for non-success in the function return values, always at [-1]
+    impl_err = impl_ret[-1] != 0
+    model_err = model_ret[-1] != 0
+
+    # Get the return fd's
+    impl_fd = impl_ret[fd_pos]
+    model_fd = model_ret[fd_pos]
+
+    # Only translate for successful calls
+    if impl_err or\
+       model_err or\
+       impl_fd == glob.NULLINT or\
+       model_fd == glob.NULLINT:
+      return False
+
+    # Store translations
+    self.impl_model_fds[impl_fd] = model_fd
+    self.model_impl_fds[model_fd] = impl_fd
+
+    return True
+
+
 
 # Function name -> model function
 func_map = {"apr_file_open": apr_file_open_model,
@@ -17,8 +82,12 @@ func_map = {"apr_file_open": apr_file_open_model,
 # value
 oracle_required_funcs = {}
 
-# Functions that return an fd and the return list index of that fd
+# Functions with an fd arg or return, and the arg/return list index of that fd
+fd_arg_calls = {"apr_file_close": 0}
 fd_ret_calls = {"apr_file_open": 0}
+
+# Object for impl and model fd translation
+fdtrans = fdtranslator()
 
 
 
@@ -43,6 +112,14 @@ def verify_trace(trace):
       print "%d  WARNING:  Unknown function: %s" % (line_num, func_name)
       continue
 
+    func_args_forcall = func_args
+
+    # Replace the action fd with the model fd
+    if func_name in fd_arg_calls:
+      fd_pos = fd_arg_calls[func_name]
+
+      func_args_forcall = _translate_fd_args(func_name, func_args, fd_pos)
+
     # Store any required returns in the oracle
     if func_name in oracle_required_funcs:
       oracle_val_pos = oracle_required_funcs[func_name]
@@ -57,7 +134,7 @@ def verify_trace(trace):
       continue
 
     # Execute the function using the model
-    model_ret = func(*func_args)
+    model_ret = func(*func_args_forcall)
 
     # Record the translation between the fd's returned by the impl and model
     if func_name in fd_ret_calls:
@@ -115,6 +192,27 @@ def _short_string(data, length=800):
     data_short += "!!SHORTENED STRING!!"
 
   return data_short
+
+
+
+def _translate_fd_args(func_name, func_args, fd_pos):
+  """
+  Translate the implementation's fd into the model's corresponding fd. Return
+  the new args
+  """
+  # Get the impl fd and translate it
+  impl_fd = func_args[fd_pos]
+  model_fd = fdtrans.implfd_to_modelfd(impl_fd)
+
+  # Replace fd in args with the new one
+  new_func_args = list(func_args)
+  new_func_args[fd_pos] = model_fd
+
+  # Record translation in args for more informative debug info
+  if glob.debugfs:
+    func_args[fd_pos] = "%d -> %d" % (impl_fd, model_fd)
+
+  return new_func_args
 
 
 

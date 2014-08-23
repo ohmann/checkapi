@@ -13,6 +13,70 @@ from errno import *
 
 
 
+class fdtranslator():
+  """
+  For accessing or updating translations between impl and model fd's
+  """
+
+  def __init__(self):
+    """
+    Initialize fd translation maps
+    """
+    self.impl_model_fds = {}
+    self.model_impl_fds = {}
+
+
+  def implfd_to_modelfd(self, implfd):
+    """
+    Given an impl fd, return the model fd equivalent. If none exists, return the
+    given impl fd
+    """
+    try:
+      return self.impl_model_fds[implfd]
+    except KeyError:
+      return implfd
+
+
+  def modelfd_to_implfd(self, modelfd):
+    """
+    Given a model fd, return the impl fd equivalent. If none exists, return the
+    given model fd
+    """
+    try:
+      return self.model_impl_fds[modelfd]
+    except KeyError:
+      return modelfd
+
+
+  def new_translation(self, impl_ret, model_ret, fd_pos):
+    """
+    If both calls were successful, record the translation between the fd's
+    returned by the impl and model, and return True. If either call was
+    unsuccessful, return False.
+    """
+    # Check for non-success in the function return values, always at [-1]
+    impl_err = impl_ret[-1] != 0
+    model_err = model_ret[-1] != 0
+
+    # Get the return fd's
+    impl_fd = impl_ret[fd_pos]
+    model_fd = model_ret[fd_pos]
+
+    # Only translate for successful calls
+    if impl_err or\
+       model_err or\
+       impl_fd == glob.NULLINT or\
+       model_fd == glob.NULLINT:
+      return False
+
+    # Store translations
+    self.impl_model_fds[impl_fd] = model_fd
+    self.model_impl_fds[model_fd] = impl_fd
+
+    return True
+
+
+
 class openfd():
   """
   A file descriptor maintaining state for an open file
@@ -96,6 +160,19 @@ class filestate():
     return newfd.id
 
 
+  def get_fd(self, implfd_id):
+    """
+    """
+    # Get corresponding model fd id
+    modelfd_id = fdtrans.implfd_to_modelfd(implfd_id)
+
+    # Return the actual fd
+    try:
+      return fds[modelfd_id]
+    except KeyError:
+      raise DoesNotExistError()
+
+
   def remove_fd(self, fd_id):
     """
     Remove an existing fd. Return the removed fd's id or else -1 if the
@@ -104,8 +181,7 @@ class filestate():
     try:
       del(self.fds[fd_id])
     except KeyError:
-      raise DoesNotExistError("Fd %d does not exist in the open files state" %
-        fd_id)
+      raise DoesNotExistError()
     return fd_id
 
 
@@ -129,6 +205,7 @@ filesys = filesystem()
 default_dir_mode = 0755
 default_file_mode = 0644
 fstate = filestate()
+fdtrans = fdtranslator()
 
 
 
@@ -176,8 +253,8 @@ def fs_fcntl(fd_id, cmd, flag=None):
   """
   # Retrieve fd, return -1 if invalid fd_id
   try:
-    fd = fstate.fds[fd_id]
-  except KeyError:
+    fd = fstate.get_fd(fd_id)
+  except DoesNotExistError:
     set_errno(EBADF)
     return -1
 

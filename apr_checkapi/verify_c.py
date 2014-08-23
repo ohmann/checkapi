@@ -7,19 +7,18 @@ from framework.checkapi_oracle_setter_getter import *
 from model.apr_model_py import *
 import framework.checkapi_globals as glob
 from framework.checkapi_exceptions import *
+from framework.checkapi_files import fdtrans
 
 # Function name -> model function
 func_map = {"apr_file_open": apr_file_open_model,
             "apr_file_close": apr_file_close_model}
 
-oracle_required_funcs = []
+# Functions that require the oracle and the return list index of the relevant
+# value
+oracle_required_funcs = {}
 
-# Functions that have a file descriptor as their first arg or first return
-fd_arg_calls = ["apr_file_close"]
-fd_ret_calls = ["apr_file_open"]
-
-# Implementation fd -> model fd
-fd_map = {}
+# Functions that return an fd and the return list index of that fd
+fd_ret_calls = {"apr_file_open": 0}
 
 
 
@@ -44,15 +43,10 @@ def verify_trace(trace):
       print "%d  WARNING:  Unknown function: %s" % (line_num, func_name)
       continue
 
-    # Replace the action fd with the model fd
-    func_args_forcall = func_args
-    if func_name in fd_arg_calls:
-      func_args_forcall = _translate_fd_args(func_name, func_args)
-
-    # Store the return value in the oracle
+    # Store any required returns in the oracle
     if func_name in oracle_required_funcs:
-      # TODO: support all ret args too, not just ret value
-      oracle_setter(impl_ret[-1])
+      oracle_val_pos = oracle_required_funcs[func_name]
+      oracle_setter(impl_ret[oracle_val_pos])
 
     # Nested calls from another API function (not directly from the API user)
     # will also be nested calls made within the model, so don't explicitly call
@@ -63,12 +57,15 @@ def verify_trace(trace):
       continue
 
     # Execute the function using the model
-    model_ret = func(*func_args_forcall)
+    model_ret = func(*func_args)
 
-    # Record the translation between the fd's returned by the impl and model,
-    # and replace fd in the model's return with the impl fd for verification
+    # Record the translation between the fd's returned by the impl and model
     if func_name in fd_ret_calls:
-      _translate_fd_ret(impl_ret, model_ret)
+      fd_pos = fd_ret_calls[func_name]
+
+      if fdtrans.new_translation(impl_ret, model_ret, fd_pos):
+        # Replace the model's returned fd with the impl's for verification
+        model_ret[fd_pos] = impl_ret[fd_pos]
 
     # Exceptions don't work properly when the oracle is called from C, so
     # instead, retrieve any stored exception here
@@ -121,72 +118,12 @@ def _short_string(data, length=800):
 
 
 
-def _translate_fd_args(func_name, func_args):
-  """
-  Translate the implementation's fd into the model's corresponding fd. Return
-  the new args
-  """
-  # Impl fd is always the first arg
-  impl_fd = func_args[0]
-
-  # Translate impl fd to model fd, or use impl fd if no translation is available
-  model_fd = impl_fd
-  if impl_fd in fd_map:
-    model_fd = fd_map[impl_fd]
-
-  # Replace fd in args with the new one
-  return [model_fd] + func_args[1:]
-
-
-
-def _translate_fd_ret(impl_ret, model_ret):
-  """
-  Record the translation between the fd's returned by the impl and model. Modify
-  the model's return tuple, with return fd replaced by the impl's return fd
-  """
-  # Check for non-success in the function return values, always at [-1]
-  impl_err = impl_ret[-1] != 0
-  model_err = model_ret[-1] != 0
-
-  # The return fd is always the first return
-  impl_fd = impl_ret[0]
-  model_fd = model_ret[0]
-
-  # Only translate for successful calls
-  if impl_err or\
-     model_err or\
-     impl_fd == glob.NULLINT or\
-     model_fd == glob.NULLINT:
-    return
-
-  # Store translation
-  fd_map[impl_fd] = model_fd
-
-  # Verification would fail erroneously if returns didn't match, so replace
-  # the model's returned fd with the impl's returned fd
-  model_ret[0] = impl_fd
-
-
-
 def _verify_model_impl_values(func_name, model_ret, impl_ret):
   """
   Verify that the implementation's returns match the model's returns
   """
   # For now, all returns should match
   return model_ret == impl_ret
-
-
-
-def modelfd_to_implfd(modelfd):
-  """
-  Given a model fd, return the impl fd equivalent
-  """
-  for (implval, modelval) in fd_map.itervalues():
-    if modelval == modelfd:
-      return implval
-
-  # No impl fd found
-  return modelfd
 
 
 

@@ -9,12 +9,13 @@ import framework.checkapi_globals as glob
 from framework.checkapi_exceptions import *
 
 # Function name -> model function
-func_map = {"apr_file_open": apr_file_open_model}
+func_map = {"apr_file_open": apr_file_open_model,
+            "apr_file_close": apr_file_close_model}
 
 oracle_required_funcs = []
 
 # Functions that have a file descriptor as their first arg or first return
-fd_arg_calls = []
+fd_arg_calls = ["apr_file_close"]
 fd_ret_calls = ["apr_file_open"]
 
 # Implementation fd -> model fd
@@ -44,8 +45,9 @@ def verify_trace(trace):
       continue
 
     # Replace the action fd with the model fd
+    func_args_forcall = func_args
     if func_name in fd_arg_calls:
-      func_args = _translate_fd_args(func_name, func_args)
+      func_args_forcall = _translate_fd_args(func_name, func_args)
 
     # Store the return value in the oracle
     if func_name in oracle_required_funcs:
@@ -61,11 +63,12 @@ def verify_trace(trace):
       continue
 
     # Execute the function using the model
-    model_ret = func(*func_args)
+    model_ret = func(*func_args_forcall)
 
-    # Record the translation between the fd's returned by the impl and model
+    # Record the translation between the fd's returned by the impl and model,
+    # and replace fd in the model's return with the impl fd for verification
     if func_name in fd_ret_calls:
-      _new_fd_translation(impl_ret, model_ret)
+      _translate_fd_ret(impl_ret, model_ret)
 
     # Exceptions don't work properly when the oracle is called from C, so
     # instead, retrieve any stored exception here
@@ -132,11 +135,11 @@ def _translate_fd_args(func_name, func_args):
     model_fd = fd_map[impl_fd]
 
   # Replace fd in args with the new one
-  return (model_fd,) + func_args[1:]
+  return [model_fd] + func_args[1:]
 
 
 
-def _new_fd_translation(impl_ret, model_ret):
+def _translate_fd_ret(impl_ret, model_ret):
   """
   Record the translation between the fd's returned by the impl and model. Modify
   the model's return tuple, with return fd replaced by the impl's return fd
@@ -174,6 +177,19 @@ def _verify_model_impl_values(func_name, model_ret, impl_ret):
 
 
 
+def modelfd_to_implfd(modelfd):
+  """
+  Given a model fd, return the impl fd equivalent
+  """
+  for (implval, modelval) in fd_map.itervalues():
+    if modelval == modelfd:
+      return implval
+
+  # No impl fd found
+  return modelfd
+
+
+
 if __name__ == "__main__":
   import argparse
 
@@ -187,10 +203,13 @@ if __name__ == "__main__":
     "messages during verification")
   parser.add_argument("--debugparse", action="store_true", help="print debug "
     "messages during trace parsing")
+  parser.add_argument("--debugfs", action="store_true", help="print debug "
+    "messages about the emulated fs and open files state")
   args = parser.parse_args()
 
   glob.debugverify = args.debugverify
   glob.debugparse = args.debugparse
+  glob.debugfs = args.debugfs
 
   # Get and parse the trace
   trace_file = open(args.traces, "r")

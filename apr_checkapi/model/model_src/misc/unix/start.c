@@ -33,6 +33,7 @@ void set_py_functions(int (oracle_get_id_)(void),
                       int (fs_fcntl2_)(int, int),
                       int (fs_fcntl3_)(int, int, int),
                       int (fs_open_)(char*, int, int),
+                      int (fs_close_)(int),
                       int (fs_unlink_)(char*),
                       void (*set_errno_)(int),
                       int (*get_errno_)(void)) {
@@ -41,6 +42,7 @@ void set_py_functions(int (oracle_get_id_)(void),
   fs_fcntl2 = fs_fcntl2_;
   fs_fcntl3 = fs_fcntl3_;
   fs_open = fs_open_;
+  fs_close = fs_close_;
   fs_unlink = fs_unlink_;
   set_errno = set_errno_;
   get_errno = get_errno_;

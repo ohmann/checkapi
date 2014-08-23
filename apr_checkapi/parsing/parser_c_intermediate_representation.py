@@ -52,10 +52,17 @@ order as the implementation's function definition and are stored in 'args' and
 'return' after any return arguments.
 """
 HANDLED_FUNCS_INFO = {
-  # int apr_file_open([int *newf], char *fname, int flag, int perm)
+  # int apr_file_open([int *new], char *fname, int flag, int perm)
   #
   "apr_file_open": {
     'args': (Int(), Str(), Int(), Int()),
     'return': (Int(), Int())
+  },
+
+  # int apr_file_close(int file)
+  #
+  "apr_file_close": {
+    'args': (Int(),),
+    'return': (Int(),)
   }
 }

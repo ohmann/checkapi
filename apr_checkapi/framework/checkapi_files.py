@@ -61,6 +61,17 @@ class openfd():
     return self.pos
 
 
+  def __repr__(self):
+    """
+    Pretty-print all open fd fields
+    """
+    # Translate fd id back to the corresponding impl fd for consistent output
+    implfd = modelfd_to_implfd(self.id)
+
+    return "openfd: {id=%d, inodeid=%d, pos=%d}" % (implfd, self.inodeid,
+      self.pos)
+
+
 
 class filestate():
   """
@@ -96,6 +107,17 @@ class filestate():
       raise DoesNotExistError("Fd %d does not exist in the open files state" %
         fd_id)
     return fd_id
+
+
+  def print_all(self):
+    """
+    Pretty-print all open fds
+    """
+    print
+    print "[[[ Current open files state ]]]"
+    for fd in self.fds.itervalues():
+      print "    ", fd
+    print
 
 
 
@@ -140,7 +162,7 @@ def fs_readinfilelist(filelist):
         filesys.add_file(path, mode, size)
 
   # For debugging, print the full fs tree
-  if glob.debugverify:
+  if glob.debugfs:
     filesys.print_full_tree()
 
 
@@ -201,7 +223,13 @@ def fs_open(path, flag, mode=default_file_mode):
     return -1
 
   # Add an fd for this file to the open files state
-  return fstate.create_fd(myinode.id)
+  ret = fstate.create_fd(myinode.id)
+
+  # For debugging, print the open files state
+  if glob.debugfs:
+    fstate.print_all()
+
+  return ret
 
 
 
@@ -238,6 +266,8 @@ def fs_unlink(path):
     filesys.del_file(path)
   except DoesNotExistError:
     set_errno(ENOENT)
+    return -1
+  except VirtualIOError:
     return -1
   return 0
 

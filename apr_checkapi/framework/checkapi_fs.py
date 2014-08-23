@@ -334,7 +334,7 @@ class filesystem():
         print newleading, path, " -- ", myinode
 
     print
-    print "[[[ Printing full emulated file system tree ]]]"
+    print "[[[ Current emulated file system tree ]]]"
 
     # Get the root inode, and print its full contents
     root = self.idtoinode[self.rootid]

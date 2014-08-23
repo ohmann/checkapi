@@ -30,35 +30,33 @@
 
 static apr_status_t file_cleanup(apr_file_t *file, int is_child)
 {
+  // Fail here until only the model version below is called internally by other
+  // APR functions
+  return APR_EGENERAL;
+}
+
+apr_status_t file_cleanup_model(int fd)
+{
     apr_status_t rv = APR_SUCCESS;
-    int fd = file->filedes;
 
-    /* Set file descriptor to -1 before close(), so that there is no
-     * chance of returning an already closed FD from apr_os_file_get().
-     */
-    file->filedes = -1;
-
-    if (close(fd) == 0) {
-        /* Only the parent process should delete the file! */
-        if (!is_child && (file->flags & APR_FOPEN_DELONCLOSE)) {
-            unlink(file->fname);
+    (*set_errno)(errno);
+    if ((*fs_close)(fd) == 0) {
+        int flags = 0;                               // TODO
+        if (flags & APR_FOPEN_DELONCLOSE) {
+            char *fname = "";                        // TODO
+            (*fs_unlink)(fname);
         }
-#if APR_HAS_THREADS
-        if (file->thlock) {
-            rv = apr_thread_mutex_destroy(file->thlock);
-        }
-#endif
+        errno = (*get_errno)();
     }
     else {
-        /* Restore, close() was not successful. */
-        file->filedes = fd;
-
-        /* Are there any error conditions other than EINTR or EBADF? */
+        /* fs_close() was not successful. */
+        errno = (*get_errno)();
         rv = errno;
     }
 #ifndef WAITIO_USES_POLL
-    if (file->pollset != NULL) {
-        apr_status_t pollset_rv = apr_pollset_destroy(file->pollset);
+    int pollset = 0;                                 // TODO? or delete?
+    if (pollset != NULL) {
+        apr_status_t pollset_rv = apr_pollset_destroy(pollset);
         /* If the file close failed, return its error value,
          * not apr_pollset_destroy()'s.
          */
@@ -72,21 +70,16 @@ static apr_status_t file_cleanup(apr_file_t *file, int is_child)
 
 apr_status_t apr_unix_file_cleanup(void *thefile)
 {
-    apr_file_t *file = thefile;
-    apr_status_t flush_rv = APR_SUCCESS, rv = APR_SUCCESS;
-
-    if (file->buffered) {
-        flush_rv = apr_file_flush(file);
-    }
-
-    rv = file_cleanup(file, 0);
-
-    return rv != APR_SUCCESS ? rv : flush_rv;
+  // Fail here until only the model version above is called internally by other
+  // APR functions
+  return APR_EGENERAL;
 }
 
 apr_status_t apr_unix_child_file_cleanup(void *thefile)
 {
-    return file_cleanup(thefile, 1);
+  // Fail here until only the model version above is called internally by other
+  // APR functions
+  return APR_EGENERAL;
 }
 
 
@@ -100,7 +93,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
 {
   // Fail here until only the model version below is called internally by other
   // APR functions
-  return APR_EBADPATH;
+  return APR_EGENERAL;
 }
 
 // CHECKAPI MODEL FUNCTION
@@ -195,7 +188,7 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
 
             (*set_errno)(errno);
             if ((flags = (*fs_fcntl2)(fd, F_GETFD)) == -1) {
-                //(*fs_close)(fd);
+                (*fs_close)(fd);
                 errno = (*get_errno)();
                 return errno;
             }
@@ -203,7 +196,7 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
                 flags |= FD_CLOEXEC;
                 (*set_errno)(errno);
                 if ((*fs_fcntl3)(fd, F_SETFD, flags) == -1) {
-                    //(*fs_close)(fd);
+                    (*fs_close)(fd);
                     errno = (*get_errno)();
                     return errno;
                 }
@@ -217,13 +210,25 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
     }
 
     *new = fd;
+    // TODO: set flags and such
 
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI DECOY UNTIL ALL CALLS ARE ADJUSTED TO MODEL VERSION
 APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
 {
-    return apr_pool_cleanup_run(file->pool, file, apr_unix_file_cleanup);
+  // Fail here until only the model version below is called internally by other
+  // APR functions
+  return APR_EGENERAL;
+}
+
+// CHECKAPI MODEL FUNCTION
+APR_DECLARE(apr_status_t) apr_file_close_model(int file)
+{
+    file_cleanup_model(file);
 }
 
 APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)

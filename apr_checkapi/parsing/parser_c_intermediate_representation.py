@@ -64,5 +64,19 @@ HANDLED_FUNCS_INFO = {
   "apr_file_close": {
     'args': (Int(),),
     'return': (Int(),)
+  },
+
+  # int apr_file_dup([int *new_file], int old_file)
+  #
+  "apr_file_dup": {
+    'args': (Int(), Int()),
+    'return': (Int(), Int())
+  },
+
+  # int apr_file_dup2([int *new_file], int old_file)
+  #
+  "apr_file_dup": {
+    'args': (Int(), Int()),
+    'return': (Int(), Int())
   }
 }

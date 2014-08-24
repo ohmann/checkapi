@@ -32,6 +32,7 @@ void set_py_functions(int (oracle_get_id_)(void),
                       int (oracle_getter_)(int, char*),
                       int (fs_fcntl2_)(int, int),
                       int (fs_fcntl3_)(int, int, int),
+                      int (fs_dup2_)(int, int),
                       int (fs_open_)(char*, int, int),
                       int (fs_close_)(int),
                       int (fs_unlink_)(char*),
@@ -41,6 +42,7 @@ void set_py_functions(int (oracle_get_id_)(void),
   oracle_getter = oracle_getter_;
   fs_fcntl2 = fs_fcntl2_;
   fs_fcntl3 = fs_fcntl3_;
+  fs_dup2 = fs_dup2_;
   fs_open = fs_open_;
   fs_close = fs_close_;
   fs_unlink = fs_unlink_;

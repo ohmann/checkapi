@@ -10,3 +10,4 @@ F_SETFD = 2
 # File flags for open and others
 O_CREAT = 64
 O_EXCL = 128
+O_CLOEXEC = 524288

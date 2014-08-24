@@ -18,7 +18,7 @@ class openfd():
   A file descriptor maintaining state for an open file
   """
 
-  def __init__(self, id, inodeid):
+  def __init__(self, id, inodeid, fdflags):
     """
     Initialize fd
     """
@@ -49,7 +49,7 @@ class openfd():
     (*new)->dataRead = 0;
     (*new)->direction = 0;
     """
-    self.flags = 0
+    self.flags = fdflags
 
 
   def seek(self, pos, relative_to=0):
@@ -83,11 +83,11 @@ class filestate():
     self.fds = {}
 
 
-  def create_fd(self, inodeid):
+  def create_fd(self, inodeid, fdflags):
     """
     Create a new fd (i.e., when opening a file). Return the new fd's id
     """
-    newfd = openfd(self.nextid, inodeid)
+    newfd = openfd(self.nextid, inodeid, fdflags)
     self.fds[self.nextid] = newfd
     self.nextid += 1
     return newfd.id
@@ -194,22 +194,52 @@ def fs_fcntl(fd_id, cmd, flag=None):
 
 
 
-def fs_open(path, flag, mode=default_file_mode):
+def fs_dup2(oldfd, newfd):
+  """
+  Duplicate oldfd into newfd, which must be a legal but unused fd id
+  """
+  # Check for non-open oldfd or newfd out of valid fd range
+  if oldfd not in fstate.fds or\
+     newfd < 0 or\
+     newfd > 65535:
+    set_errno(EBADF)
+
+  oldfdpath = ""
+  oldfdflags = 0
+  return _open(oldfdpath, oldfdflags)
+
+
+
+def fs_open(path, oflags, mode=default_file_mode):
   """
   Open a file, potentially creating it. On success, the new fd's id is returned.
   On failure, -1 is returned, and errno is set appropriately
   """
+  fdflags = 0
+
+  # Set fd flags
+  if oflags & O_CLOEXEC:
+    fdflags &= FD_CLOEXEC
+
   # If requested, try to create the file
-  if flag & O_CREAT:
+  if oflags & O_CREAT:
     try:
       filesys.add_file(path, mode, 0)
     except AlreadyExistsError:
       # The file can already exist with O_CREAT except with O_EXCL
-      if flag & O_EXCL:
+      if oflags & O_EXCL:
         set_errno(EEXIST)
         return -1
     except Exception:
       return -1
+
+  return _open(path, fsflags)
+
+
+
+def _open(path, fsflags):
+  """
+  """
 
   # Call the virtual fs to open the file
   try:
@@ -219,13 +249,14 @@ def fs_open(path, flag, mode=default_file_mode):
     return -1
 
   # Add an fd for this file to the open files state
-  ret = fstate.create_fd(myinode.id)
+  ret = fstate.create_fd(myinode.id, fdflags)
 
   # For debugging, print the open files state
   if glob.debugfs:
     fstate.print_all()
 
   return ret
+
 
 
 

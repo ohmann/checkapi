@@ -22,26 +22,19 @@
 
 #include "checkapicommon.h"
 
-static apr_status_t file_dup(apr_file_t **new_file,
-                             apr_file_t *old_file, apr_pool_t *p,
+static apr_status_t file_dup(int *new_file,
+                             int old_file,
                              int which_dup)
 {
     int rv;
-#ifdef HAVE_DUP3
     int flags = 0;
-#endif
 
     if (which_dup == 2) {
-        if ((*new_file) == NULL) {
+        if (new_file == NULL) {
             /* We can't dup2 unless we have a valid new_file */
             return APR_EINVAL;
         }
-#ifdef HAVE_DUP3
-        if (!((*new_file)->flags & (APR_FOPEN_NOCLEANUP|APR_INHERIT)))
-            flags |= O_CLOEXEC;
-        rv = dup3(old_file->filedes, (*new_file)->filedes, flags);
-#else
-        rv = dup2(old_file->filedes, (*new_file)->filedes);
+        rv = (*fs_dup2)(old_file, *new_file);
         if (!((*new_file)->flags & (APR_FOPEN_NOCLEANUP|APR_INHERIT))) {
             int flags;
 
@@ -56,7 +49,6 @@ static apr_status_t file_dup(apr_file_t **new_file,
                 return errno;
 
         }
-#endif
     } else {
         rv = dup(old_file->filedes);
     }
@@ -73,18 +65,8 @@ static apr_status_t file_dup(apr_file_t **new_file,
     (*new_file)->fname = apr_pstrdup(p, old_file->fname);
     (*new_file)->buffered = old_file->buffered;
 
-    /* If the existing socket in a dup2 is already buffered, we
-     * have an existing and valid (hopefully) mutex, so we don't
-     * want to create it again as we could leak!
-     */
-#if APR_HAS_THREADS
-    if ((*new_file)->buffered && !(*new_file)->thlock && old_file->thlock) {
-        apr_thread_mutex_create(&((*new_file)->thlock),
-                                APR_THREAD_MUTEX_DEFAULT, p);
-    }
-#endif
-    /* As above, only create the buffer if we haven't already
-     * got one.
+    /* If the existing socket in a dup2 is already buffered, only create the
+     * buffer if we haven't already got one.
      */
     if ((*new_file)->buffered && !(*new_file)->buffer) {
         (*new_file)->buffer = apr_palloc(p, old_file->bufsize);
@@ -118,25 +100,49 @@ static apr_status_t file_dup(apr_file_t **new_file,
     apr_pool_cleanup_register((*new_file)->pool, (void *)(*new_file),
                               apr_unix_file_cleanup,
                               apr_unix_child_file_cleanup);
-#ifndef WAITIO_USES_POLL
+
     /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
      * initialize the pollset if needed.
      */
     (*new_file)->pollset = NULL;
-#endif
+
     return APR_SUCCESS;
 }
 
+
+
+// CHECKAPI DECOY UNTIL ALL CALLS ARE ADJUSTED TO MODEL VERSION
 APR_DECLARE(apr_status_t) apr_file_dup(apr_file_t **new_file,
                                        apr_file_t *old_file, apr_pool_t *p)
 {
-    return file_dup(new_file, old_file, p, 1);
+  // Fail here until only the model version below is called internally by other
+  // APR functions
+  return APR_EGENERAL;
 }
 
+// CHECKAPI MODEL FUNCTION
+APR_DECLARE(apr_status_t) apr_file_dup_model(int *new_file,
+                                       int old_file)
+{
+    return file_dup(new_file, old_file, 1);
+}
+
+
+
+// CHECKAPI DECOY UNTIL ALL CALLS ARE ADJUSTED TO MODEL VERSION
 APR_DECLARE(apr_status_t) apr_file_dup2(apr_file_t *new_file,
                                         apr_file_t *old_file, apr_pool_t *p)
 {
-    return file_dup(&new_file, old_file, p, 2);
+  // Fail here until only the model version below is called internally by other
+  // APR functions
+  return APR_EGENERAL;
+}
+
+// CHECKAPI MODEL FUNCTION
+APR_DECLARE(apr_status_t) apr_file_dup2_model(int *new_file,
+                                        int old_file)
+{
+    return file_dup(new_file, old_file, 2);
 }
 
 APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,

@@ -30,7 +30,7 @@ static apr_status_t file_dup(int *new_file,
     int flags = 0;
 
     if (which_dup == 2) {
-        if (new_file == NULL) {
+        if (new_file == NULLINT) {
             /* We can't dup2 unless we have a valid new_file */
             return APR_EINVAL;
         }

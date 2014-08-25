@@ -18,7 +18,7 @@ class openfd():
   A file descriptor maintaining state for an open file
   """
 
-  def __init__(self, id, inodeid, fdflags):
+  def __init__(self, id, inodeid, fsflags):
     """
     Initialize fd
     """
@@ -49,7 +49,7 @@ class openfd():
     (*new)->dataRead = 0;
     (*new)->direction = 0;
     """
-    self.flags = fdflags
+    self.fsflags = fsflags
 
 
   def seek(self, pos, relative_to=0):
@@ -65,8 +65,8 @@ class openfd():
     """
     Pretty-print all open fd fields
     """
-    return "openfd: {id=%d, inodeid=%d, pos=%d}" % (self.id, self.inodeid,
-      self.pos)
+    return "openfd: {id=%d, inodeid=%d, pos=%d fsflags=%d fdflags=%d}" % (
+      self.id, self.inodeid, self.pos, self.fsflags, self.fdflags)
 
 
 
@@ -80,17 +80,45 @@ class filestate():
     Initialize open files state
     """
     self.nextid = 3
-    self.fds = {}
+    self.fds = {}                   # {fd_id: openfd}
+    self.fdflags = {}               # {fd_id: fdflags} for FD_CLOEXEC only
 
 
-  def create_fd(self, inodeid, fdflags):
+  def _getnextid(self):
+    """
+    Return the next available fd id
+    """
+    # Find next available id
+    self.nextid += 1
+    while self.nextid in fds:
+      self.nextid += 1
+
+    return self.nextid
+
+
+  def create_fd(self, inodeid, fsflags):
     """
     Create a new fd (i.e., when opening a file). Return the new fd's id
     """
-    newfd = openfd(self.nextid, inodeid, fdflags)
-    self.fds[self.nextid] = newfd
-    self.nextid += 1
-    return newfd.id
+    newid = _getnextid()
+    newfd = openfd(newid, inodeid, fsflags)
+    self.fds[newid] = newfd
+    return newid
+
+
+  def dup_fd(self, oldid, newid=None):
+    """
+    Duplicate an fd, but always unset fdflags (only FD_CLOEXEC)
+    """
+    # Get next available fd id if this is dup1
+    if not newid:
+      newid = _getnextid()
+
+    # Perform the dup
+    self.fds[newid] = fds[oldid]
+    self.fdflags[newid] = 0
+
+    return newid
 
 
   def remove_fd(self, fd_id):
@@ -194,19 +222,40 @@ def fs_fcntl(fd_id, cmd, flag=None):
 
 
 
-def fs_dup2(oldfd, newfd):
+def fs_dup(oldid):
   """
-  Duplicate oldfd into newfd, which must be a legal but unused fd id
+  Duplicate oldid's fd
   """
-  # Check for non-open oldfd or newfd out of valid fd range
-  if oldfd not in fstate.fds or\
-     newfd < 0 or\
-     newfd > 65535:
+  # Check for non-open oldid
+  if oldid not in fstate.fds:
     set_errno(EBADF)
+    return -1
 
-  oldfdpath = ""
-  oldfdflags = 0
-  return _open(oldfdpath, oldfdflags)
+  # Perform the dup
+  return fstate.dup_fd(oldid)
+
+
+
+def fs_dup2(oldid, newid):
+  """
+  Duplicate oldid's fd into newid, which must be a legal but unused fd id
+  """
+  # Check for non-open oldid, or newid out of valid fd range
+  if oldid not in fstate.fds or\
+     newid < 0:
+    set_errno(EBADF)
+    return -1
+
+  if newid in fstate.fds:
+    # Do nothing if fds are the same
+    if fstate.fds[oldid] == fstate.fds[newid]:
+      return newid
+
+    # Close newid
+    fstate.remove_fd(newid)
+
+  # Perform the dup
+  return fstate.dup_fd(oldid, newid)
 
 
 
@@ -233,14 +282,6 @@ def fs_open(path, oflags, mode=default_file_mode):
     except Exception:
       return -1
 
-  return _open(path, fsflags)
-
-
-
-def _open(path, fsflags):
-  """
-  """
-
   # Call the virtual fs to open the file
   try:
     myinode = filesys.open_file(path)
@@ -256,7 +297,6 @@ def _open(path, fsflags):
     fstate.print_all()
 
   return ret
-
 
 
 

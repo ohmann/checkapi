@@ -30,54 +30,44 @@ static apr_status_t file_dup(int *new_file,
     int flags = 0;
 
     if (which_dup == 2) {
-        if (new_file == NULLINT) {
+        if (*new_file == NULLINT) {
             /* We can't dup2 unless we have a valid new_file */
             return APR_EINVAL;
         }
         rv = (*fs_dup2)(old_file, *new_file);
-        if (!((*new_file)->flags & (APR_FOPEN_NOCLEANUP|APR_INHERIT))) {
-            int flags;
-
+        if (!((*fs_getfsflags)(*new_file) & (APR_FOPEN_NOCLEANUP|APR_INHERIT))) {
             if (rv == -1)
                 return errno;
 
-            if ((flags = fcntl((*new_file)->filedes, F_GETFD)) == -1)
+            if ((*fs_setcloexec)(*new_file, 1) == -1)
                 return errno;
-
-            flags |= FD_CLOEXEC;
-            if (fcntl((*new_file)->filedes, F_SETFD, flags) == -1)
-                return errno;
-
         }
     } else {
-        rv = dup(old_file->filedes);
+        rv = (*fs_dup)(old_file);
     }
 
     if (rv == -1)
         return errno;
 
     if (which_dup == 1) {
-        (*new_file) = (apr_file_t *)apr_pcalloc(p, sizeof(apr_file_t));
-        (*new_file)->pool = p;
-        (*new_file)->filedes = rv;
+        *new_file = rv;
     }
 
-    (*new_file)->fname = apr_pstrdup(p, old_file->fname);
-    (*new_file)->buffered = old_file->buffered;
+    //(*new_file)->buffered = old_file->buffered;
 
-    /* If the existing socket in a dup2 is already buffered, only create the
-     * buffer if we haven't already got one.
-     */
-    if ((*new_file)->buffered && !(*new_file)->buffer) {
-        (*new_file)->buffer = apr_palloc(p, old_file->bufsize);
-        (*new_file)->bufsize = old_file->bufsize;
-    }
+    ///* If the existing socket in a dup2 is already buffered, only create the
+     //* buffer if we haven't already got one.
+     //*/
+    //if ((*new_file)->buffered && !(*new_file)->buffer) {
+        //(*new_file)->buffer = apr_palloc(p, old_file->bufsize);
+        //(*new_file)->bufsize = old_file->bufsize;
+    //}
 
-    /* this is the way dup() works */
-    (*new_file)->blocking = old_file->blocking;
+    ///* this is the way dup() works */
+    //(*new_file)->blocking = old_file->blocking;
 
-    /* make sure unget behavior is consistent */
-    (*new_file)->ungetchar = old_file->ungetchar;
+    ///* make sure unget behavior is consistent */
+    //(*new_file)->ungetchar = old_file->ungetchar;
 
     /* apr_file_dup2() retains the original cleanup, reflecting
      * the existing inherit and nocleanup flags.  This means,
@@ -94,17 +84,14 @@ static apr_status_t file_dup(int *new_file,
      * The user must call apr_file_inherit_set() on the dupped
      * apr_file_t when desired.
      */
-    (*new_file)->flags = old_file->flags
+    int fsflags = (*fs_getfsflags)(old_file)
                        & ~(APR_INHERIT | APR_FOPEN_NOCLEANUP);
-
-    apr_pool_cleanup_register((*new_file)->pool, (void *)(*new_file),
-                              apr_unix_file_cleanup,
-                              apr_unix_child_file_cleanup);
+    (*fs_setfsflags)(*new_file, fsflags);
 
     /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
      * initialize the pollset if needed.
      */
-    (*new_file)->pollset = NULL;
+    //(*new_file)->pollset = NULL;
 
     return APR_SUCCESS;
 }

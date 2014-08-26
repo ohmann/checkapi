@@ -65,8 +65,8 @@ class openfd():
     """
     Pretty-print all open fd fields
     """
-    return "openfd: {id=%d, inodeid=%d, pos=%d fsflags=%d fdflags=%d}" % (
-      self.id, self.inodeid, self.pos, self.fsflags, self.fdflags)
+    return "openfd: {id=%d, inodeid=%d, pos=%d fsflags=%d}" % (self.id,
+      self.inodeid, self.pos, self.fsflags)
 
 
 
@@ -80,8 +80,8 @@ class filestate():
     Initialize open files state
     """
     self.nextid = 3
-    self.fds = {}                   # {fd_id: openfd}
-    self.fdflags = {}               # {fd_id: fdflags} for FD_CLOEXEC only
+    self.fds = {}                 # {fd_id: openfd}
+    self.cloexec = {}             # {fd_id: cloexec} FD_CLOEXEC is true or false
 
 
   def _getnextid(self):
@@ -108,7 +108,7 @@ class filestate():
 
   def dup_fd(self, oldid, newid=None):
     """
-    Duplicate an fd, but always unset fdflags (only FD_CLOEXEC)
+    Duplicate an fd, but always unset FD_CLOEXEC
     """
     # Get next available fd id if this is dup1
     if not newid:
@@ -116,7 +116,7 @@ class filestate():
 
     # Perform the dup
     self.fds[newid] = fds[oldid]
-    self.fdflags[newid] = 0
+    self.cloexec[newid] = False
 
     return newid
 
@@ -191,12 +191,68 @@ def fs_readinfilelist(filelist):
 
 
 
+def fs_fsflags(fd_id, fsflags=None):
+  """
+  Set or get an fd's file status flags
+  """
+  # Check for invalid fd id
+  if fd_id not in fstate.fds:
+    set_errno(EBADF)
+    return -1
+
+  # GET: return file status flags
+  if not fsflags:
+    return fstate.fds[fd_id].fsflags
+
+  # SET: assign file status flags
+  fstate.fds[fd_id].fsflags = fsflags
+  return 0
+
+
+
+def fs_addfsflags(fd_id, fsflags):
+  """
+  Non-destructively add new bits to an fd's file status flags
+  """
+  # Check for invalid fd id
+  if fd_id not in fstate.fds:
+    set_errno(EBADF)
+    return -1
+
+  # Add new file status flags
+  fstate.fds[fd_id].fsflags &= fsflags
+  return 0
+
+
+
+def fs_setcloexec(fd_id, setflag):
+  """
+  Set or unset an fd's FD_CLOEXEC (the only file descriptor flag)
+  """
+  # Check for invalid fd id
+  if fd_id not in fstate.fds:
+    set_errno(EBADF)
+    return -1
+
+  ## GET: return file descriptor flags
+  #if not fdflags:
+    #return fstate.fdflags[fd_id]
+
+  # Set or unset FD_CLOEXEC flag
+  if setflag:
+    fstate.cloexec[fd_id] = True
+  else:
+    fstate.cloexec[fd_id] = False
+  return 0
+
+
+
 def fs_fcntl(fd_id, cmd, flag=None):
   """
   Manipulate or acess information about a file descriptor. This subset of fcntl
   commands are supported:
-  F_GETFD
-  F_SETFD
+  F_SETLK (incomplete)
+  F_SETLKW (incomplete)
   """
   # Retrieve fd, return -1 if invalid fd_id
   try:
@@ -205,16 +261,13 @@ def fs_fcntl(fd_id, cmd, flag=None):
     set_errno(EBADF)
     return -1
 
-  # Return the fd's flags
-  if cmd == F_GETFD:
-    return fd.flags
+  #
+  if cmd == F_SETLK:
+    pass
 
-  # Set the fd's flags
-  elif cmd == F_SETFD:
-    if not flag:
-      return -1
-    fd.flags = flag
-    return 0
+  #
+  if cmd == F_SETLKW:
+    pass
 
   # Invalid command
   else:

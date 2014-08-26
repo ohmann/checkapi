@@ -149,13 +149,11 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
 #endif
     }
 
-#ifdef O_CLOEXEC
     /* Introduced in Linux 2.6.23. Silently ignored on earlier Linux kernels.
      */
     if (!(flag & APR_FOPEN_NOCLEANUP)) {
         oflags |= O_CLOEXEC;
-}
-#endif
+    }
 
 #if APR_HAS_LARGE_FILES && defined(_LARGEFILE64_SOURCE)
     oflags |= O_LARGEFILE;
@@ -179,33 +177,18 @@ APR_DECLARE(apr_status_t) apr_file_open_model(int *new,
         return errno;
     }
     if (!(flag & APR_FOPEN_NOCLEANUP)) {
-#ifdef O_CLOEXEC
         static int has_o_cloexec = 0;
         if (!has_o_cloexec)
-#endif
         {
-            int flags;
-
             (*set_errno)(errno);
-            if ((flags = (*fs_fcntl2)(fd, F_GETFD)) == -1) {
+            if ((*fs_setcloexec)(fd, 1) == -1) {
                 (*fs_close)(fd);
                 errno = (*get_errno)();
                 return errno;
             }
-            if ((flags & FD_CLOEXEC) == 0) {
-                flags |= FD_CLOEXEC;
-                (*set_errno)(errno);
-                if ((*fs_fcntl3)(fd, F_SETFD, flags) == -1) {
-                    (*fs_close)(fd);
-                    errno = (*get_errno)();
-                    return errno;
-                }
-            }
-#ifdef O_CLOEXEC
             else {
                 has_o_cloexec = 1;
             }
-#endif
         }
     }
 

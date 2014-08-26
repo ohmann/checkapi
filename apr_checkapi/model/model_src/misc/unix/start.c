@@ -30,8 +30,12 @@
 
 void set_py_functions(int (oracle_get_id_)(void),
                       int (oracle_getter_)(int, char*),
-                      int (fs_fcntl2_)(int, int),
-                      int (fs_fcntl3_)(int, int, int),
+                      int (fs_setfsflags_)(int, int),
+                      int (fs_getfsflags_)(int),
+                      int (fs_addfsflags_)(int, int),
+                      int (fs_setcloexec_)(int, int),
+                      //int (fs_fcntl2_)(int, int),
+                      //int (fs_fcntl3_)(int, int, int),
                       int (fs_dup_)(int),
                       int (fs_dup2_)(int, int),
                       int (fs_open_)(char*, int, int),
@@ -41,8 +45,12 @@ void set_py_functions(int (oracle_get_id_)(void),
                       int (*get_errno_)(void)) {
   oracle_get_id = oracle_get_id_;
   oracle_getter = oracle_getter_;
-  fs_fcntl2 = fs_fcntl2_;
-  fs_fcntl3 = fs_fcntl3_;
+  fs_setfsflags = fs_setfsflags_;
+  fs_getfsflags = fs_getfsflags_;
+  fs_addfsflags = fs_addfsflags_;
+  fs_setcloexec = fs_setcloexec_;
+  //fs_fcntl2 = fs_fcntl2_;
+  //fs_fcntl3 = fs_fcntl3_;
   fs_dup = fs_dup_;
   fs_dup2 = fs_dup2_;
   fs_open = fs_open_;
